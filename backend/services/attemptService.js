@@ -23,6 +23,7 @@ const pool = require("../db");
 const { QUESTION_META, USE_TOPIC_PRIMARY_FALLBACK, DIFFICULTIES } = require("../config/questionMeta");
 const { grade } = require("../utils/grading");
 const assessmentService = require("./assessmentService");
+const masteryService = require("./masteryService");
 const {
   badRequest,
   notFound,
@@ -223,7 +224,15 @@ const attemptService = {
         [attemptId, round2(overallScore)]
       );
 
+      // Hanya soal yang DIJAWAB yang menghasilkan evidence.
+      //
+      // Soal yang dilewati tidak boleh jadi evidence: `answer` dan
+      // `is_correct` kolomnya NOT NULL, sehingga opsi termudah adalah
+      // menyimpannya sebagai score 0. Itu salah — "belum menjawab"
+      // bukan bukti tidak paham konsep, dan akan menarik mastery ke bawah
+      // lalu memicu POSSIBLE_GAP untuk alasan yang keliru.
       for (const g of graded) {
+        if (g.submittedAnswer === null) continue;
         await client.query(
           `INSERT INTO evidence
               (attempt_id, question_id, concept_id, answer, is_correct,
@@ -233,9 +242,7 @@ const attemptService = {
             attemptId,
             g.question.id,
             g.conceptId,
-            g.submittedAnswer === null
-              ? JSON.stringify({ unanswered: true })
-              : JSON.stringify(g.submittedAnswer),
+            JSON.stringify(g.submittedAnswer),
             g.isCorrect,
             round2(g.score),
             g.errorPattern,
@@ -274,6 +281,18 @@ const attemptService = {
       client.release();
     }
 
+    // Recalculate mastery SETELAH commit evidence berhasil.
+    // Jika ini gagal, attempt tetap tersimpan (data evidence utuh).
+    let mastery = [];
+    try {
+      mastery = await masteryService.recalculateForConcepts(
+        learnerId,
+        graded.map((g) => g.conceptId)
+      );
+    } catch (error) {
+      console.error("MASTERY RECALC FAILED (evidence tetap tersimpan):", error);
+    }
+
     return {
       attemptId,
       status: "COMPLETED",
@@ -284,11 +303,17 @@ const attemptService = {
           ? null
           : overallScore >= Number(assessment.passing_score),
       questionCount: graded.length,
+      // Soal yang dilewati tetap dihitung 0 untuk attempts.score (poin tidak
+      // diperoleh), tapi TIDAK menghasilkan evidence — lihat catatan di bawah.
+      answeredCount: graded.filter((g) => g.submittedAnswer !== null).length,
+      unansweredCount: graded.filter((g) => g.submittedAnswer === null).length,
       correctCount: graded.filter((g) => g.isCorrect).length,
+      mastery,
       perQuestion: graded.map((g) => ({
         questionId: g.question.id,
         concept: g.conceptName,
         difficulty: g.difficulty,
+        answered: g.submittedAnswer !== null,
         isCorrect: g.isCorrect,
         score: round2(g.score),
         errorPattern: g.errorPattern,
