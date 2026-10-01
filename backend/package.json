@@ -1,0 +1,21 @@
+{
+  "name": "xora-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend API untuk Xora (Node.js + Express)",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
