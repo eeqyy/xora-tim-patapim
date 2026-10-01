@@ -43,7 +43,30 @@ const assessmentService = {
       "SELECT id, type, question_text, correct_answer, points, order_index FROM questions WHERE assessment_id = $1 ORDER BY order_index ASC",
       [assessmentId]
     );
-    return result.rows;
+    return result.rows.map(assessmentService.toPublicQuestion);
+  },
+
+  /**
+   * Amankan soal sebelum dikirim ke client.
+   *
+   * Kolom correct_answer di database menyimpan JAWABAN sekaligus pilihan opsi:
+   *   { correct: "B", options: [...] }  <- MULTIPLE_CHOICE
+   *   { expected: "...", criteria: [...] } <- CODE / ESSAY
+   * Karena itu correct_answer tidak boleh dikirim mentah — peserta bisa
+   * membaca kuncinya. Yang dibutuhkan frontend hanya opsi tampilannya.
+   *
+   * (PRD TR-09/TR-08: penilaian dilakukan backend, bukan client.)
+   */
+  toPublicQuestion(row) {
+    const correct = row.correct_answer || {};
+    return {
+      id: row.id,
+      type: row.type,
+      question_text: row.question_text,
+      points: row.points,
+      order_index: row.order_index,
+      options: row.type === "MULTIPLE_CHOICE" ? correct.options || [] : [],
+    };
   },
 };
 

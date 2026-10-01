@@ -11,6 +11,8 @@ const levelRoutes = require("./routes/levels");
 const topicRoutes = require("./routes/topics");
 const conceptRoutes = require("./routes/concepts");
 const assessmentRoutes = require("./routes/assessments");
+const authRoutes = require("./routes/auth");
+const attemptRoutes = require("./routes/attempts");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,6 +42,8 @@ app.use("/api/levels", levelRoutes);
 app.use("/api/topics", topicRoutes);
 app.use("/api/concepts", conceptRoutes);
 app.use("/api/assessments", assessmentRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/attempts", attemptRoutes);
 
 app.listen(PORT, () => {
   console.log(`Backend Xora berjalan di http://localhost:${PORT}`);
