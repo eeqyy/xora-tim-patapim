@@ -1,0 +1,14 @@
+-- Script ini otomatis dieksekusi oleh MySQL saat container pertama kali start.
+--_ATURAN: file di folder ini HANYA berjalan ketika volume 'mysql_data' masih kosong.
+-- Untuk menjalankan ulang script setelah ada perubahan, gunakan:
+--   docker compose down -v && docker compose up --build
+-- (PERINGATAN: -v akan MENGHAPUS seluruh data database)
+
+-- Contoh membuat tabel:
+--
+-- CREATE TABLE users (
+--   id         INT AUTO_INCREMENT PRIMARY KEY,
+--   name       VARCHAR(100) NOT NULL,
+--   email      VARCHAR(255) NOT NULL UNIQUE,
+--   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );

@@ -6,11 +6,21 @@ Proyek ini menggunakan arsitektur monorepo sederhana yang terdiri dari Frontend 
 ```text
 /project-root
  ├── backend/            # Source code Node.js + Express
+ │   ├── index.js        # Entry point Express server
+ │   ├── db.js           # Connection pool MySQL (mysql2)
+ │   ├── package.json    # Dependency backend
+ │   ├── nodemon.json    # Konfigurasi hot reload
  │   ├── Dockerfile      # Konfigurasi Docker khusus backend
  │   └── .dockerignore
  ├── frontend/           # Source code React + Vite
+ │   ├── index.html      # Root HTML Vite
+ │   ├── vite.config.js  # Konfigurasi Vite dev server
+ │   ├── src/            # Source React (main.jsx, App.jsx, index.css)
+ │   ├── package.json    # Dependency frontend
  │   ├── Dockerfile      # Konfigurasi Docker khusus frontend
  │   └── .dockerignore
+ ├── database/
+ │   └── init/           # Script SQL yang auto-run saat MySQL container pertama start
  ├── docker-compose.yml  # Orkestrasi semua container (Frontend, Backend, MySQL)
  ├── .env.example        # Template konfigurasi environment variables
  ├── .gitignore          # Mengabaikan file yang tidak perlu di push ke Github
@@ -50,7 +60,19 @@ Ketika terminal sudah menunjukkan status bahwa server berjalan:
 - **Backend API** dapat diakses pada: `http://localhost:5000`
 - **Database MySQL** berjalan di port `3306` (host: `localhost` jika akses via DBeaver/DataGrip, atau `mysql` jika diakses via script backend).
 
-> **Penting (Hot Reload):** Karena kita menggunakan volume mount, semua perubahan kode yang kamu tulis di folder `backend/` atau `frontend/` akan langsung me-reload otomatis (berkat `nodemon` dan `vite`). **Kamu tidak perlu stop/start ulang docker setiap mengubah kode!**
+> **Penting (Hot Reload):** Karena kita menggunakan volume mount, semua perubahan kode yang kamu tulis di folder `backend/` atau `frontend/` akan langsung me-reload otomatis (berkat `nodemon` dan `vite`). Untuk environment Docker di Windows (bind mount), kami mengaktifkan `legacyWatch` (nodemon) dan `usePolling` (Vite) agar perubahan file terdeteksi dengan stabil. **Kamu tidak perlu stop/start ulang docker setiap mengubah kode!**
+
+---
+
+## 🗄️ Menjalankan Script SQL Otomatis
+
+Letakkan file `.sql` di folder `database/init/` dengan prefix angka agar urut (misal `01-schema.sql`, `02-seed.sql`).
+
+> **⚠️ PENTING:** File SQL di `database/init/` **hanya dieksekusi saat container MySQL start untuk pertama kali** (ketika volume `mysql_data` masih kosong). Jika kamu menambah atau mengubah file SQL setelah database pernah running, kamu perlu me-reset database:
+> ```bash
+> docker compose down -v && docker compose up --build
+> ```
+> Perintah `-v` akan **MENGHAPUS seluruh data** pada volume MySQL. Pastikan tidak ada data penting yang tersimpan sebelum menjalankannya.
 
 ---
 
@@ -70,3 +92,5 @@ Ketika terminal sudah menunjukkan status bahwa server berjalan:
   ```bash
   docker compose down
   ```
+- **Cek semua sistem sehat?**
+  Buka `http://localhost:5000/api/health`. Endpoint ini akan menampilkan `{"status":"ok","database":"connected"}` apabila backend berhasil terhubung ke MySQL.
