@@ -81,8 +81,11 @@ async function seed() {
     // 2. USERS
     // ══════════════════════════════════════════════════════════
     console.log("  ➜ Users");
-    // Dummy bcrypt hash for "password123" (cost 10) – safe for dev only
-    const dummyHash = "$2b$10$dummyHashForDevelopmentOnlyXoraProject2026abc";
+    // Hash bcrypt ASLI untuk "password123" (cost 10) – hanya untuk dev.
+    // Hash lama di sini hanya 52 karakter sehingga tidak sah sebagai bcrypt
+    // (wajib 60), membuat akun dev tidak bisa login sama sekali.
+    // Dikenerate dengan: bcrypt.hashSync("password123", 10)
+    const dummyHash = "$2b$10$qMhrbGmynYTtnqkEAjNE7.O16yqVHigioCR5pXmA2NG1C/0kiX/mq";
 
     const learnerUser = await upsertRow(
       client, "users",
