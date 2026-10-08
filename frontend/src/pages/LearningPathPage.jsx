@@ -5,8 +5,10 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { subjectsApi, learningPathApi } from "../services/api";
+import { useRouter } from "../context/RouterContext";
 
 export default function LearningPathPage() {
+  const { navigate } = useRouter();
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const [learningPath, setLearningPath] = useState(null);
@@ -158,9 +160,18 @@ export default function LearningPathPage() {
                   <p className="selected-subject-desc">{learningPath.subject.description}</p>
                 )}
               </div>
-              <span className="badge badge-success">
-                {learningPath.subject?.status || "PUBLISHED"}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                <span className="badge badge-success">
+                  {learningPath.subject?.status || "PUBLISHED"}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => navigate("/assessments")}
+                >
+                  Buka Asesmen →
+                </button>
+              </div>
             </div>
           </div>
 

@@ -42,6 +42,12 @@ export default function Navbar() {
                 Learning Path
               </Link>
               <Link
+                to="/assessments"
+                className={`nav-link ${currentPath.startsWith("/assessments") || currentPath.startsWith("/attempts") ? "nav-link-active" : ""}`}
+              >
+                Asesmen
+              </Link>
+              <Link
                 to="/profile"
                 className={`nav-link ${currentPath === "/profile" ? "nav-link-active" : ""}`}
               >

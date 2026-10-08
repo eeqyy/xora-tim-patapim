@@ -149,6 +149,48 @@ export const learningPathApi = {
   },
 };
 
+export const assessmentsApi = {
+  getAll: (params = {}, token) => {
+    const query = new URLSearchParams();
+    if (params.subject_id) query.append("subject_id", params.subject_id);
+    if (params.level_id) query.append("level_id", params.level_id);
+    if (params.topic_id) query.append("topic_id", params.topic_id);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/assessments${qs}`, { method: "GET", token });
+  },
+
+  getById: (id, token) =>
+    apiRequest(`/api/assessments/${id}`, { method: "GET", token }),
+
+  getQuestions: (id, token) =>
+    apiRequest(`/api/assessments/${id}/questions`, { method: "GET", token }),
+
+  startAttempt: (id, token) =>
+    apiRequest(`/api/assessments/${id}/attempts`, { method: "POST", token }),
+
+  submitAttempt: (attemptId, answers, token) =>
+    apiRequest(`/api/assessments/attempts/${attemptId}/submit`, {
+      method: "POST",
+      body: { answers },
+      token,
+    }),
+
+  getAttempt: (attemptId, token) =>
+    apiRequest(`/api/assessments/attempts/${attemptId}`, { method: "GET", token }),
+};
+
+export const attemptsApi = {
+  getById: (id, token) =>
+    apiRequest(`/api/attempts/${id}`, { method: "GET", token }),
+
+  submit: (id, answers, token) =>
+    apiRequest(`/api/attempts/${id}/submit`, {
+      method: "POST",
+      body: { answers },
+      token,
+    }),
+};
+
 export const systemApi = {
   getHealth: () =>
     apiRequest("/api/health", {
