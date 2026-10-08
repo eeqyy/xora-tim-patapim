@@ -1,22 +1,89 @@
-import { useEffect, useState } from "react";
+// ============================================================
+// XORA — Main Application Entry Point
+// frontend/src/App.jsx
+// ============================================================
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+import React from "react";
+import { AuthProvider } from "./context/AuthContext";
+import { RouterProvider, useRouter, ProtectedRoute } from "./context/RouterContext";
+import Navbar from "./components/Navbar";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ProfilePage from "./pages/ProfilePage";
+import LearningPathPage from "./pages/LearningPathPage";
+import AssessmentListPage from "./pages/AssessmentListPage";
+import AssessmentPage from "./pages/AssessmentPage";
+import AssessmentResultPage from "./pages/AssessmentResultPage";
 
-export default function App() {
-  const [status, setStatus] = useState("memuat...");
+function AppContent() {
+  const { currentPath } = useRouter();
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/health`)
-      .then((res) => res.json())
-      .then((data) => setStatus(JSON.stringify(data)))
-      .catch((error) => setStatus(`gagal: ${error.message}`));
-  }, []);
+  let pageContent;
+
+  if (currentPath === "/") {
+    pageContent = <HomePage />;
+  } else if (currentPath === "/login") {
+    pageContent = <LoginPage />;
+  } else if (currentPath === "/register") {
+    pageContent = <RegisterPage />;
+  } else if (currentPath === "/profile") {
+    pageContent = (
+      <ProtectedRoute>
+        <ProfilePage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/learning-path") {
+    pageContent = (
+      <ProtectedRoute>
+        <LearningPathPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/assessments") {
+    pageContent = (
+      <ProtectedRoute>
+        <AssessmentListPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/assessments/result/")) {
+    const attemptId = currentPath.replace("/assessments/result/", "").split("?")[0];
+    pageContent = (
+      <ProtectedRoute>
+        <AssessmentResultPage attemptId={attemptId} />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/attempts/")) {
+    const attemptId = currentPath.replace("/attempts/", "").split("?")[0];
+    pageContent = (
+      <ProtectedRoute>
+        <AssessmentResultPage attemptId={attemptId} />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/assessments/")) {
+    const assessmentId = currentPath.replace("/assessments/", "").split("?")[0];
+    pageContent = (
+      <ProtectedRoute>
+        <AssessmentPage assessmentId={assessmentId} />
+      </ProtectedRoute>
+    );
+  } else {
+    pageContent = <HomePage />;
+  }
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Xora</h1>
-      <p>Frontend jalan di http://localhost:5173</p>
-      <p>Status backend: {status}</p>
-    </main>
+    <div className="app-layout">
+      <Navbar />
+      <main className="main-content">{pageContent}</main>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <RouterProvider>
+        <AppContent />
+      </RouterProvider>
+    </AuthProvider>
   );
 }
