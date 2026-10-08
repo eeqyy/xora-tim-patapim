@@ -1,22 +1,57 @@
-import { useEffect, useState } from "react";
+// ============================================================
+// XORA — Main Application Entry Point
+// frontend/src/App.jsx
+// ============================================================
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+import React from "react";
+import { AuthProvider } from "./context/AuthContext";
+import { RouterProvider, useRouter, ProtectedRoute } from "./context/RouterContext";
+import Navbar from "./components/Navbar";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ProfilePage from "./pages/ProfilePage";
 
-export default function App() {
-  const [status, setStatus] = useState("memuat...");
+function AppContent() {
+  const { currentPath } = useRouter();
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/health`)
-      .then((res) => res.json())
-      .then((data) => setStatus(JSON.stringify(data)))
-      .catch((error) => setStatus(`gagal: ${error.message}`));
-  }, []);
+  let pageContent;
+  switch (currentPath) {
+    case "/":
+      pageContent = <HomePage />;
+      break;
+    case "/login":
+      pageContent = <LoginPage />;
+      break;
+    case "/register":
+      pageContent = <RegisterPage />;
+      break;
+    case "/profile":
+      pageContent = (
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      );
+      break;
+    default:
+      pageContent = <HomePage />;
+      break;
+  }
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Xora</h1>
-      <p>Frontend jalan di http://localhost:5173</p>
-      <p>Status backend: {status}</p>
-    </main>
+    <div className="app-layout">
+      <Navbar />
+      <main className="main-content">{pageContent}</main>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <RouterProvider>
+        <AppContent />
+      </RouterProvider>
+    </AuthProvider>
   );
 }
