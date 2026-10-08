@@ -1156,6 +1156,30 @@ body {
   margin-bottom: 2rem;
 }
 
+.quiz-question-formatted {
+  margin-bottom: 2rem;
+}
+
+.quiz-code-snippet {
+  background-color: #0b1120;
+  border: 1px solid #1e293b;
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  margin: 1rem 0 1.25rem 0;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #38bdf8;
+  white-space: pre;
+}
+
+.quiz-code-snippet code {
+  color: inherit;
+  font-family: inherit;
+}
+
 .quiz-options-list {
   display: flex;
   flex-direction: column;
@@ -1244,6 +1268,229 @@ body {
 .quiz-textarea:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+/* Drag & Drop Styling */
+.quiz-drag-drop-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.drag-instructions-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background-color: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--color-text-main);
+  line-height: 1.45;
+}
+
+.drag-info-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.drag-source-section {
+  background-color: rgba(15, 23, 42, 0.4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.drag-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.drag-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.drag-count-badge {
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+  background-color: rgba(255, 255, 255, 0.06);
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+}
+
+.drag-source-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-height: 48px;
+  align-items: center;
+}
+
+.drag-pool-empty {
+  font-size: 0.82rem;
+  color: #34d399;
+  font-style: italic;
+  padding: 0.5rem;
+}
+
+.drag-item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  border: 1px solid #334155;
+  border-radius: var(--radius-sm);
+  color: #f1f5f9;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.drag-item-chip:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+.drag-item-chip:active {
+  cursor: grabbing;
+}
+
+.drag-item-selected {
+  border-color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.2) !important;
+  box-shadow: 0 0 0 2px #38bdf8, 0 4px 12px rgba(56, 189, 248, 0.25);
+  transform: scale(1.02);
+}
+
+.drag-handle-icon {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.drag-item-text {
+  font-family: inherit;
+}
+
+.drag-targets-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.drag-targets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.drag-target-card {
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 2px dashed #334155;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  transition: all 0.2s ease;
+  min-height: 110px;
+}
+
+.drag-target-card:hover {
+  border-color: #475569;
+}
+
+.drag-target-droppable {
+  border-color: #38bdf8 !important;
+  background-color: rgba(56, 189, 248, 0.05) !important;
+  cursor: pointer;
+}
+
+.drag-target-filled {
+  border-style: solid;
+  border-color: rgba(59, 130, 246, 0.5);
+  background-color: rgba(15, 23, 42, 0.85);
+}
+
+.drag-target-header {
+  margin-bottom: 0.75rem;
+}
+
+.drag-target-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.drag-target-dropzone {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+}
+
+.dropzone-placeholder {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+  padding: 0.6rem 0.5rem;
+  border-radius: var(--radius-sm);
+  width: 100%;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.assigned-item-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.85rem;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(14, 165, 233, 0.2));
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  animation: fadeIn 0.2s ease;
+}
+
+.assigned-item-text {
+  word-break: break-word;
+}
+
+.drag-remove-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: all 0.15s ease;
+  margin-left: 0.5rem;
+}
+
+.drag-remove-btn:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.drag-actions-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
 }
 
 .quiz-controls {

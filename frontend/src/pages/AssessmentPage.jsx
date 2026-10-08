@@ -16,7 +16,8 @@ export default function AssessmentPage({ assessmentId }) {
 
   const [isStarted, setIsStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({}); // { [question_id]: "A" }
+  const [answers, setAnswers] = useState({}); // { [question_id]: "A" | { [itemId]: targetId } }
+  const [selectedDragItemId, setSelectedDragItemId] = useState(null);
   const [startTimes, setStartTimes] = useState({}); // { [question_id]: timestamp }
 
   const [isLoading, setIsLoading] = useState(true);
@@ -86,8 +87,45 @@ export default function AssessmentPage({ assessmentId }) {
     }));
   };
 
+  // 3b. Drag & Drop handlers
+  const handleAssignDragItem = (questionId, itemId, targetId) => {
+    setAnswers((prev) => {
+      const current = prev[questionId] && typeof prev[questionId] === "object" ? { ...prev[questionId] } : {};
+      // Jika target ini sudah terisi oleh item lain, lepaskan item lama tersebut
+      for (const [k, v] of Object.entries(current)) {
+        if (v === targetId) delete current[k];
+      }
+      current[itemId] = targetId;
+      return {
+        ...prev,
+        [questionId]: current,
+      };
+    });
+  };
+
+  const handleRemoveDragItem = (questionId, itemId) => {
+    setAnswers((prev) => {
+      const current = prev[questionId] && typeof prev[questionId] === "object" ? { ...prev[questionId] } : {};
+      delete current[itemId];
+      return {
+        ...prev,
+        [questionId]: current,
+      };
+    });
+  };
+
+  const handleResetDragItems = (questionId) => {
+    setAnswers((prev) => {
+      const updated = { ...prev };
+      delete updated[questionId];
+      return updated;
+    });
+    setSelectedDragItemId(null);
+  };
+
   // 4. Navigation
   const handleNext = () => {
+    setSelectedDragItemId(null);
     if (currentIndex < questions.length - 1) {
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
@@ -98,12 +136,14 @@ export default function AssessmentPage({ assessmentId }) {
   };
 
   const handlePrev = () => {
+    setSelectedDragItemId(null);
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
     }
   };
 
   const handleJumpToQuestion = (index) => {
+    setSelectedDragItemId(null);
     setCurrentIndex(index);
     if (!startTimes[questions[index]?.id]) {
       setStartTimes((prev) => ({ ...prev, [questions[index]?.id]: Date.now() }));
@@ -114,7 +154,12 @@ export default function AssessmentPage({ assessmentId }) {
   const handleSubmit = async () => {
     if (!attempt?.id) return;
 
-    const answeredCount = Object.keys(answers).length;
+    const answeredCount = Object.entries(answers).filter(([_, val]) => {
+      if (!val) return false;
+      if (typeof val === "object") return Object.keys(val).length > 0;
+      return String(val).trim() !== "";
+    }).length;
+
     if (answeredCount < questions.length) {
       const confirmSubmit = window.confirm(
         `Anda baru menjawab ${answeredCount} dari ${questions.length} soal. Yakin ingin mengumpulkan sekarang?`
@@ -255,8 +300,58 @@ export default function AssessmentPage({ assessmentId }) {
   // Active Question View
   const currentQ = questions[currentIndex];
   const selectedChoice = answers[currentQ.id];
-  const answeredTotal = Object.keys(answers).length;
+  const answeredTotal = Object.entries(answers).filter(([_, val]) => {
+    if (!val) return false;
+    if (typeof val === "object") return Object.keys(val).length > 0;
+    return String(val).trim() !== "";
+  }).length;
   const progressPercent = Math.round(((currentIndex + 1) / questions.length) * 100);
+
+  // Drag & drop data helpers
+  const currentMatches = (currentQ.type === "DRAG_DROP" && answers[currentQ.id] && typeof answers[currentQ.id] === "object")
+    ? answers[currentQ.id]
+    : {};
+  const currentItems = Array.isArray(currentQ.items) ? currentQ.items : [];
+  const currentTargets = Array.isArray(currentQ.targets) ? currentQ.targets : [];
+  const availableItems = currentItems.filter((item) => !currentMatches[item.id]);
+
+  // Helper to format code blocks in question text
+  const renderQuestionText = (text) => {
+    if (!text) return null;
+    if (!text.includes("```")) {
+      return <h2 className="quiz-question-text">{text}</h2>;
+    }
+    const parts = text.split(/(```[\s\S]*?```)/g);
+    return (
+      <div className="quiz-question-formatted">
+        {parts.map((part, idx) => {
+          if (part.startsWith("```") && part.endsWith("```")) {
+            const raw = part.slice(3, -3).trim();
+            const newlineIdx = raw.indexOf("\n");
+            let code = raw;
+            if (newlineIdx !== -1) {
+              const firstLine = raw.slice(0, newlineIdx).trim();
+              if (/^[a-z0-9_-]+$/i.test(firstLine)) {
+                code = raw.slice(newlineIdx + 1);
+              }
+            }
+            return (
+              <pre key={idx} className="quiz-code-snippet">
+                <code>{code}</code>
+              </pre>
+            );
+          }
+          const trimmed = part.trim();
+          if (!trimmed) return null;
+          return (
+            <h2 key={idx} className="quiz-question-text" style={{ marginBottom: "0.75rem" }}>
+              {trimmed}
+            </h2>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="assessment-container">
@@ -282,10 +377,24 @@ export default function AssessmentPage({ assessmentId }) {
           <div className="quiz-question-meta">
             <span className="badge badge-topic">Soal #{currentQ.order_index}</span>
             <span className="badge badge-difficulty badge-easy">{currentQ.points} Poin</span>
-            <span className="badge badge-role">{currentQ.type}</span>
+            {currentQ.concept && (
+              <span className="badge badge-role">{currentQ.concept}</span>
+            )}
+            {currentQ.type === "DRAG_DROP" && (
+              <span className="badge badge-difficulty badge-hard">Drag &amp; Drop</span>
+            )}
+            {currentQ.category === "TRUE_FALSE" && (
+              <span className="badge badge-difficulty badge-medium">Benar / Salah</span>
+            )}
+            {currentQ.category === "CODE_INTERPRETATION" && (
+              <span className="badge badge-difficulty badge-hard">Interpretasi Kode</span>
+            )}
+            {currentQ.category === "SCENARIO" && (
+              <span className="badge badge-difficulty badge-medium">Kasus / Skenario</span>
+            )}
           </div>
 
-          <h2 className="quiz-question-text">{currentQ.question_text}</h2>
+          {renderQuestionText(currentQ.question_text)}
 
           {/* Multiple Choice Options */}
           {currentQ.type === "MULTIPLE_CHOICE" && Array.isArray(currentQ.options) && (
@@ -315,8 +424,130 @@ export default function AssessmentPage({ assessmentId }) {
             </div>
           )}
 
+          {/* Drag & Drop Interactive Question */}
+          {currentQ.type === "DRAG_DROP" && (
+            <div className="quiz-drag-drop-container">
+              <div className="drag-instructions-banner">
+                <span className="drag-info-icon">💡</span>
+                <p>
+                  <strong>Petunjuk:</strong> Tarik (drag) kartu item dan lepaskan di kotak target yang sesuai, atau klik kartu item di bawah lalu klik kotak target tujuannya.
+                </p>
+              </div>
+
+              {/* Pool of Available Items */}
+              <div className="drag-source-section">
+                <div className="drag-section-header">
+                  <h4 className="drag-section-title">Item yang Tersedia:</h4>
+                  <span className="drag-count-badge">
+                    {availableItems.length} belum terpasang
+                  </span>
+                </div>
+                <div className="drag-source-pool">
+                  {availableItems.length === 0 ? (
+                    <div className="drag-pool-empty">
+                      ✓ Semua item telah dipasangkan. Tekan tanda ✕ pada kotak target jika ingin mengubah pasangan.
+                    </div>
+                  ) : (
+                    availableItems.map((item) => (
+                      <div
+                        key={item.id}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", item.id);
+                          setSelectedDragItemId(item.id);
+                        }}
+                        onClick={() => setSelectedDragItemId(selectedDragItemId === item.id ? null : item.id)}
+                        className={`drag-item-chip ${selectedDragItemId === item.id ? "drag-item-selected" : ""}`}
+                        title="Klik untuk memilih lalu klik target, atau tarik ke kotak target"
+                      >
+                        <span className="drag-handle-icon">⠿</span>
+                        <span className="drag-item-text">{item.label}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Target Drop Zones */}
+              <div className="drag-targets-section">
+                <div className="drag-section-header">
+                  <h4 className="drag-section-title">Kotak Target Pasangan:</h4>
+                </div>
+                <div className="drag-targets-grid">
+                  {currentTargets.map((tg) => {
+                    const assignedItemId = currentMatches[tg.id] || Object.keys(currentMatches).find((k) => currentMatches[k] === tg.id);
+                    const assignedItem = currentItems.find((it) => it.id === assignedItemId);
+
+                    return (
+                      <div
+                        key={tg.id}
+                        className={`drag-target-card ${assignedItem ? "drag-target-filled" : ""} ${
+                          selectedDragItemId && !assignedItem ? "drag-target-droppable" : ""
+                        }`}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const itemId = e.dataTransfer.getData("text/plain") || selectedDragItemId;
+                          if (itemId) {
+                            handleAssignDragItem(currentQ.id, itemId, tg.id);
+                            setSelectedDragItemId(null);
+                          }
+                        }}
+                        onClick={() => {
+                          if (selectedDragItemId) {
+                            handleAssignDragItem(currentQ.id, selectedDragItemId, tg.id);
+                            setSelectedDragItemId(null);
+                          }
+                        }}
+                      >
+                        <div className="drag-target-header">
+                          <span className="drag-target-label">{tg.label}</span>
+                        </div>
+                        <div className="drag-target-dropzone">
+                          {assignedItem ? (
+                            <div className="assigned-item-pill">
+                              <span className="assigned-item-text">{assignedItem.label}</span>
+                              <button
+                                type="button"
+                                className="drag-remove-btn"
+                                title="Lepaskan pasangan"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveDragItem(currentQ.id, assignedItem.id);
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="dropzone-placeholder">
+                              {selectedDragItemId ? "Klik di sini untuk pasangkan item terpilih" : "Tarik & lepaskan item di sini"}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Reset button */}
+              {Object.keys(currentMatches).length > 0 && (
+                <div className="drag-actions-bar">
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => handleResetDragItems(currentQ.id)}
+                  >
+                    Reset Pasangan Soal Ini
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Fallback for other question types */}
-          {currentQ.type !== "MULTIPLE_CHOICE" && (
+          {currentQ.type !== "MULTIPLE_CHOICE" && currentQ.type !== "DRAG_DROP" && (
             <div className="quiz-other-type-box">
               <p className="quiz-other-desc">
                 Soal tipe {currentQ.type}. Masukkan jawaban atau kode Anda:
@@ -378,7 +609,8 @@ export default function AssessmentPage({ assessmentId }) {
 
           <div className="palette-grid">
             {questions.map((q, idx) => {
-              const isAnswered = Boolean(answers[q.id]);
+              const ans = answers[q.id];
+              const isAnswered = ans && typeof ans === "object" ? Object.keys(ans).length > 0 : Boolean(ans);
               const isCurrent = idx === currentIndex;
               return (
                 <button

@@ -81,6 +81,17 @@ const assessmentService = {
         options = q.correct_answer.options;
       }
 
+      let items = [];
+      let targets = [];
+      if (q.type === "DRAG_DROP" && q.correct_answer) {
+        if (Array.isArray(q.correct_answer.items)) {
+          items = q.correct_answer.items.map((it) => ({ id: it.id, label: it.label }));
+        }
+        if (Array.isArray(q.correct_answer.targets)) {
+          targets = q.correct_answer.targets.map((tg) => ({ id: tg.id, label: tg.label }));
+        }
+      }
+
       return {
         id: q.id,
         assessment_id: q.assessment_id,
@@ -89,6 +100,10 @@ const assessmentService = {
         points: Number(q.points),
         order_index: q.order_index,
         options,
+        items,
+        targets,
+        concept: (q.correct_answer && q.correct_answer.concept) ? q.correct_answer.concept : null,
+        category: (q.correct_answer && q.correct_answer.category) ? q.correct_answer.category : null,
       };
     });
   },
@@ -298,6 +313,13 @@ const assessmentService = {
       }
     }
 
+    // Ambil seluruh concepts untuk subject_id ini untuk pemetaan presisi dari question metadata
+    const allConceptsRes = await pool.query(
+      "SELECT id, name FROM concepts WHERE subject_id = $1",
+      [attempt.subject_id]
+    );
+    const conceptMapByName = new Map(allConceptsRes.rows.map((c) => [c.name, c.id]));
+
     // 6. Validasi dan evaluasi setiap jawaban di SERVER
     const evaluatedEvidence = [];
     const answeredQuestionIds = new Set();
@@ -382,6 +404,50 @@ const assessmentService = {
           isCorrect = false;
           questionScore = 0;
         }
+      } else if (question.type === "DRAG_DROP") {
+        const correctMap = (question.correct_answer && typeof question.correct_answer.correct === "object")
+          ? question.correct_answer.correct
+          : {};
+
+        let learnerMatches = {};
+        if (item.selected && typeof item.selected === "object") {
+          learnerMatches = item.selected;
+        } else if (item.matches && typeof item.matches === "object") {
+          learnerMatches = item.matches;
+        } else if (item.answer && typeof item.answer === "object") {
+          learnerMatches = item.answer;
+        } else if (typeof item.selected === "string") {
+          try {
+            learnerMatches = JSON.parse(item.selected);
+          } catch (e) {
+            learnerMatches = {};
+          }
+        }
+
+        answerObj = { matches: learnerMatches };
+
+        // Evaluasi server-side
+        const correctKeys = Object.keys(correctMap);
+        if (correctKeys.length > 0) {
+          let allMatch = true;
+          for (const key of correctKeys) {
+            if (learnerMatches[key] !== correctMap[key]) {
+              allMatch = false;
+              break;
+            }
+          }
+          if (allMatch && Object.keys(learnerMatches).length >= correctKeys.length) {
+            isCorrect = true;
+            questionScore = Number(question.points);
+            correctCount++;
+          } else {
+            isCorrect = false;
+            questionScore = 0;
+          }
+        } else {
+          isCorrect = false;
+          questionScore = 0;
+        }
       } else {
         // Tipe lain (ESSAY / CODE)
         answerObj = typeof item.answer === "object" ? item.answer : { input: item.answer || item.selected || "" };
@@ -391,9 +457,20 @@ const assessmentService = {
 
       totalEarnedPoints += questionScore;
 
-      // Tentukan concept_id untuk evidence
-      const conceptIndex = (question.order_index - 1) % conceptList.length;
-      const assignedConceptId = conceptList[conceptIndex] || conceptList[0];
+      // Tentukan concept_id untuk evidence berdasarkan metadata soal
+      let assignedConceptId = null;
+      if (question.correct_answer && question.correct_answer.concept_id) {
+        assignedConceptId = question.correct_answer.concept_id;
+      } else if (
+        question.correct_answer &&
+        question.correct_answer.concept &&
+        conceptMapByName.has(question.correct_answer.concept)
+      ) {
+        assignedConceptId = conceptMapByName.get(question.correct_answer.concept);
+      } else {
+        const conceptIndex = (question.order_index - 1) % conceptList.length;
+        assignedConceptId = conceptList[conceptIndex] || conceptList[0];
+      }
 
       evaluatedEvidence.push({
         question_id: question.id,
