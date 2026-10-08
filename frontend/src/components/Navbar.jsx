@@ -36,6 +36,12 @@ export default function Navbar() {
           {isAuthenticated ? (
             <>
               <Link
+                to="/learning-path"
+                className={`nav-link ${currentPath === "/learning-path" ? "nav-link-active" : ""}`}
+              >
+                Learning Path
+              </Link>
+              <Link
                 to="/profile"
                 className={`nav-link ${currentPath === "/profile" ? "nav-link-active" : ""}`}
               >

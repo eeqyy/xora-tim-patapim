@@ -139,6 +139,16 @@ export const subjectsApi = {
     }),
 };
 
+export const learningPathApi = {
+  getPath: (subjectId, token) => {
+    const endpoint = subjectId ? `/api/learning-path/${subjectId}` : "/api/learning-path";
+    return apiRequest(endpoint, {
+      method: "GET",
+      token,
+    });
+  },
+};
+
 export const systemApi = {
   getHealth: () =>
     apiRequest("/api/health", {

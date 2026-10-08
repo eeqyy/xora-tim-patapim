@@ -11,6 +11,7 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProfilePage from "./pages/ProfilePage";
+import LearningPathPage from "./pages/LearningPathPage";
 
 function AppContent() {
   const { currentPath } = useRouter();
@@ -30,6 +31,13 @@ function AppContent() {
       pageContent = (
         <ProtectedRoute>
           <ProfilePage />
+        </ProtectedRoute>
+      );
+      break;
+    case "/learning-path":
+      pageContent = (
+        <ProtectedRoute>
+          <LearningPathPage />
         </ProtectedRoute>
       );
       break;
