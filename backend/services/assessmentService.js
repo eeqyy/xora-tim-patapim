@@ -4,6 +4,7 @@
 // ============================================================
 
 const pool = require("../db");
+const masteryService = require("./masteryService");
 
 const assessmentService = {
   async getAll(filters = {}) {
@@ -73,6 +74,7 @@ const assessmentService = {
       "SELECT id, assessment_id, type, question_text, correct_answer, points, order_index FROM questions WHERE assessment_id = $1 ORDER BY order_index ASC",
       [assessmentId]
     );
+
 
     // Sanitize questions: strip correct answers and secret scoring criteria
     return result.rows.map((q) => {
@@ -524,6 +526,17 @@ const assessmentService = {
 
       await client.query("COMMIT");
 
+      // Rehit mastery SETELAH commit evidence berhasil.
+      // Sama polanya dengan attemptService: kalau gagal, attempt tetap tersimpan.
+      try {
+        await masteryService.recalculateForConcepts(
+          learnerId,
+          evaluatedEvidence.map((ev) => ev.concept_id)
+        );
+      } catch (masteryError) {
+        console.error("MASTERY RECALC FAILED (evidence tetap tersimpan):", masteryError);
+      }
+
       return {
         id: updatedAttempt.rows[0].id,
         assessment_id: attempt.assessment_id,
@@ -544,6 +557,31 @@ const assessmentService = {
     } finally {
       client.release();
     }
+  },
+
+  /**
+   * Amankan soal sebelum dikirim ke client.
+   *
+   * Kolom correct_answer di database menyimpan JAWABAN sekaligus pilihan opsi:
+   *   { correct: "B", options: [...] }  <- MULTIPLE_CHOICE
+   *   { expected: "...", criteria: [...] } <- CODE / ESSAY
+   * Karena itu correct_answer tidak boleh dikirim mentah — peserta bisa
+   * membaca kuncinya. Yang dibutuhkan frontend hanya opsi tampilannya.
+   *
+   * (PRD TR-09/TR-08: penilaian dilakukan backend, bukan client.)
+   *
+   * Dipakai oleh attemptService untuk menyiapkan daftar soal peserta.
+   */
+  toPublicQuestion(row) {
+    const correct = row.correct_answer || {};
+    return {
+      id: row.id,
+      type: row.type,
+      question_text: row.question_text,
+      points: row.points,
+      order_index: row.order_index,
+      options: row.type === "MULTIPLE_CHOICE" ? correct.options || [] : [],
+    };
   },
 };
 

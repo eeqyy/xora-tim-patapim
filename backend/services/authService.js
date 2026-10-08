@@ -1,195 +1,210 @@
 // ============================================================
-// XORA — Authentication Service
+// XORA — Authentication service (register / login / logout / me)
 // backend/services/authService.js
 // ============================================================
+// FR-01..FR-05: sign up, login, logout, kelola sesi, profil minat & tujuan.
+// Penyimpanan password memakai bcrypt (lihat utils/password.js).
+// ============================================================
 
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const pool = require("../db");
-const { getJwtSecret, getJwtExpiresIn } = require("../config/auth");
+const passwordUtils = require("../utils/password");
+const sessionService = require("./sessionService");
+const { badRequest, conflict, unauthorized } = require("../utils/errors");
 
-const SALT_ROUNDS = 10;
+// Batas bcrypt: maksimal 72 byte input. Lebih dari itu dipotong library,
+// jadi divalidasi di sini agar pesannya jelas ke pengguna.
+const MAX_PASSWORD_BYTES = 72;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function formatRoles(roles) {
-  if (Array.isArray(roles)) return roles;
-  if (typeof roles === "string") {
-    const cleaned = roles.replace(/^\{|\}$/g, "").trim();
-    return cleaned ? cleaned.split(",").map((r) => r.trim()) : [];
+function validateRegisterInput({ name, email, password }) {
+  const cleanName = String(name ?? "").trim();
+  const cleanEmail = String(email ?? "").trim().toLowerCase();
+  const cleanPassword = String(password ?? "");
+
+  if (cleanName.length < 2 || cleanName.length > 100) {
+    throw badRequest("Name must be between 2 and 100 characters");
   }
-  return [];
+  if (!EMAIL_PATTERN.test(cleanEmail) || cleanEmail.length > 254) {
+    throw badRequest("Please provide a valid email address");
+  }
+  if (cleanPassword.length < 8) {
+    throw badRequest("Password must be at least 8 characters");
+  }
+  if (Buffer.byteLength(cleanPassword, "utf8") > MAX_PASSWORD_BYTES) {
+    throw badRequest(`Password must be at most ${MAX_PASSWORD_BYTES} bytes`);
+  }
+
+  return { name: cleanName, email: cleanEmail, password: cleanPassword };
+}
+
+/** Catat event login/logout ke learning_events agar jejak audit tersedia. */
+async function recordAuthEvent(userId, eventType) {
+  try {
+    await pool.query(
+      `INSERT INTO learning_events (learner_id, event_type, entity_type, entity_id, metadata)
+       VALUES ($1, $2, 'user', $1, $3)`,
+      [userId, eventType, JSON.stringify({ at: new Date().toISOString() })]
+    );
+  } catch (error) {
+    // Kegagalan audit tidak boleh menggagalkan login.
+    console.error("AUTH EVENT LOG FAILED:", error.message);
+  }
 }
 
 const authService = {
   /**
-   * Generate JWT token for user
+   * Daftar akun learner baru + buat sesi aktif.
+   * @returns {{user: object, token: string, expiresAt: Date}}
    */
-  generateToken(userId) {
-    return jwt.sign({ userId }, getJwtSecret(), {
-      expiresIn: getJwtExpiresIn(),
-    });
-  },
+  async register(input) {
+    const { name, email, password } = validateRegisterInput(input);
 
-  /**
-   * Register a new learner user with database transaction
-   */
-  async register({ name, email, password }) {
-    const normalizedEmail = (typeof email === "string" ? email.trim() : "").toLowerCase();
-    const trimmedName = typeof name === "string" ? name.trim() : "";
-
-    // Check if email already registered
-    const existingUser = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [normalizedEmail]
-    );
-
-    if (existingUser.rows.length > 0) {
-      const error = new Error("Email sudah terdaftar");
-      error.statusCode = 409;
-      throw error;
-    }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-
-    // Database transaction to create user, assign role, and create learner profile
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
 
-      // 1. Insert user
-      const userResult = await client.query(
-        `INSERT INTO users (name, email, password_hash, status)
+      const passwordHash = await passwordUtils.hash(password);
+
+      const inserted = await client.query(
+        `INSERT INTO users (email, password_hash, name, status)
          VALUES ($1, $2, $3, 'ACTIVE')
-         RETURNING id, name, email, status, created_at, updated_at`,
-        [trimmedName, normalizedEmail, passwordHash]
+         ON CONFLICT (email) DO NOTHING
+         RETURNING id, email, name, status, created_at`,
+        [email, passwordHash, name]
       );
-      const user = userResult.rows[0];
 
-      // 2. Fetch LEARNER role ID (or create if not yet seeded)
-      let roleResult = await client.query(
-        "SELECT id FROM roles WHERE name = 'LEARNER'"
-      );
-      if (roleResult.rows.length === 0) {
-        roleResult = await client.query(
-          "INSERT INTO roles (name, description) VALUES ('LEARNER', 'Pelajar yang menggunakan platform Xora') RETURNING id"
-        );
+      if (!inserted.rows[0]) {
+        throw conflict("An account with this email already exists");
       }
-      const roleId = roleResult.rows[0].id;
 
-      // 3. Assign role to user
-      await client.query(
-        "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)",
-        [user.id, roleId]
-      );
+      const user = inserted.rows[0];
 
-      // 4. Create learner profile
+      // Profil disiapkan kosong; onboarding (FR-02..FR-04) mengisinya nanti.
       await client.query(
-        "INSERT INTO learner_profiles (user_id) VALUES ($1)",
+        `INSERT INTO learner_profiles (user_id, onboarding_completed)
+         VALUES ($1, false)
+         ON CONFLICT (user_id) DO NOTHING`,
         [user.id]
       );
 
+      // Beri role LEARNER jika tabel roles sudah terisi (aman saat belum di-seed).
+      await client.query(
+        `INSERT INTO user_roles (user_id, role_id)
+         SELECT $1, r.id FROM roles r WHERE r.name = 'LEARNER'
+         ON CONFLICT (user_id, role_id) DO NOTHING`,
+        [user.id]
+      );
+
+      const session = await sessionService.create(user.id, client);
+
       await client.query("COMMIT");
 
-      // Return safe user object with roles and token
-      const token = this.generateToken(user.id);
-
       return {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          status: user.status,
-          roles: ["LEARNER"],
-          createdAt: user.created_at,
-        },
-        token,
+        user: { id: user.id, email: user.email, name: user.name, status: user.status },
+        token: session.token,
+        expiresAt: session.expiresAt,
       };
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
     } finally {
       client.release();
     }
   },
 
   /**
-   * Login user with email and password
+   * Login dengan email + password.
+   * Pesan error sengaja sama untuk "email tidak ada" dan "password salah"
+   * agar tidak bisa dipakai menebak daftar email yang terdaftar.
    */
   async login({ email, password }) {
-    const normalizedEmail = (typeof email === "string" ? email.trim() : "").toLowerCase();
+    const cleanEmail = String(email ?? "").trim().toLowerCase();
+    const cleanPassword = String(password ?? "");
 
-    // Find user by email
-    const userResult = await pool.query(
-      `SELECT u.id, u.email, u.password_hash, u.name, u.status, u.created_at,
-              COALESCE(ARRAY_AGG(r.name::text) FILTER (WHERE r.name IS NOT NULL), '{}') AS roles
-       FROM users u
-       LEFT JOIN user_roles ur ON ur.user_id = u.id
-       LEFT JOIN roles r ON r.id = ur.role_id
-       WHERE u.email = $1
-       GROUP BY u.id`,
-      [normalizedEmail]
+    if (!cleanEmail || !cleanPassword) {
+      throw badRequest("Email and password are required");
+    }
+
+    const result = await pool.query(
+      `SELECT id, email, name, status, password_hash
+         FROM users
+        WHERE LOWER(email) = $1`,
+      [cleanEmail]
     );
 
-    if (userResult.rows.length === 0) {
-      const error = new Error("Email atau password tidak valid");
-      error.statusCode = 401;
-      throw error;
+    const user = result.rows[0];
+
+    if (!user || !passwordUtils.verify(cleanPassword, user.password_hash)) {
+      // Bedakan penyebab hanya di log server, bukan ke client.
+      if (user && !passwordUtils.isValidHash(user.password_hash)) {
+        console.error(
+          `LOGIN BLOCKED: stored hash for ${user.email} is not a valid bcrypt hash ` +
+            `(length=${String(user.password_hash || "").length}). ` +
+            `This account was seeded with a placeholder hash and cannot sign in until re-seeded.`
+        );
+      }
+      throw unauthorized("Invalid email or password");
     }
 
-    const user = userResult.rows[0];
-
-    // Check account status
     if (user.status !== "ACTIVE") {
-      const error = new Error("Akun sedang tidak aktif atau dinonaktifkan");
-      error.statusCode = 403;
-      throw error;
+      throw unauthorized("This account is not active");
     }
 
-    // Verify password hash
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-    if (!isPasswordValid) {
-      const error = new Error("Email atau password tidak valid");
-      error.statusCode = 401;
-      throw error;
-    }
-
-    // Generate token
-    const token = this.generateToken(user.id);
+    const session = await sessionService.create(user.id);
+    await recordAuthEvent(user.id, "LOGIN");
 
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        status: user.status,
-        roles: formatRoles(user.roles),
-        createdAt: user.created_at,
-      },
-      token,
+      user: { id: user.id, email: user.email, name: user.name, status: user.status },
+      token: session.token,
+      expiresAt: session.expiresAt,
     };
   },
 
-  /**
-   * Get user details by ID (for /api/auth/me and auth middleware)
-   */
-  async getUserById(userId) {
+  /** Logout: cabut sesi aktif milik request berjalan. */
+  async logout(token, userId) {
+    const revoked = await sessionService.revoke(token);
+    if (userId && revoked > 0) {
+      await recordAuthEvent(userId, "LOGOUT");
+    }
+    return { revoked };
+  },
+
+  /** Profil singkat user yang sedang login. */
+  async me(userId) {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.name, u.status, u.created_at, u.updated_at,
-              COALESCE(ARRAY_AGG(r.name::text) FILTER (WHERE r.name IS NOT NULL), '{}') AS roles
-       FROM users u
-       LEFT JOIN user_roles ur ON ur.user_id = u.id
-       LEFT JOIN roles r ON r.id = ur.role_id
-       WHERE u.id = $1
-       GROUP BY u.id`,
+      `SELECT u.id, u.email, u.name, u.status, u.created_at,
+              lp.learning_goal, lp.experience_level, lp.preferred_subject_id,
+              lp.onboarding_completed,
+              -- Cast eksplisit: tanpa ::text[] pada COALESCE, PostgreSQL
+              -- mengirim string literal "{LEARNER}" alih-alih array JS.
+              COALESCE(
+                (SELECT array_agg(r.name::text ORDER BY r.name)
+                   FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+                  WHERE ur.user_id = u.id),
+                '{}'
+              )::text[] AS roles
+         FROM users u
+         LEFT JOIN learner_profiles lp ON lp.user_id = u.id
+        WHERE u.id = $1`,
       [userId]
     );
 
-    if (!result.rows[0]) return null;
+    const row = result.rows[0];
+    if (!row) throw unauthorized("Account no longer exists");
 
-    const user = result.rows[0];
     return {
-      ...user,
-      roles: formatRoles(user.roles),
+      id: row.id,
+      email: row.email,
+      name: row.name,
+      status: row.status,
+      createdAt: row.created_at,
+      roles: row.roles,
+      onboarding: {
+        completed: Boolean(row.onboarding_completed),
+        learningGoal: row.learning_goal,
+        experienceLevel: row.experience_level,
+        preferredSubjectId: row.preferred_subject_id,
+      },
     };
   },
 };

@@ -6,10 +6,10 @@
 const express = require("express");
 const router = express.Router();
 const learningPathService = require("../services/learningPathService");
-const authMiddleware = require("../middlewares/authMiddleware");
+const { requireAuth } = require("../middleware/auth");
 
 // All Learning Path endpoints are read-only and require authentication
-router.use(authMiddleware);
+router.use(requireAuth);
 
 // GET /api/learning-path (Resolves preferred or default subject's path)
 router.get("/", async (req, res) => {

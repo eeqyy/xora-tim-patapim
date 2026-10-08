@@ -6,13 +6,13 @@
 const express = require("express");
 const router = express.Router();
 const profileService = require("../services/profileService");
-const authMiddleware = require("../middlewares/authMiddleware");
+const { requireAuth } = require("../middleware/auth");
 
 // Standard UUID format regex (8-4-4-4-12 hex)
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // GET /api/profile (Self-service profile)
-router.get("/", authMiddleware, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const profile = await profileService.getLearnerProfile(req.user.id);
     return res.json({
@@ -36,7 +36,7 @@ router.get("/", authMiddleware, async (req, res) => {
 });
 
 // PATCH /api/profile (Self-service update profile)
-router.patch("/", authMiddleware, async (req, res) => {
+router.patch("/", requireAuth, async (req, res) => {
   try {
     const {
       name,
@@ -119,7 +119,7 @@ router.patch("/", authMiddleware, async (req, res) => {
 });
 
 // PATCH /api/profile/onboarding (Complete onboarding)
-router.patch("/onboarding", authMiddleware, async (req, res) => {
+router.patch("/onboarding", requireAuth, async (req, res) => {
   try {
     const result = await profileService.completeOnboarding(req.user.id);
     return res.json({

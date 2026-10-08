@@ -6,10 +6,10 @@
 const express = require("express");
 const router = express.Router();
 const assessmentService = require("../services/assessmentService");
-const authMiddleware = require("../middlewares/authMiddleware");
+const { requireAuth } = require("../middleware/auth");
 
 // Semua route assessment mewajibkan autentikasi learner
-router.use(authMiddleware);
+router.use(requireAuth);
 
 // GET /api/assessments
 router.get("/", async (req, res) => {

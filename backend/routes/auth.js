@@ -1,143 +1,63 @@
 // ============================================================
-// XORA — Authentication Routes
+// XORA — Auth Routes
 // backend/routes/auth.js
+// ============================================================
+// POST /api/auth/register  -> daftar + langsung dapat token
+// POST /api/auth/login     -> login + token
+// POST /api/auth/logout    -> cabut sesi berjalan (butuh token)
+// GET  /api/auth/me        -> profil user yang sedang login
 // ============================================================
 
 const express = require("express");
 const router = express.Router();
 const authService = require("../services/authService");
-const authMiddleware = require("../middlewares/authMiddleware");
-
-// Simple email regex validator
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const { requireAuth } = require("../middleware/auth");
+const { sendError } = require("../utils/errors");
 
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-
-    // 1. Validation
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return res.status(400).json({
-        status: "error",
-        message: "Nama wajib diisi",
-      });
-    }
-
-    if (!email || typeof email !== "string" || email.trim().length === 0) {
-      return res.status(400).json({
-        status: "error",
-        message: "Email wajib diisi",
-      });
-    }
-
-    if (!EMAIL_REGEX.test(email.trim())) {
-      return res.status(400).json({
-        status: "error",
-        message: "Format email tidak valid",
-      });
-    }
-
-    if (!password || typeof password !== "string" || password.length === 0) {
-      return res.status(400).json({
-        status: "error",
-        message: "Password wajib diisi",
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        status: "error",
-        message: "Password minimal 6 karakter",
-      });
-    }
-
-    // 2. Register user
+    const { name, email, password } = req.body || {};
     const result = await authService.register({ name, email, password });
-
-    return res.status(201).json({
-      status: "ok",
-      data: result,
-    });
+    res.status(201).json({ status: "ok", data: result });
   } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
-      });
-    }
-
-    console.error("REGISTER ERROR:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Terjadi kesalahan internal pada server saat registrasi",
-    });
+    console.error("POST /api/auth/register ERROR:", error);
+    sendError(res, error);
   }
 });
 
 // POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // 1. Validation
-    if (!email || typeof email !== "string" || email.trim().length === 0) {
-      return res.status(400).json({
-        status: "error",
-        message: "Email wajib diisi",
-      });
-    }
-
-    if (!EMAIL_REGEX.test(email.trim())) {
-      return res.status(400).json({
-        status: "error",
-        message: "Format email tidak valid",
-      });
-    }
-
-    if (!password || typeof password !== "string" || password.length === 0) {
-      return res.status(400).json({
-        status: "error",
-        message: "Password wajib diisi",
-      });
-    }
-
-    // 2. Login user
+    const { email, password } = req.body || {};
     const result = await authService.login({ email, password });
-
-    return res.json({
-      status: "ok",
-      data: result,
-    });
+    res.json({ status: "ok", data: result });
   } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
-      });
-    }
-
-    console.error("LOGIN ERROR:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Terjadi kesalahan internal pada server saat login",
-    });
+    console.error("POST /api/auth/login ERROR:", error);
+    sendError(res, error);
   }
 });
 
-// GET /api/auth/me (Protected Route)
-router.get("/me", authMiddleware, async (req, res) => {
+// POST /api/auth/logout
+router.post("/logout", requireAuth, async (req, res) => {
   try {
-    return res.json({
-      status: "ok",
-      data: req.user,
-    });
+    const result = await authService.logout(req.token, req.user.id);
+    res.json({ status: "ok", data: result });
+  } catch (error) {
+    console.error("POST /api/auth/logout ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// GET /api/auth/me
+router.get("/me", requireAuth, async (req, res) => {
+  try {
+    const profile = await authService.me(req.user.id);
+    // Frontend (AuthContext) membaca response.data.user untuk restore sesi.
+    res.json({ status: "ok", data: { user: profile } });
   } catch (error) {
     console.error("GET /api/auth/me ERROR:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Terjadi kesalahan internal pada server",
-    });
+    sendError(res, error);
   }
 });
 
