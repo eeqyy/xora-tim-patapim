@@ -35,17 +35,21 @@ async function upsertRow(client, table, columns, values, conflictTarget, lookupC
 /**
  * Upsert question by (assessment_id, order_index) with DO UPDATE
  */
-async function upsertQuestion(client, assessmentId, type, text, answerJson, points, order) {
-  const sql = `INSERT INTO questions (assessment_id, type, question_text, correct_answer, points, order_index)
-               VALUES ($1, $2, $3, $4, $5, $6)
-               ON CONFLICT (assessment_id, order_index)
-               DO UPDATE SET
-                 type = EXCLUDED.type,
-                 question_text = EXCLUDED.question_text,
-                 correct_answer = EXCLUDED.correct_answer,
-                 points = EXCLUDED.points
-               RETURNING *`;
-  const res = await client.query(sql, [assessmentId, type, text, answerJson, points, order]);
+async function upsertQuestion(client, assessmentId, conceptId, difficulty, type, text, answerJson, points, order) {
+  const sql = `INSERT INTO questions (assessment_id, concept_id, difficulty, type, question_text, correct_answer, points, order_index)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT (assessment_id, order_index)
+             DO UPDATE SET
+               concept_id = EXCLUDED.concept_id,
+               difficulty = EXCLUDED.difficulty,
+               type = EXCLUDED.type,
+               question_text = EXCLUDED.question_text,
+               correct_answer = EXCLUDED.correct_answer,
+               points = EXCLUDED.points
+             RETURNING *`;
+  const res = await client.query(sql, [
+    assessmentId, conceptId, difficulty, type, text, answerJson, points, order,
+  ]);
   return res.rows[0];
 }
 
@@ -392,35 +396,46 @@ async function seed() {
     // ══════════════════════════════════════════════════════════
     console.log("  ➜ Materials");
     const materialDefs = [
-      { topic: "HTML Basics",       title: "Pengenalan HTML",            type: "ARTICLE",      order: 1, content: { body: "HTML (HyperText Markup Language) adalah bahasa markup standar untuk membuat halaman web. Setiap elemen HTML ditandai dengan tag pembuka dan penutup." } },
-      { topic: "HTML Basics",       title: "Contoh Kode HTML Dasar",    type: "CODE_EXAMPLE", order: 2, content: { language: "html", code: "<!DOCTYPE html>\n<html>\n<head><title>Halaman Pertama</title></head>\n<body><h1>Halo Dunia!</h1></body>\n</html>" } },
-      { topic: "Semantic HTML",     title: "Elemen Semantik HTML5",      type: "ARTICLE",      order: 1, content: { body: "Elemen semantik seperti <header>, <nav>, <main>, <article>, <section>, dan <footer> memberikan makna struktur pada halaman web." } },
-      { topic: "CSS Basics",        title: "Pengenalan CSS",             type: "ARTICLE",      order: 1, content: { body: "CSS (Cascading Style Sheets) digunakan untuk mengatur tampilan elemen HTML. Selector memilih elemen, property menentukan aspek visual, dan value menentukan nilainya." } },
-      { topic: "CSS Basics",        title: "Video Tutorial CSS",         type: "VIDEO",        order: 2, content: { url: "https://example.com/css-tutorial", duration_minutes: 15 } },
-      { topic: "Box Model",         title: "Memahami Box Model",         type: "ARTICLE",      order: 1, content: { body: "Setiap elemen HTML adalah sebuah box. Box model terdiri dari content, padding, border, dan margin. Memahami box model penting untuk layout." } },
-      { topic: "Flexbox",           title: "Flexbox Layout",             type: "ARTICLE",      order: 1, content: { body: "Flexbox menyediakan cara efisien untuk mengatur layout, alignment, dan distribusi ruang antar item dalam container." } },
-      { topic: "Variables & Data Types", title: "Variabel JavaScript",   type: "ARTICLE",      order: 1, content: { body: "JavaScript memiliki tiga cara mendeklarasikan variabel: var, let, dan const. Let dan const diperkenalkan di ES6 dengan block scope." } },
-      { topic: "Variables & Data Types", title: "Contoh Deklarasi Variabel", type: "CODE_EXAMPLE", order: 2, content: { language: "javascript", code: "const name = 'Xora';\nlet count = 0;\ncount += 1;\nconsole.log(name, count);" } },
-      { topic: "Functions",         title: "Fungsi JavaScript",          type: "ARTICLE",      order: 1, content: { body: "Fungsi adalah blok kode yang dapat digunakan kembali. Dapat menerima parameter dan mengembalikan nilai." } },
-      { topic: "Arrays & Objects",  title: "Array dan Objek",            type: "ARTICLE",      order: 1, content: { body: "Array menyimpan kumpulan data berurutan. Objek menyimpan data dalam pasangan key-value." } },
-      { topic: "DOM Manipulation",  title: "Manipulasi DOM",             type: "ARTICLE",      order: 1, content: { body: "DOM (Document Object Model) memungkinkan JavaScript mengakses dan mengubah konten, struktur, dan style halaman web." } },
-      { topic: "Async JavaScript",  title: "Asynchronous JavaScript",    type: "ARTICLE",      order: 1, content: { body: "JavaScript bersifat single-threaded tetapi mendukung operasi asynchronous melalui callback, promises, dan async/await." } },
-      { topic: "Promises",          title: "Promise dan Async/Await",    type: "ARTICLE",      order: 1, content: { body: "Promise merepresentasikan nilai yang mungkin tersedia di masa depan. Async/await adalah syntax sugar untuk bekerja dengan Promise." } },
-      { topic: "Promises",          title: "Contoh Kode Promise",        type: "CODE_EXAMPLE", order: 2, content: { language: "javascript", code: "async function fetchData() {\n  try {\n    const response = await fetch('/api/data');\n    const data = await response.json();\n    return data;\n  } catch (error) {\n    console.error('Error:', error);\n  }\n}" } },
-      { topic: "React Fundamentals",title: "Pengenalan React",           type: "ARTICLE",      order: 1, content: { body: "React adalah library JavaScript untuk membangun user interface. Menggunakan pendekatan component-based dan virtual DOM." } },
-      { topic: "Components",        title: "Komponen React",             type: "ARTICLE",      order: 1, content: { body: "Komponen adalah blok bangunan utama aplikasi React. Functional component adalah cara modern membuat komponen." } },
-      { topic: "Props & State",     title: "Props dan State",            type: "ARTICLE",      order: 1, content: { body: "Props adalah data yang dikirim dari parent ke child component. State adalah data internal yang dapat berubah di dalam component." } },
-      { topic: "Props & State",     title: "Contoh useState",            type: "CODE_EXAMPLE", order: 2, content: { language: "jsx", code: "import { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  return <button onClick={() => setCount(count + 1)}>Count: {count}</button>;\n}" } },
-      { topic: "Routing",           title: "React Router",               type: "ARTICLE",      order: 1, content: { body: "React Router memungkinkan navigasi antar halaman di aplikasi single-page tanpa full page reload." } },
+      { topic: "HTML Basics",       concept: "Document Structure",   title: "Pengenalan HTML",            type: "ARTICLE",      order: 1, content: { body: "HTML (HyperText Markup Language) adalah bahasa markup standar untuk membuat halaman web. Setiap elemen HTML ditandai dengan tag pembuka dan penutup." } },
+      { topic: "HTML Basics",       concept: "HTML Element",         title: "Contoh Kode HTML Dasar",    type: "CODE_EXAMPLE", order: 2, content: { language: "html", code: "<!DOCTYPE html>\n<html>\n<head><title>Halaman Pertama</title></head>\n<body><h1>Halo Dunia!</h1></body>\n</html>" } },
+      { topic: "Semantic HTML",     concept: "Semantic Elements",    title: "Elemen Semantik HTML5",      type: "ARTICLE",      order: 1, content: { body: "Elemen semantik seperti <header>, <nav>, <main>, <article>, <section>, dan <footer> memberikan makna struktur pada halaman web." } },
+      { topic: "CSS Basics",        concept: "CSS Selector",         title: "Pengenalan CSS",             type: "ARTICLE",      order: 1, content: { body: "CSS (Cascading Style Sheets) digunakan untuk mengatur tampilan elemen HTML. Selector memilih elemen, property menentukan aspek visual, dan value menentukan nilainya." } },
+      { topic: "CSS Basics",        concept: "CSS Property",         title: "Video Tutorial CSS",         type: "VIDEO",        order: 2, content: { url: "https://example.com/css-tutorial", duration_minutes: 15 } },
+      { topic: "Box Model",         concept: "Content Box",          title: "Memahami Box Model",         type: "ARTICLE",      order: 1, content: { body: "Setiap elemen HTML adalah sebuah box. Box model terdiri dari content, padding, border, dan margin. Memahami box model penting untuk layout." } },
+      { topic: "Flexbox",           concept: "Flex Container",       title: "Flexbox Layout",             type: "ARTICLE",      order: 1, content: { body: "Flexbox menyediakan cara efisien untuk mengatur layout, alignment, dan distribusi ruang antar item dalam container." } },
+      { topic: "Variables & Data Types", concept: "Variable Declaration", title: "Variabel JavaScript",   type: "ARTICLE",      order: 1, content: { body: "JavaScript memiliki tiga cara mendeklarasikan variabel: var, let, dan const. Let dan const diperkenalkan di ES6 dengan block scope." } },
+      { topic: "Variables & Data Types", concept: "Primitive Data Type", title: "Contoh Deklarasi Variabel", type: "CODE_EXAMPLE", order: 2, content: { language: "javascript", code: "const name = 'Xora';\nlet count = 0;\ncount += 1;\nconsole.log(name, count);" } },
+      { topic: "Functions",         concept: "Function Declaration", title: "Fungsi JavaScript",          type: "ARTICLE",      order: 1, content: { body: "Fungsi adalah blok kode yang dapat digunakan kembali. Dapat menerima parameter dan mengembalikan nilai." } },
+      { topic: "Arrays & Objects",  concept: "Array Methods",        title: "Array dan Objek",            type: "ARTICLE",      order: 1, content: { body: "Array menyimpan kumpulan data berurutan. Objek menyimpan data dalam pasangan key-value." } },
+      { topic: "DOM Manipulation",  concept: "DOM Modification",     title: "Manipulasi DOM",             type: "ARTICLE",      order: 1, content: { body: "DOM (Document Object Model) memungkinkan JavaScript mengakses dan mengubah konten, struktur, dan style halaman web." } },
+      { topic: "Async JavaScript",  concept: "Event Loop",           title: "Asynchronous JavaScript",    type: "ARTICLE",      order: 1, content: { body: "JavaScript bersifat single-threaded tetapi mendukung operasi asynchronous melalui callback, promises, dan async/await." } },
+      { topic: "Promises",          concept: "Promise Object",       title: "Promise dan Async/Await",    type: "ARTICLE",      order: 1, content: { body: "Promise merepresentasikan nilai yang mungkin tersedia di masa depan. Async/await adalah syntax sugar untuk bekerja dengan Promise." } },
+      { topic: "Promises",          concept: "Async Await",          title: "Contoh Kode Promise",        type: "CODE_EXAMPLE", order: 2, content: { language: "javascript", code: "async function fetchData() {\n  try {\n    const response = await fetch('/api/data');\n    const data = await response.json();\n    return data;\n  } catch (error) {\n    console.error('Error:', error);\n  }\n}" } },
+      { topic: "React Fundamentals",concept: "React Component",      title: "Pengenalan React",           type: "ARTICLE",      order: 1, content: { body: "React adalah library JavaScript untuk membangun user interface. Menggunakan pendekatan component-based dan virtual DOM." } },
+      { topic: "Components",        concept: "Functional Component", title: "Komponen React",             type: "ARTICLE",      order: 1, content: { body: "Komponen adalah blok bangunan utama aplikasi React. Functional component adalah cara modern membuat komponen." } },
+      { topic: "Props & State",     concept: "Props",                title: "Props dan State",            type: "ARTICLE",      order: 1, content: { body: "Props adalah data yang dikirim dari parent ke child component. State adalah data internal yang dapat berubah di dalam component." } },
+      { topic: "Props & State",     concept: "useState Hook",        title: "Contoh useState",            type: "CODE_EXAMPLE", order: 2, content: { language: "jsx", code: "import { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  return <button onClick={() => setCount(count + 1)}>Count: {count}</button>;\n}" } },
+      { topic: "Routing",           concept: "React Router",         title: "React Router",               type: "ARTICLE",      order: 1, content: { body: "React Router memungkinkan navigasi antar halaman di aplikasi single-page tanpa full page reload." } },
     ];
 
     for (const m of materialDefs) {
-      await upsertRow(
+      const conceptId = m.concept && concepts[m.concept] ? concepts[m.concept].id : null;
+      const material = await upsertRow(
         client, "materials",
-        ["topic_id", "title", "type", "content", "order_index", "status"],
-        [topics[m.topic].id, m.title, m.type, JSON.stringify(m.content), m.order, "PUBLISHED"],
+        ["topic_id", "concept_id", "title", "type", "content", "order_index", "status"],
+        [
+          topics[m.topic].id,
+          conceptId,
+          m.title, m.type, JSON.stringify(m.content), m.order, "PUBLISHED",
+        ],
         "(topic_id, order_index)", "topic_id", topics[m.topic].id
       );
+      // upsertRow = ON CONFLICT DO NOTHING; backfill concept_id pada baris lama.
+      if (material && conceptId && material.concept_id !== conceptId) {
+        await client.query("UPDATE materials SET concept_id = $1 WHERE id = $2", [
+          conceptId, material.id,
+        ]);
+      }
     }
 
     // ══════════════════════════════════════════════════════════
@@ -778,10 +793,25 @@ async function seed() {
       },
     ];
 
+    // Difficulty untuk tiap soal HTML Basics. Default MEDIUM; soal awal EASY.
+    const htmlBasicsDifficulty = { 1: "EASY", 2: "EASY", 3: "MEDIUM" };
+
     const savedQuestionsHtml = [];
     for (const q of questionsHtmlBasics) {
+      const conceptName = q.answer.concept;
+      if (!conceptName || !concepts[conceptName]) {
+        throw new Error(`seed: soal HTML Basics #${q.order} tidak punya konsep valid (concept="${conceptName}")`);
+      }
       const saved = await upsertQuestion(
-        client, assessHtmlBasics.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order
+        client,
+        assessHtmlBasics.id,
+        concepts[conceptName].id,
+        htmlBasicsDifficulty[q.order] || "MEDIUM",
+        q.type,
+        q.text,
+        JSON.stringify(q.answer),
+        q.points,
+        q.order
       );
       savedQuestionsHtml.push(saved);
     }
@@ -796,23 +826,23 @@ async function seed() {
 
     const questionsLevelFinal = [
       {
-        type: "MULTIPLE_CHOICE", order: 1, points: 10,
+        type: "MULTIPLE_CHOICE", order: 1, points: 10, difficulty: "MEDIUM",
+        concept: "Semantic Elements",
         text: "Elemen semantik mana yang digunakan untuk konten utama halaman?",
         answer: { correct: "B", options: ["<div>", "<main>", "<section>", "<article>"] }
       },
       {
-        type: "ESSAY", order: 2, points: 20,
+        type: "ESSAY", order: 2, points: 20, difficulty: "HARD",
+        concept: "Accessibility",
         text: "Jelaskan perbedaan antara elemen <div> dan elemen semantik HTML5.",
         answer: { criteria: ["semantic meaning", "accessibility", "SEO", "structure"] }
       },
     ];
 
     for (const q of questionsLevelFinal) {
-      await upsertRow(
-        client, "questions",
-        ["assessment_id", "type", "question_text", "correct_answer", "points", "order_index"],
-        [assessLevelFinal.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order],
-        "(assessment_id, order_index)", "assessment_id", assessLevelFinal.id
+      await upsertQuestion(
+        client, assessLevelFinal.id, concepts[q.concept].id, q.difficulty,
+        q.type, q.text, JSON.stringify(q.answer), q.points, q.order
       );
     }
 
@@ -826,23 +856,23 @@ async function seed() {
 
     const questionsJsPractice = [
       {
-        type: "MULTIPLE_CHOICE", order: 1, points: 10,
+        type: "MULTIPLE_CHOICE", order: 1, points: 10, difficulty: "EASY",
+        concept: "Variable Declaration",
         text: "Keyword mana yang membuat variabel yang TIDAK bisa di-reassign?",
         answer: { correct: "C", options: ["var", "let", "const", "function"] }
       },
       {
-        type: "CODE", order: 2, points: 15,
+        type: "CODE", order: 2, points: 15, difficulty: "MEDIUM",
+        concept: "Variable Declaration",
         text: "Tulis deklarasi variabel menggunakan const untuk menyimpan nama 'Xora' dan let untuk menyimpan angka 42.",
         answer: { expected: "const name = 'Xora';\nlet number = 42;", criteria: ["const", "let", "string", "number"] }
       },
     ];
 
     for (const q of questionsJsPractice) {
-      await upsertRow(
-        client, "questions",
-        ["assessment_id", "type", "question_text", "correct_answer", "points", "order_index"],
-        [assessJsPractice.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order],
-        "(assessment_id, order_index)", "assessment_id", assessJsPractice.id
+      await upsertQuestion(
+        client, assessJsPractice.id, concepts[q.concept].id, q.difficulty,
+        q.type, q.text, JSON.stringify(q.answer), q.points, q.order
       );
     }
 

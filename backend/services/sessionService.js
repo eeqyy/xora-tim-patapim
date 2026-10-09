@@ -41,14 +41,21 @@ const sessionService = {
    * Memvalidasi: sesi ada, status ACTIVE, belum lewat expires_at,
    * dan user-nya sendiri masih ACTIVE.
    *
-   * @returns {Promise<{sessionId: string, user: {id, email, name}} | null>}
+   * @returns {Promise<{sessionId: string, user: {id, email, name, roles: string[]}} | null>}
    */
   async resolve(token) {
     if (!token) return null;
 
     const result = await pool.query(
       `SELECT s.id AS session_id, s.status AS session_status, s.expires_at,
-              u.id AS user_id, u.email, u.name, u.status AS user_status
+              u.id AS user_id, u.email, u.name, u.status AS user_status,
+              -- Cast eksplisit agar PostgreSQL mengirim array JS, bukan "{ADMIN}".
+              COALESCE(
+                (SELECT array_agg(r.name::text ORDER BY r.name)
+                   FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+                  WHERE ur.user_id = u.id),
+                '{}'
+              )::text[] AS roles
          FROM sessions s
          JOIN users u ON u.id = s.user_id
         WHERE s.token_hash = $1`,
@@ -73,7 +80,12 @@ const sessionService = {
 
     return {
       sessionId: row.session_id,
-      user: { id: row.user_id, email: row.email, name: row.name },
+      user: {
+        id: row.user_id,
+        email: row.email,
+        name: row.name,
+        roles: row.roles || [],
+      },
     };
   },
 

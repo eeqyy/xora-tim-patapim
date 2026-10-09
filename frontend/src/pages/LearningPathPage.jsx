@@ -229,12 +229,32 @@ export default function LearningPathPage() {
                                 </p>
                               ) : (
                                 <div className="concepts-tags">
-                                  {topic.concepts.map((concept) => (
-                                    <span key={concept.id} className="concept-tag" title={concept.description}>
-                                      <span className="concept-dot"></span>
-                                      {concept.name}
-                                    </span>
-                                  ))}
+                                  {topic.concepts.map((concept) => {
+                                    const locked = concept.is_locked === true;
+                                    const prereqTitle =
+                                      concept.prerequisites && concept.prerequisites.length > 0
+                                        ? "Prasyarat: " +
+                                          concept.prerequisites
+                                            .map(
+                                              (p) =>
+                                                `${p.name} — mastery ${p.mastery_score ?? 0}/70 ${
+                                                  p.satisfied ? "✓" : "✗"
+                                                }`
+                                            )
+                                            .join("; ")
+                                        : concept.description || "";
+                                    return (
+                                      <span
+                                        key={concept.id}
+                                        className={`concept-tag${locked ? " concept-tag-locked" : ""}`}
+                                        title={prereqTitle}
+                                      >
+                                        {locked && <span className="concept-lock">🔒</span>}
+                                        <span className="concept-dot"></span>
+                                        {concept.name}
+                                      </span>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>

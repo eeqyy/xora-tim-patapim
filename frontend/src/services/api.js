@@ -155,6 +155,7 @@ export const assessmentsApi = {
     if (params.subject_id) query.append("subject_id", params.subject_id);
     if (params.level_id) query.append("level_id", params.level_id);
     if (params.topic_id) query.append("topic_id", params.topic_id);
+    if (params.type) query.append("type", params.type);
     const qs = query.toString() ? `?${query.toString()}` : "";
     return apiRequest(`/api/assessments${qs}`, { method: "GET", token });
   },
@@ -167,6 +168,9 @@ export const assessmentsApi = {
 
   startAttempt: (id, token) =>
     apiRequest(`/api/assessments/${id}/attempts`, { method: "POST", token }),
+
+  reassess: (id, token) =>
+    apiRequest(`/api/assessments/${id}/reassess`, { method: "POST", token }),
 
   submitAttempt: (attemptId, answers, token) =>
     apiRequest(`/api/assessments/attempts/${attemptId}/submit`, {
@@ -189,6 +193,164 @@ export const attemptsApi = {
       body: { answers },
       token,
     }),
+};
+
+/**
+ * Data referensi untuk form admin (level / topik / konsep).
+ * Endpoint ini publik, tanpa token.
+ */
+export const referenceApi = {
+  getLevels: () => apiRequest("/api/levels", { method: "GET" }),
+
+  getTopics: () => apiRequest("/api/topics", { method: "GET" }),
+
+  getConcepts: () => apiRequest("/api/concepts", { method: "GET" }),
+};
+
+/**
+ * Admin CRUD assessment — butuh role ADMIN.
+ * `getFull` mengembalikan assessment + seluruh soal termasuk kunci jawaban
+ * (dipakai editor admin; peserta tetap memakai assessmentsApi.getQuestions).
+ */
+export const adminAssessmentsApi = {
+  getFull: (id, token) =>
+    apiRequest(`/api/assessments/admin/full/${id}`, { method: "GET", token }),
+
+  create: (body, token) =>
+    apiRequest("/api/assessments", { method: "POST", body, token }),
+
+  update: (id, body, token) =>
+    apiRequest(`/api/assessments/${id}`, { method: "PUT", body, token }),
+
+  remove: (id, token) =>
+    apiRequest(`/api/assessments/${id}`, { method: "DELETE", token }),
+};
+
+export const adminQuestionsApi = {
+  create: (assessmentId, body, token) =>
+    apiRequest(`/api/assessments/${assessmentId}/questions`, {
+      method: "POST",
+      body,
+      token,
+    }),
+
+  update: (assessmentId, questionId, body, token) =>
+    apiRequest(`/api/assessments/${assessmentId}/questions/${questionId}`, {
+      method: "PUT",
+      body,
+      token,
+    }),
+
+  remove: (assessmentId, questionId, token) =>
+    apiRequest(`/api/assessments/${assessmentId}/questions/${questionId}`, {
+      method: "DELETE",
+      token,
+    }),
+
+  reorder: (assessmentId, orderedIds, token) =>
+    apiRequest(`/api/assessments/${assessmentId}/questions/reorder`, {
+      method: "PUT",
+      body: { orderedIds },
+      token,
+    }),
+};
+
+export const masteryApi = {
+  getSummary: (token) =>
+    apiRequest("/api/mastery", { method: "GET", token }),
+
+  getConceptMastery: (conceptId, token) =>
+    apiRequest(`/api/mastery/concepts/${conceptId}`, { method: "GET", token }),
+};
+
+export const gapsApi = {
+  list: (token) =>
+    apiRequest("/api/gaps", { method: "GET", token }),
+
+  getDetail: (conceptId, token) =>
+    apiRequest(`/api/gaps/${conceptId}`, { method: "GET", token }),
+
+  diagnose: (conceptId, token) =>
+    apiRequest(`/api/gaps/${conceptId}/diagnose`, { method: "POST", token }),
+};
+
+export const diagnosticsApi = {
+  getDetail: (id, token) =>
+    apiRequest(`/api/diagnostics/${id}`, { method: "GET", token }),
+
+  startVerification: (id, token) =>
+    apiRequest(`/api/diagnostics/${id}/verify/start`, { method: "POST", token }),
+};
+
+export const recommendationsApi = {
+  list: (token) =>
+    apiRequest("/api/recommendations", { method: "GET", token }),
+
+  getNextStep: (token) =>
+    apiRequest("/api/recommendations/next-step", { method: "GET", token }),
+
+  getDetail: (id, token) =>
+    apiRequest(`/api/recommendations/${id}`, { method: "GET", token }),
+
+  getMaterials: (id, token) =>
+    apiRequest(`/api/recommendations/${id}/materials`, { method: "GET", token }),
+
+  startPractice: (id, token) =>
+    apiRequest(`/api/recommendations/${id}/start-practice`, { method: "POST", token }),
+
+  submit: (attemptId, answers, token) =>
+    apiRequest(`/api/recommendations/attempts/${attemptId}/submit`, {
+      method: "POST",
+      body: { answers },
+      token,
+    }),
+
+  getResult: (attemptId, token) =>
+    apiRequest(`/api/recommendations/attempts/${attemptId}/result`, { method: "GET", token }),
+
+  complete: (id, token) =>
+    apiRequest(`/api/recommendations/${id}/complete`, { method: "PATCH", token }),
+
+  skip: (id, token) =>
+    apiRequest(`/api/recommendations/${id}/skip`, { method: "PATCH", token }),
+};
+
+export const practicesApi = {
+  list: (params = {}, token) => {
+    const query = new URLSearchParams();
+    if (params.subjectId) query.append("subjectId", params.subjectId);
+    if (params.levelId) query.append("levelId", params.levelId);
+    if (params.conceptId) query.append("conceptId", params.conceptId);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/practices${qs}`, { method: "GET", token });
+  },
+
+  getById: (id, token) =>
+    apiRequest(`/api/practices/${id}`, { method: "GET", token }),
+
+  start: (id, token) =>
+    apiRequest(`/api/practices/${id}/start`, { method: "POST", token }),
+
+  submit: (attemptId, answers, token) =>
+    apiRequest(`/api/practices/attempts/${attemptId}/submit`, {
+      method: "POST",
+      body: { answers },
+      token,
+    }),
+
+  getResult: (attemptId, token) =>
+    apiRequest(`/api/practices/attempts/${attemptId}/result`, { method: "GET", token }),
+};
+
+export const historyApi = {
+  getHistory: (params = {}, token) => {
+    const query = new URLSearchParams();
+    if (params.limit) query.append("limit", params.limit);
+    if (params.offset) query.append("offset", params.offset);
+    if (params.eventType) query.append("eventType", params.eventType);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/history${qs}`, { method: "GET", token });
+  },
 };
 
 export const systemApi = {

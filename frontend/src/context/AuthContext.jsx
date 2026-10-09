@@ -8,6 +8,17 @@ import { authApi, tokenStorage } from "../services/api";
 
 const AuthContext = createContext(null);
 
+/**
+ * Tujuan utama setelah login/registrasi berdasar role.
+ * /profile memanggil GET /api/profile yang 404 untuk user tanpa
+ * learner_profiles (akun admin) — jadi admin diarahkan ke halaman kelola.
+ */
+export function homePathFor(user) {
+  return Array.isArray(user?.roles) && user.roles.includes("ADMIN")
+    ? "/admin/assessments"
+    : "/profile";
+}
+
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => tokenStorage.get());
   const [user, setUser] = useState(null);
@@ -73,6 +84,24 @@ export function AuthProvider({ children }) {
     if (receivedUser) {
       setUser(receivedUser);
     }
+
+    // POST /api/auth/login HANYA mengembalikan { id, email, name, status } —
+    // roles hanya ada di GET /api/auth/me. Tanpa hydrate ini, user.role masih
+    // kosong sampai reload: link "Kelola" tidak muncul dan AdminRoute
+    // menolak admin sendiri. Selesai sebelum login() return supaya halaman
+    // login sudah punya role saat memutuskan tujuan redirect.
+    if (receivedToken) {
+      try {
+        const meRes = await authApi.getMe(receivedToken);
+        if (meRes?.data?.user) {
+          setUser(meRes.data.user);
+        }
+      } catch (err) {
+        // Gagal hydrate tidak membatalkan login; user tetap login tanpa roles.
+        console.warn("Gagal memuat data user setelah login:", err.message);
+      }
+    }
+
     return res;
   }, []);
 

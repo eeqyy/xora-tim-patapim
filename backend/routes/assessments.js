@@ -6,10 +6,107 @@
 const express = require("express");
 const router = express.Router();
 const assessmentService = require("../services/assessmentService");
+const questionService = require("../services/questionService");
 const { requireAuth } = require("../middleware/auth");
+const { requireAdmin } = require("../middleware/requireAdmin");
+const { sendError } = require("../utils/errors");
 
 // Semua route assessment mewajibkan autentikasi learner
 router.use(requireAuth);
+
+// ============================================================
+// Admin CRUD — wajib role ADMIN. Ditulis sebelum route `/:id`
+// supaya literal "admin" tidak tertangkap sebagai uuid.
+// ============================================================
+
+// GET /api/assessments/admin/full/:id — detail + soal lengkap (ada kunci)
+router.get("/admin/full/:id", requireAdmin, async (req, res) => {
+  try {
+    const data = await assessmentService.getFullById(req.params.id);
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("GET /api/assessments/admin/full/:id ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// POST /api/assessments — buat assessment
+router.post("/", requireAdmin, async (req, res) => {
+  try {
+    const data = await assessmentService.create(req.body || {});
+    res.status(201).json({ status: "ok", data });
+  } catch (error) {
+    console.error("POST /api/assessments ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// PUT /api/assessments/:id — ubah assessment
+router.put("/:id", requireAdmin, async (req, res) => {
+  try {
+    const data = await assessmentService.update(req.params.id, req.body || {});
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("PUT /api/assessments/:id ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// DELETE /api/assessments/:id — hapus assessment (409 bila sudah ada pengerjaan)
+router.delete("/:id", requireAdmin, async (req, res) => {
+  try {
+    const data = await assessmentService.remove(req.params.id);
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("DELETE /api/assessments/:id ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// POST /api/assessments/:id/questions — tambah soal
+router.post("/:id/questions", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.create(req.params.id, req.body || {});
+    res.status(201).json({ status: "ok", data });
+  } catch (error) {
+    console.error("POST /api/assessments/:id/questions ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// PUT /api/assessments/:id/questions/reorder — susun ulang urutan soal
+// (harus terdaftar SEBELUM /:id/questions/:questionId)
+router.put("/:id/questions/reorder", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.reorder(req.params.id, (req.body || {}).orderedIds);
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("PUT /api/assessments/:id/questions/reorder ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// PUT /api/assessments/:id/questions/:questionId — ubah soal
+router.put("/:id/questions/:questionId", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.update(req.params.questionId, req.body || {});
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("PUT /api/assessments/:id/questions/:questionId ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// DELETE /api/assessments/:id/questions/:questionId — hapus soal (409 bila ada jawaban)
+router.delete("/:id/questions/:questionId", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.remove(req.params.questionId);
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("DELETE /api/assessments/:id/questions/:questionId ERROR:", error);
+    sendError(res, error);
+  }
+});
 
 // GET /api/assessments
 router.get("/", async (req, res) => {
@@ -80,7 +177,18 @@ router.post("/:id/attempts", async (req, res) => {
     res.status(201).json({ status: "ok", data: attempt });
   } catch (error) {
     console.error("POST /api/assessments/:id/attempts ERROR:", error);
-    res.status(error.statusCode || 500).json({ status: "error", message: error.message });
+    sendError(res, error);
+  }
+});
+
+// POST /api/assessments/:id/reassess - Memulai Re-assessment (Remedial / uji ulang)
+router.post("/:id/reassess", async (req, res) => {
+  try {
+    const data = await assessmentService.reassess(req.user.id, req.params.id);
+    res.status(201).json({ status: "ok", data });
+  } catch (error) {
+    console.error("POST /api/assessments/:id/reassess ERROR:", error);
+    sendError(res, error);
   }
 });
 

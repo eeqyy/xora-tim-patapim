@@ -12,6 +12,8 @@ export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
   const [backendStatus, setBackendStatus] = useState("memuat...");
 
+  const isAdmin = Array.isArray(user?.roles) && user.roles.includes("ADMIN");
+
   useEffect(() => {
     systemApi
       .getHealth()
@@ -30,9 +32,16 @@ export default function HomePage() {
 
         <div className="hero-actions">
           {isAuthenticated ? (
-            <Link to="/profile" className="btn btn-primary btn-lg">
-              Buka Profil Pembelajar ({user?.name})
-            </Link>
+            // Admin tidak punya learner_profiles -> jangan diarahkan ke /profile.
+            isAdmin ? (
+              <Link to="/admin/assessments" className="btn btn-primary btn-lg">
+                Buka Halaman Kelola ({user?.name})
+              </Link>
+            ) : (
+              <Link to="/profile" className="btn btn-primary btn-lg">
+                Buka Profil Pembelajar ({user?.name})
+              </Link>
+            )
           ) : (
             <>
               <Link to="/login" className="btn btn-primary btn-lg">

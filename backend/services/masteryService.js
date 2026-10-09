@@ -12,7 +12,6 @@
 // ============================================================
 
 const pool = require("../db");
-const { QUESTION_META } = require("../config/questionMeta");
 const {
   MASTERY_CONFIG,
   getDifficultyWeight,
@@ -20,6 +19,7 @@ const {
   round2,
   clamp01,
 } = require("../config/masteryThresholds");
+const gapService = require("./gapService");
 
 const masteryService = {
   /**
@@ -43,11 +43,10 @@ const masteryService = {
     // Ambil semua evidence untuk konsep ini (termasuk yang baru saja di-insert)
     const evRes = await pool.query(
       `SELECT e.id, e.score, e.error_pattern, e.created_at,
-              q.order_index, a.assessment_id, asmt.title AS assessment_title
+              q.difficulty
          FROM evidence e
          JOIN questions q ON q.id = e.question_id
          JOIN attempts a  ON a.id = e.attempt_id
-         JOIN assessments asmt ON asmt.id = a.assessment_id
         WHERE e.concept_id = $1
           AND a.learner_id = $2
         ORDER BY e.created_at ASC`,
@@ -57,7 +56,22 @@ const masteryService = {
     const rows = evRes.rows;
     const n = rows.length;
 
+    // Status siklus gap yang sedang berjalan tidak boleh diturunkan oleh
+    // perhitungan mastery biasa (lihat resolveLifecycle untuk promosi RESOLVED).
+    const stateRes = await pool.query(
+      `SELECT gap_status FROM learner_concept_states
+        WHERE learner_id = $1 AND concept_id = $2`,
+      [learnerId, conceptId]
+    );
+    const existingGap = stateRes.rows[0]?.gap_status || null;
+    const lifecycleActive = ["CONFIRMED", "IN_PRACTICE", "VERIFICATION"].includes(
+      existingGap
+    );
+
     if (n === 0) {
+      if (lifecycleActive) {
+        return { conceptId, evidenceCount: 0, gap_status: existingGap };
+      }
       // Tidak ada evidence -> reset ke INSUFFICIENT_EVIDENCE (opsional)
       await this.upsertState(learnerId, conceptId, {
         mastery_score: 0,
@@ -70,15 +84,13 @@ const masteryService = {
       return { conceptId, evidenceCount: 0, gap_status: "INSUFFICIENT_EVIDENCE" };
     }
 
-    // Bangun mapping difficulty per evidence (dari config)
+    // Bangun mapping difficulty per evidence (langsung dari questions.difficulty)
     const scores = [];
     const weights = [];
     const errorList = [];
 
     for (const r of rows) {
-      const metaForOrder = QUESTION_META[r.assessment_title] || {};
-      const meta = metaForOrder[r.order_index];
-      const w = getDifficultyWeight(meta ? meta.difficulty : null);
+      const w = getDifficultyWeight(r.difficulty);
       scores.push(Number(r.score));
       weights.push(w);
       if (r.error_pattern && r.error_pattern.trim()) {
@@ -110,13 +122,18 @@ const masteryService = {
       consistency * 100 * MASTERY_CONFIG.consistencyWeight;
 
     // gap_status
-    let gap_status = "NO_GAP";
-    if (n < MASTERY_CONFIG.minEvidence) {
+    // Prioritaskan status siklus gap yang sedang berjalan (CONFIRMED/IN_PRACTICE/
+    // VERIFICATION) agar recalc biasa tidak menimpanya. Promosi ke RESOLVED
+    // dilakukan gapService.resolveLifecycle di bawah.
+    let gap_status;
+    if (lifecycleActive) {
+      gap_status = existingGap;
+    } else if (n < MASTERY_CONFIG.minEvidence) {
       gap_status = "INSUFFICIENT_EVIDENCE";
     } else if (mastery < MASTERY_CONFIG.possibleGapThreshold) {
       gap_status = "POSSIBLE_GAP";
     } else if (mastery >= MASTERY_CONFIG.masteredThreshold) {
-      gap_status = "MASTERED";
+      gap_status = existingGap === "RESOLVED" ? "RESOLVED" : "MASTERED";
     } else {
       gap_status = "NO_GAP";
     }
@@ -141,6 +158,20 @@ const masteryService = {
       gap_status,
       last_assessed_at,
     });
+
+    // Gap pipeline: begitu konsep berstatus POSSIBLE_GAP, jalankan diagnosis
+    // otomatis (idempotent). Kegagalan di sini tidak boleh membatalkan recalc.
+    // Jika mastery sudah pulih, jalankan siklus resolusi (complete action +
+    // RESOLVED) — termasuk resolusi gap induk lewat prerequisite.
+    try {
+      if (gap_status === "POSSIBLE_GAP") {
+        await gapService.onPossibleGapDetected(learnerId, conceptId);
+      } else if (mastery >= MASTERY_CONFIG.masteredThreshold) {
+        await gapService.resolveLifecycle(learnerId, conceptId, round2(mastery));
+      }
+    } catch (gapErr) {
+      console.error("gapService lifecycle ERROR:", gapErr);
+    }
 
     return {
       conceptId,

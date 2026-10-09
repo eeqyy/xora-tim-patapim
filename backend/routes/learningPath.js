@@ -7,7 +7,7 @@ const express = require("express");
 const router = express.Router();
 const learningPathService = require("../services/learningPathService");
 const { requireAuth } = require("../middleware/auth");
-
+const { sendError } = require("../utils/errors");
 // All Learning Path endpoints are read-only and require authentication
 router.use(requireAuth);
 
@@ -23,24 +23,14 @@ router.get("/", async (req, res) => {
       });
     }
 
-    const data = await learningPathService.getLearningPathBySubjectId(subjectId);
+    const data = await learningPathService.getLearningPathBySubjectId(subjectId, req.user.id);
     return res.json({
       status: "ok",
       data,
     });
   } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
-      });
-    }
-
     console.error("GET /api/learning-path ERROR:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Terjadi kesalahan internal pada server saat memuat alur belajar",
-    });
+    sendError(res, error);
   }
 });
 
@@ -48,24 +38,14 @@ router.get("/", async (req, res) => {
 router.get("/:subjectId", async (req, res) => {
   try {
     const { subjectId } = req.params;
-    const data = await learningPathService.getLearningPathBySubjectId(subjectId);
+    const data = await learningPathService.getLearningPathBySubjectId(subjectId, req.user.id);
     return res.json({
       status: "ok",
       data,
     });
   } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
-      });
-    }
-
     console.error("GET /api/learning-path/:subjectId ERROR:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Terjadi kesalahan internal pada server saat memuat alur belajar",
-    });
+    sendError(res, error);
   }
 });
 

@@ -11,6 +11,8 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const { currentPath, navigate } = useRouter();
 
+  const isAdmin = Array.isArray(user?.roles) && user.roles.includes("ADMIN");
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -47,12 +49,24 @@ export default function Navbar() {
               >
                 Asesmen
               </Link>
-              <Link
-                to="/profile"
-                className={`nav-link ${currentPath === "/profile" ? "nav-link-active" : ""}`}
-              >
-                Profil Saya
-              </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin/assessments"
+                  className={`nav-link ${currentPath.startsWith("/admin/") ? "nav-link-active" : ""}`}
+                >
+                  Kelola
+                </Link>
+              )}
+              {/* /profile hanya untuk learner: admin tidak punya
+                  learner_profiles sehingga endpoint-nya 404. */}
+              {!isAdmin && (
+                <Link
+                  to="/profile"
+                  className={`nav-link ${currentPath === "/profile" ? "nav-link-active" : ""}`}
+                >
+                  Profil Saya
+                </Link>
+              )}
               <div className="nav-user-pill">
                 <span className="nav-user-name">{user?.name}</span>
                 {Array.isArray(user?.roles) && user.roles.length > 0 && (

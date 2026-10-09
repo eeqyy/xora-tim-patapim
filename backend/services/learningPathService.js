@@ -4,6 +4,7 @@
 // ============================================================
 
 const pool = require("../db");
+const { MASTERY_CONFIG } = require("../config/masteryThresholds");
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -11,8 +12,15 @@ const learningPathService = {
   /**
    * Get complete hierarchical learning path for a given subject:
    * Subject → Levels → Topics → Concepts
+   *
+   * Jika learnerId diberikan, tiap konsep di-annotate dengan:
+   *   - prerequisites: [{ id, name, mastery_score, gap_status, satisfied }]
+   *   - is_locked: true jika ada minimal 1 prerequisite yang belum dikuasai
+   *     (syarat "dikuasai": mastery_score >= masteredThreshold / MASTERED, lihat
+   *      config/masteryThresholds.js). Konsep tanpa prerequisite (root) selalu terbuka.
+   *   Prerequisite tanpa baris learner_concept_states = belum pernah dinilai -> belum terpenuhi.
    */
-  async getLearningPathBySubjectId(subjectId) {
+  async getLearningPathBySubjectId(subjectId, learnerId = null) {
     if (!subjectId || typeof subjectId !== "string" || !UUID_REGEX.test(subjectId)) {
       const err = new Error("ID subject harus berupa UUID yang valid");
       err.statusCode = 400;
@@ -119,10 +127,103 @@ const learningPathService = {
       topics: topicsByLevel[lvl.id] || [],
     }));
 
+    // 6. Annotate prerequisites (display-only lock) — hanya jika learner diketahui
+    if (learnerId) {
+      await this.annotatePrerequisites(hierarchicalLevels, learnerId);
+    }
+
     return {
       subject,
       levels: hierarchicalLevels,
     };
+  },
+
+  /**
+   * Annotate setiap konsep pada hierarki (in-place) dengan prerequisites + is_locked.
+   * 2 query total (pakai ANY(uuid[])), tanpa N+1.
+   */
+  async annotatePrerequisites(levels, learnerId) {
+    // Kumpulkan semua concept_id dari hierarki
+    const conceptIds = [];
+    for (const lvl of levels) {
+      for (const topic of lvl.topics || []) {
+        for (const concept of topic.concepts || []) {
+          conceptIds.push(concept.id);
+        }
+      }
+    }
+    if (conceptIds.length === 0) return;
+
+    // 1) Prerequisite dari setiap konsep di path ini (JOIN nama prereq)
+    const prereqRes = await pool.query(
+      `SELECT cp.concept_id, cp.prerequisite_concept_id, c.name AS prerequisite_name
+         FROM concept_prerequisites cp
+         JOIN concepts c ON c.id = cp.prerequisite_concept_id
+        WHERE cp.concept_id = ANY($1::uuid[])`,
+      [conceptIds]
+    );
+
+    // Semua concept_id yang butuh status mastery learner:
+    // baik sebagai prerequisite MAUPUN sebagai node konsep itu sendiri
+    const allQueryIds = Array.from(
+      new Set([...conceptIds, ...prereqRes.rows.map((r) => r.prerequisite_concept_id)])
+    );
+
+    // 2) Status mastery learner untuk semua konsep tsb (tanpa baris = belum dinilai)
+    const stateByConcept = new Map();
+    if (allQueryIds.length > 0) {
+      const stateRes = await pool.query(
+        `SELECT concept_id, mastery_score, gap_status, evidence_count, evidence_confidence
+           FROM learner_concept_states
+          WHERE learner_id = $1
+            AND concept_id = ANY($2::uuid[])`,
+        [learnerId, allQueryIds]
+      );
+      for (const row of stateRes.rows) {
+        stateByConcept.set(row.concept_id, row);
+      }
+    }
+    // Group prerequisite per konsep asal
+    const prereqsByConcept = new Map();
+    for (const row of prereqRes.rows) {
+      if (!prereqsByConcept.has(row.concept_id)) {
+        prereqsByConcept.set(row.concept_id, []);
+      }
+      prereqsByConcept.get(row.concept_id).push(row);
+    }
+
+    // Annotate in-place
+    for (const lvl of levels) {
+      for (const topic of lvl.topics || []) {
+        for (const concept of topic.concepts || []) {
+          const rows = prereqsByConcept.get(concept.id) || [];
+          const prerequisites = rows.map((r) => {
+            const state = stateByConcept.get(r.prerequisite_concept_id) || null;
+            const mastery = state && state.mastery_score != null ? Number(state.mastery_score) : null;
+            const satisfied =
+              mastery !== null && mastery >= MASTERY_CONFIG.masteredThreshold;
+            return {
+              id: r.prerequisite_concept_id,
+              name: r.prerequisite_name,
+              mastery_score: mastery,
+              gap_status: state ? state.gap_status : "INSUFFICIENT_EVIDENCE",
+              satisfied,
+            };
+          });
+
+          const selfState = stateByConcept.get(concept.id) || null;
+          const selfMastery = selfState && selfState.mastery_score != null ? Number(selfState.mastery_score) : null;
+
+          concept.mastery_score = selfMastery;
+          concept.gap_status = selfState ? selfState.gap_status : "INSUFFICIENT_EVIDENCE";
+          concept.is_mastered = selfMastery !== null && selfMastery >= MASTERY_CONFIG.masteredThreshold;
+          concept.evidence_count = selfState ? Number(selfState.evidence_count) : 0;
+          concept.evidence_confidence = selfState?.evidence_confidence != null ? Number(selfState.evidence_confidence) : 0;
+          concept.prerequisites = prerequisites;
+          concept.is_locked = prerequisites.some((p) => !p.satisfied);
+        }
+      }
+    }
   },
 
   /**
