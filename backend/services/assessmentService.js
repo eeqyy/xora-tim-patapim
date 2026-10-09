@@ -6,6 +6,7 @@
 const pool = require("../db");
 const masteryService = require("./masteryService");
 const gapService = require("./gapService");
+const recommendationService = require("./recommendationService");
 const questionService = require("./questionService");
 const { badRequest, notFound, conflict } = require("../utils/errors");
 // Grader bersama untuk ESSAY/CODE — dipakai juga oleh attemptService,
@@ -526,6 +527,14 @@ const attemptRes = await pool.query(`
         await gapService.resolveVerification(learnerId, attemptId);
       } catch (gapError) {
         console.error("GAP VERIFICATION RESOLVE FAILED (evidence tetap tersimpan):", gapError);
+      }
+
+      // Siklus rekomendasi: bila attempt ini menjalankan sebuah learning_action
+      // (practice), tandai action tersebut COMPLETED.
+      try {
+        await recommendationService.onAttemptSubmitted(learnerId, attemptId);
+      } catch (recError) {
+        console.error("RECOMMENDATION COMPLETE FAILED (evidence tetap tersimpan):", recError);
       }
 
       return {

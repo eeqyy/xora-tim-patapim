@@ -18,6 +18,7 @@ const profileRoutes = require("./routes/profile");
 const learningPathRoutes = require("./routes/learningPath");
 const gapRoutes = require("./routes/gaps");
 const diagnosticRoutes = require("./routes/diagnostics");
+const recommendationRoutes = require("./routes/recommendations");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -65,6 +66,7 @@ app.use("/api/attempts", attemptRoutes);
 app.use("/api/mastery", masteryRoutes);
 app.use("/api/gaps", gapRoutes);
 app.use("/api/diagnostics", diagnosticRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend Xora berjalan di http://localhost:${PORT}`);

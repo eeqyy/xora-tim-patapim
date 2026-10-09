@@ -56,7 +56,22 @@ const masteryService = {
     const rows = evRes.rows;
     const n = rows.length;
 
+    // Status siklus gap yang sedang berjalan tidak boleh diturunkan oleh
+    // perhitungan mastery biasa (lihat resolveLifecycle untuk promosi RESOLVED).
+    const stateRes = await pool.query(
+      `SELECT gap_status FROM learner_concept_states
+        WHERE learner_id = $1 AND concept_id = $2`,
+      [learnerId, conceptId]
+    );
+    const existingGap = stateRes.rows[0]?.gap_status || null;
+    const lifecycleActive = ["CONFIRMED", "IN_PRACTICE", "VERIFICATION"].includes(
+      existingGap
+    );
+
     if (n === 0) {
+      if (lifecycleActive) {
+        return { conceptId, evidenceCount: 0, gap_status: existingGap };
+      }
       // Tidak ada evidence -> reset ke INSUFFICIENT_EVIDENCE (opsional)
       await this.upsertState(learnerId, conceptId, {
         mastery_score: 0,
@@ -107,13 +122,18 @@ const masteryService = {
       consistency * 100 * MASTERY_CONFIG.consistencyWeight;
 
     // gap_status
-    let gap_status = "NO_GAP";
-    if (n < MASTERY_CONFIG.minEvidence) {
+    // Prioritaskan status siklus gap yang sedang berjalan (CONFIRMED/IN_PRACTICE/
+    // VERIFICATION) agar recalc biasa tidak menimpanya. Promosi ke RESOLVED
+    // dilakukan gapService.resolveLifecycle di bawah.
+    let gap_status;
+    if (lifecycleActive) {
+      gap_status = existingGap;
+    } else if (n < MASTERY_CONFIG.minEvidence) {
       gap_status = "INSUFFICIENT_EVIDENCE";
     } else if (mastery < MASTERY_CONFIG.possibleGapThreshold) {
       gap_status = "POSSIBLE_GAP";
     } else if (mastery >= MASTERY_CONFIG.masteredThreshold) {
-      gap_status = "MASTERED";
+      gap_status = existingGap === "RESOLVED" ? "RESOLVED" : "MASTERED";
     } else {
       gap_status = "NO_GAP";
     }
@@ -141,12 +161,16 @@ const masteryService = {
 
     // Gap pipeline: begitu konsep berstatus POSSIBLE_GAP, jalankan diagnosis
     // otomatis (idempotent). Kegagalan di sini tidak boleh membatalkan recalc.
-    if (gap_status === "POSSIBLE_GAP") {
-      try {
+    // Jika mastery sudah pulih, jalankan siklus resolusi (complete action +
+    // RESOLVED) — termasuk resolusi gap induk lewat prerequisite.
+    try {
+      if (gap_status === "POSSIBLE_GAP") {
         await gapService.onPossibleGapDetected(learnerId, conceptId);
-      } catch (gapErr) {
-        console.error("gapService.onPossibleGapDetected ERROR:", gapErr);
+      } else if (mastery >= MASTERY_CONFIG.masteredThreshold) {
+        await gapService.resolveLifecycle(learnerId, conceptId, round2(mastery));
       }
+    } catch (gapErr) {
+      console.error("gapService lifecycle ERROR:", gapErr);
     }
 
     return {

@@ -351,6 +351,7 @@ CREATE INDEX idx_topics_status
 CREATE TABLE materials (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     topic_id UUID NOT NULL,
+    concept_id UUID,
     title TEXT NOT NULL,
     type material_type NOT NULL,
     content JSONB NOT NULL,
@@ -365,12 +366,21 @@ CREATE TABLE materials (
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
 
+    CONSTRAINT fk_materials_concept
+        FOREIGN KEY (concept_id)
+        REFERENCES concepts(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
     CONSTRAINT uq_materials_topic_order
         UNIQUE (topic_id, order_index)
 );
 
 CREATE INDEX idx_materials_topic_id
     ON materials(topic_id);
+
+CREATE INDEX idx_materials_concept_id
+    ON materials(concept_id);
 
 CREATE INDEX idx_materials_status
     ON materials(status);
@@ -904,6 +914,7 @@ CREATE TABLE learning_actions (
     learner_id UUID NOT NULL,
     concept_id UUID NOT NULL,
     diagnostic_id UUID,
+    attempt_id UUID,
     action_type action_type NOT NULL,
     reason TEXT NOT NULL,
     priority INTEGER NOT NULL,
@@ -929,6 +940,12 @@ CREATE TABLE learning_actions (
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
 
+    CONSTRAINT fk_learning_actions_attempt
+        FOREIGN KEY (attempt_id)
+        REFERENCES attempts(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     CONSTRAINT chk_learning_actions_priority
         CHECK (priority >= 0)
 );
@@ -941,6 +958,9 @@ CREATE INDEX idx_learning_actions_concept_id
 
 CREATE INDEX idx_learning_actions_diagnostic_id
     ON learning_actions(diagnostic_id);
+
+CREATE INDEX idx_learning_actions_attempt_id
+    ON learning_actions(attempt_id);
 
 CREATE INDEX idx_learning_actions_status
     ON learning_actions(status);

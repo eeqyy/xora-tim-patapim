@@ -544,6 +544,111 @@ const gapService = {
     };
   },
 
+  // ── Siklus practice / rekomendasi ────────────────────────────
+  // Tandai konsep gap sedang dalam latihan.
+  async markInPractice(learnerId, conceptId) {
+    const res = await pool.query(
+      `UPDATE learner_concept_states
+          SET gap_status = 'IN_PRACTICE', updated_at = NOW()
+        WHERE learner_id = $1 AND concept_id = $2
+          AND gap_status IN ('CONFIRMED', 'REJECTED', 'IN_PRACTICE')
+        RETURNING gap_status`,
+      [learnerId, conceptId]
+    );
+    return res.rows[0]?.gap_status || null;
+  },
+
+  // Selesaikan semua action terbuka yang terkait dengan satu konsep gap
+  // (action langsung pada konsep itu, atau action dari diagnostic konsep itu).
+  async completeOpenActions(learnerId, conceptId) {
+    const res = await pool.query(
+      `UPDATE learning_actions
+          SET status = 'COMPLETED', completed_at = NOW()
+        WHERE learner_id = $1
+          AND status IN ('RECOMMENDED', 'IN_PROGRESS')
+          AND (
+            concept_id = $2
+            OR diagnostic_id IN (
+              SELECT id FROM diagnostics WHERE learner_id = $1 AND concept_id = $2
+            )
+          )
+        RETURNING id, action_type, concept_id`,
+      [learnerId, conceptId]
+    );
+    return res.rows;
+  },
+
+  // Dipanggil masteryService setelah mastery dihitung ulang untuk satu konsep.
+  // Logic lifecycle:
+  //   1) Konsep gap (CONFIRMED/IN_PRACTICE) yang mastery-nya pulih -> RESOLVED.
+  //   2) Konsep prerequisite yang mastery-nya pulih, sementara ada action
+  //      PREREQUISITE_PRACTICE terbuka -> gap induk (diagnostic.concept_id)
+  //      dianggap RESOLVED dan action di-complete.
+  async resolveLifecycle(learnerId, conceptId, newMastery) {
+    const mastered = Number(newMastery) >= MASTERY_CONFIG.masteredThreshold;
+
+    // 1) Gap pada konsep itu sendiri
+    const stateRes = await pool.query(
+      `SELECT gap_status FROM learner_concept_states
+        WHERE learner_id = $1 AND concept_id = $2`,
+      [learnerId, conceptId]
+    );
+    const gapStatus = stateRes.rows[0]?.gap_status || null;
+
+    if (
+      mastered &&
+      ["CONFIRMED", "IN_PRACTICE", "RESOLVED"].includes(gapStatus)
+    ) {
+      if (gapStatus !== "RESOLVED") {
+        await pool.query(
+          `UPDATE learner_concept_states
+              SET gap_status = 'RESOLVED', updated_at = NOW()
+            WHERE learner_id = $1 AND concept_id = $2`,
+          [learnerId, conceptId]
+        );
+      }
+      const actions = await this.completeOpenActions(learnerId, conceptId);
+      if (actions.length > 0) {
+        await this._logEvent(learnerId, "RECOMMENDATION_COMPLETED", "concept", conceptId, {
+          resolvedBy: "mastery",
+          mastery: newMastery,
+          completedActionCount: actions.length,
+        });
+      }
+    }
+
+    // 2) Gap induk lewat prerequisite yang pulih
+    if (mastered) {
+      const parents = await pool.query(
+        `SELECT a.id AS action_id, d.id AS diagnostic_id, d.concept_id AS gap_concept_id
+           FROM learning_actions a
+           JOIN diagnostics d ON d.id = a.diagnostic_id
+          WHERE a.learner_id = $1
+            AND a.concept_id = $2
+            AND a.action_type IN ('PREREQUISITE_PRACTICE', 'COLLECT_MORE_EVIDENCE')
+            AND a.status IN ('RECOMMENDED', 'IN_PROGRESS')`,
+        [learnerId, conceptId]
+      );
+
+      for (const p of parents.rows) {
+        await pool.query(
+          `UPDATE learner_concept_states
+              SET gap_status = 'RESOLVED', updated_at = NOW()
+            WHERE learner_id = $1 AND concept_id = $2
+              AND gap_status IN ('CONFIRMED', 'IN_PRACTICE')`,
+          [learnerId, p.gap_concept_id]
+        );
+        await this.completeOpenActions(learnerId, p.gap_concept_id);
+        await this._logEvent(learnerId, "RECOMMENDATION_COMPLETED", "diagnostic", p.diagnostic_id, {
+          resolvedBy: "prerequisite_mastery",
+          prerequisiteConceptId: conceptId,
+          gapConceptId: p.gap_concept_id,
+          mastery: newMastery,
+        });
+      }
+    }
+  },
+
   // ── Helpers ──────────────────────────────────────────────────
   async _verificationPayload(diag, verification, attempt) {
     const assessRes = await pool.query(
