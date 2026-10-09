@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
       });
     }
 
-    const data = await learningPathService.getLearningPathBySubjectId(subjectId);
+    const data = await learningPathService.getLearningPathBySubjectId(subjectId, req.user.id);
     return res.json({
       status: "ok",
       data,
@@ -48,7 +48,7 @@ router.get("/", async (req, res) => {
 router.get("/:subjectId", async (req, res) => {
   try {
     const { subjectId } = req.params;
-    const data = await learningPathService.getLearningPathBySubjectId(subjectId);
+    const data = await learningPathService.getLearningPathBySubjectId(subjectId, req.user.id);
     return res.json({
       status: "ok",
       data,
