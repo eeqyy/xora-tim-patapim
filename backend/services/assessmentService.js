@@ -5,6 +5,14 @@
 
 const pool = require("../db");
 const masteryService = require("./masteryService");
+const questionService = require("./questionService");
+const { badRequest, notFound, conflict } = require("../utils/errors");
+// Grader bersama untuk ESSAY/CODE — dipakai juga oleh attemptService,
+// supaya kedua jalur submit menilai dengan kriteria yang sama.
+const { grade } = require("../utils/grading");
+
+const ASSESSMENT_TYPES = ["TOPIC", "LEVEL_FINAL", "MIXED", "REASSESSMENT", "PRACTICE"];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const assessmentService = {
   async getAll(filters = {}) {
@@ -223,9 +231,9 @@ const assessmentService = {
    */
   async submitAttempt(learnerId, attemptId, answersPayload = []) {
     // 1. Ambil data attempt
-    const attemptRes = await pool.query(`
+const attemptRes = await pool.query(`
       SELECT att.id, att.learner_id, att.assessment_id, att.status,
-             a.topic_id, a.level_id, a.subject_id, a.passing_score, a.title AS assessment_title
+             a.passing_score, a.title AS assessment_title
       FROM attempts att
       JOIN assessments a ON a.id = att.assessment_id
       WHERE att.id = $1
@@ -259,9 +267,9 @@ const assessmentService = {
       throw err;
     }
 
-    // 4. Ambil semua soal dari assessment ini (termasuk correct_answer internal)
+// 4. Ambil semua soal dari assessment ini (termasuk correct_answer internal)
     const questionsRes = await pool.query(`
-      SELECT id, assessment_id, type, question_text, correct_answer, points, order_index
+      SELECT id, assessment_id, type, question_text, correct_answer, points, order_index, concept_id
       FROM questions
       WHERE assessment_id = $1
       ORDER BY order_index ASC
@@ -278,49 +286,6 @@ const assessmentService = {
     for (const q of questions) {
       questionMap.set(q.id, q);
     }
-
-    // 5. Ambil list concept_id yang valid untuk asesmen ini (untuk FK evidence)
-    let conceptList = [];
-    if (attempt.topic_id) {
-      const tcRes = await pool.query(`
-        SELECT tc.concept_id FROM topic_concepts tc
-        JOIN concepts c ON c.id = tc.concept_id
-        WHERE tc.topic_id = $1
-        ORDER BY c.created_at ASC
-      `, [attempt.topic_id]);
-      conceptList = tcRes.rows.map((r) => r.concept_id);
-    } else if (attempt.level_id) {
-      const tcRes = await pool.query(`
-        SELECT tc.concept_id FROM topics t
-        JOIN topic_concepts tc ON tc.topic_id = t.id
-        JOIN concepts c ON c.id = tc.concept_id
-        WHERE t.level_id = $1
-        ORDER BY c.created_at ASC
-      `, [attempt.level_id]);
-      conceptList = tcRes.rows.map((r) => r.concept_id);
-    }
-
-    // Fallback concept jika tidak ada relasi langsung
-    if (conceptList.length === 0) {
-      const fallbackConcept = await pool.query(`
-        SELECT id FROM concepts WHERE subject_id = $1 LIMIT 1
-      `, [attempt.subject_id]);
-      if (fallbackConcept.rows.length > 0) {
-        conceptList.push(fallbackConcept.rows[0].id);
-      } else {
-        const anyConcept = await pool.query("SELECT id FROM concepts LIMIT 1");
-        if (anyConcept.rows.length > 0) {
-          conceptList.push(anyConcept.rows[0].id);
-        }
-      }
-    }
-
-    // Ambil seluruh concepts untuk subject_id ini untuk pemetaan presisi dari question metadata
-    const allConceptsRes = await pool.query(
-      "SELECT id, name FROM concepts WHERE subject_id = $1",
-      [attempt.subject_id]
-    );
-    const conceptMapByName = new Map(allConceptsRes.rows.map((c) => [c.name, c.id]));
 
     // 6. Validasi dan evaluasi setiap jawaban di SERVER
     const evaluatedEvidence = [];
@@ -353,7 +318,10 @@ const assessmentService = {
       answeredQuestionIds.add(item.question_id);
 
       let isCorrect = false;
-      let questionScore = 0;
+      // Persentase penilaian per soal, skala 0..100 — skala yang diwajibkan
+      // CHECK evidence.score dan formula mastery (masteryService), bukan poin.
+      let percent = 0;
+      let errorPattern = null;
       let answerObj = {};
 
       if (question.type === "MULTIPLE_CHOICE") {
@@ -397,14 +365,14 @@ const assessmentService = {
 
         answerObj = { selected: learnerChoiceLetter };
 
-        // Evaluasi correctness di server
+        // Evaluasi correctness di server (skala 0..100)
         if (correctLetter && learnerChoiceLetter === correctLetter) {
           isCorrect = true;
-          questionScore = Number(question.points);
-          correctCount++;
+          percent = 100;
         } else {
           isCorrect = false;
-          questionScore = 0;
+          percent = 0;
+          errorPattern = `WRONG_OPTION:selected=${learnerChoiceLetter};expected=${correctLetter}`;
         }
       } else if (question.type === "DRAG_DROP") {
         const correctMap = (question.correct_answer && typeof question.correct_answer.correct === "object")
@@ -428,7 +396,7 @@ const assessmentService = {
 
         answerObj = { matches: learnerMatches };
 
-        // Evaluasi server-side
+        // Evaluasi server-side (skala 0..100)
         const correctKeys = Object.keys(correctMap);
         if (correctKeys.length > 0) {
           let allMatch = true;
@@ -440,38 +408,50 @@ const assessmentService = {
           }
           if (allMatch && Object.keys(learnerMatches).length >= correctKeys.length) {
             isCorrect = true;
-            questionScore = Number(question.points);
-            correctCount++;
+            percent = 100;
           } else {
             isCorrect = false;
-            questionScore = 0;
+            percent = 0;
+            errorPattern = "DRAG_DROP_MISMATCH";
           }
         } else {
           isCorrect = false;
-          questionScore = 0;
+          percent = 0;
+          errorPattern = "DRAG_DROP_NO_KEY";
         }
       } else {
-        // Tipe lain (ESSAY / CODE)
-        answerObj = typeof item.answer === "object" ? item.answer : { input: item.answer || item.selected || "" };
-        isCorrect = false;
-        questionScore = 0;
+        // ESSAY / CODE — dinilai oleh grader bersama (utils/grading.js),
+        // jalur yang sama dengan attemptService: kredit parsial berbasis
+        // kriteria (ESSAY) dan diff token yang diabaikan (CODE).
+        const submittedText =
+          typeof item.answer === "string"
+            ? item.answer
+            : item.answer && typeof item.answer === "object"
+              ? item.answer.text ?? item.answer.code ?? item.answer.input ?? ""
+              : typeof item.selected === "string"
+                ? item.selected
+                : "";
+
+        answerObj = question.type === "CODE" ? { code: submittedText } : { text: submittedText };
+        const graded = grade(question, answerObj);
+        isCorrect = graded.isCorrect;
+        percent = graded.score;
+        errorPattern = graded.errorPattern;
       }
 
+      // Poin yang diperoleh = kredit parsial terhadap poin soal
+      // (sama polanya dengan attemptService: points * score / 100).
+      const questionScore = (Number(question.points) * percent) / 100;
       totalEarnedPoints += questionScore;
+      if (isCorrect) correctCount++;
 
-      // Tentukan concept_id untuk evidence berdasarkan metadata soal
-      let assignedConceptId = null;
-      if (question.correct_answer && question.correct_answer.concept_id) {
-        assignedConceptId = question.correct_answer.concept_id;
-      } else if (
-        question.correct_answer &&
-        question.correct_answer.concept &&
-        conceptMapByName.has(question.correct_answer.concept)
-      ) {
-        assignedConceptId = conceptMapByName.get(question.correct_answer.concept);
-      } else {
-        const conceptIndex = (question.order_index - 1) % conceptList.length;
-        assignedConceptId = conceptList[conceptIndex] || conceptList[0];
+      // Tentukan concept_id untuk evidence langsung dari kolom questions.concept_id
+      // (dipindahkan dari config/questionMeta.js ke database — lihat migrasi 002).
+      const assignedConceptId = question.concept_id;
+      if (!assignedConceptId) {
+        const err = new Error(`Pertanyaan #${question.order_index} belum memiliki pemetaan konsep`);
+        err.statusCode = 400;
+        throw err;
       }
 
       evaluatedEvidence.push({
@@ -479,7 +459,8 @@ const assessmentService = {
         concept_id: assignedConceptId,
         answer: answerObj,
         is_correct: isCorrect,
-        score: questionScore,
+        score: percent,
+        error_pattern: errorPattern,
         response_time_seconds: Number.isInteger(item.response_time_seconds) ? item.response_time_seconds : null,
       });
     }
@@ -503,8 +484,8 @@ const assessmentService = {
       // Simpan evidence rows
       for (const ev of evaluatedEvidence) {
         await client.query(`
-          INSERT INTO evidence (attempt_id, question_id, concept_id, answer, is_correct, score, response_time_seconds, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+          INSERT INTO evidence (attempt_id, question_id, concept_id, answer, is_correct, score, error_pattern, response_time_seconds, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
         `, [
           attemptId,
           ev.question_id,
@@ -512,6 +493,7 @@ const assessmentService = {
           JSON.stringify(ev.answer),
           ev.is_correct,
           ev.score,
+          ev.error_pattern,
           ev.response_time_seconds,
         ]);
       }
@@ -559,6 +541,152 @@ const assessmentService = {
     }
   },
 
+  // ============================================================
+// Admin CRUD (dilindungi requireAuth + requireAdmin di layer routes)
+// ============================================================
+
+  /** Detail assessment untuk editor: meta + soal lengkap (ada kunci jawaban). */
+  async getFullById(id) {
+    requireUuid(id, "id");
+    const assessment = await this.getById(id);
+    if (!assessment) throw notFound("Assessment tidak ditemukan");
+    const questions = await questionService.getFullByAssessmentId(id);
+    return { ...toPublicAssessment(assessment), questions };
+  },
+
+  /** Buat assessment baru. */
+  async create(input = {}) {
+    const title = requireText(input.title, "title");
+    const subjectId = requireUuid(input.subjectId, "subjectId");
+    const type = requireEnum(input.type, ASSESSMENT_TYPES, "type");
+    const levelId = input.levelId ? requireUuid(input.levelId, "levelId") : null;
+    const topicId = input.topicId ? requireUuid(input.topicId, "topicId") : null;
+    const durationMinutes = input.durationMinutes != null && input.durationMinutes !== ""
+      ? requirePositiveInt(input.durationMinutes, "durationMinutes")
+      : null;
+    const passingScore = input.passingScore != null && input.passingScore !== ""
+      ? requireScore(input.passingScore)
+      : null;
+
+    await assertReferenceExists(subjectId, "subjects", "Subject tidak ditemukan");
+    if (levelId) await assertReferenceExists(levelId, "levels", "Level tidak ditemukan");
+    if (topicId) await assertReferenceExists(topicId, "topics", "Topic tidak ditemukan");
+
+    // Klarifikasi rule CHECK di schema lebih dulu, supaya bukan 500.
+    if (type === "TOPIC" && !topicId) {
+      throw badRequest("Assessment bertipe TOPIC wajib memilih topic");
+    }
+    if (type === "LEVEL_FINAL" && !levelId) {
+      throw badRequest("Assessment bertipe LEVEL_FINAL wajib memilih level");
+    }
+
+    const result = await pool.query(
+      `INSERT INTO assessments (subject_id, level_id, topic_id, type, title, duration_minutes, passing_score)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id`,
+      [subjectId, levelId, topicId, type, title, durationMinutes, passingScore]
+    );
+    return toPublicAssessment(await this.getById(result.rows[0].id));
+  },
+
+  /** Ubah assessment (partial). */
+  async update(id, input = {}) {
+    requireUuid(id, "id");
+    const current = await this.getById(id);
+    if (!current) throw notFound("Assessment tidak ditemukan");
+
+    const fields = [];
+    const values = [];
+    const push = (col, val) => {
+      values.push(val);
+      fields.push(`${col} = $${values.length}`);
+    };
+
+    const title = input.title !== undefined ? requireText(input.title, "title") : current.title;
+    const type = input.type !== undefined
+      ? requireEnum(input.type, ASSESSMENT_TYPES, "type")
+      : current.type;
+    const subjectId = input.subjectId !== undefined
+      ? requireUuid(input.subjectId, "subjectId")
+      : current.subject_id;
+    const levelId = input.levelId !== undefined
+      ? (input.levelId ? requireUuid(input.levelId, "levelId") : null)
+      : current.level_id;
+    const topicId = input.topicId !== undefined
+      ? (input.topicId ? requireUuid(input.topicId, "topicId") : null)
+      : current.topic_id;
+    const durationMinutes = input.durationMinutes !== undefined
+      ? (input.durationMinutes === null || input.durationMinutes === ""
+          ? null
+          : requirePositiveInt(input.durationMinutes, "durationMinutes"))
+      : current.duration_minutes;
+    const passingScore = input.passingScore !== undefined
+      ? (input.passingScore === null || input.passingScore === ""
+          ? null
+          : requireScore(input.passingScore))
+      : current.passing_score;
+
+    await assertReferenceExists(subjectId, "subjects", "Subject tidak ditemukan");
+    if (levelId) await assertReferenceExists(levelId, "levels", "Level tidak ditemukan");
+    if (topicId) await assertReferenceExists(topicId, "topics", "Topic tidak ditemukan");
+
+    if (type === "TOPIC" && !topicId) throw badRequest("Assessment bertipe TOPIC wajib memilih topic");
+    if (type === "LEVEL_FINAL" && !levelId) throw badRequest("Assessment bertipe LEVEL_FINAL wajib memilih level");
+
+    if (title !== current.title) push("title", title);
+    if (type !== current.type) push("type", type);
+    if (subjectId !== current.subject_id) push("subject_id", subjectId);
+    if (levelId !== (current.level_id || null)) push("level_id", levelId);
+    if (topicId !== (current.topic_id || null)) push("topic_id", topicId);
+    if (durationMinutes !== (current.duration_minutes || null)) push("duration_minutes", durationMinutes);
+    if (passingScore !== (current.passing_score || null)) push("passing_score", passingScore);
+
+    if (fields.length === 0) return toPublicAssessment(current);
+
+    const result = await pool.query(
+      `UPDATE assessments SET ${fields.join(", ")} WHERE id = $${values.length + 1}`,
+      [...values, id]
+    );
+    if (result.rowCount === 0) throw notFound("Assessment tidak ditemukan");
+    return toPublicAssessment(await this.getById(id));
+  },
+
+  /**
+   * Hapus assessment.
+   * 409 bila sudah ada riwayat pengerjaan (attempts/evidence) — data peserta
+   * tidak boleh dihapus. Soal ikut terhapus dalam transaksi karena FK
+   * questions -> assessments adalah RESTRICT.
+   */
+  async remove(id) {
+    requireUuid(id, "id");
+    const assessment = await this.getById(id);
+    if (!assessment) throw notFound("Assessment tidak ditemukan");
+
+    const attempts = await pool.query(
+      "SELECT COUNT(*)::int AS c FROM attempts WHERE assessment_id = $1",
+      [id]
+    );
+    if (attempts.rows[0].c > 0) {
+      throw conflict(
+        `Assessment tidak bisa dihapus karena sudah dikerjakan ${attempts.rows[0].c} kali`
+      );
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("DELETE FROM questions WHERE assessment_id = $1", [id]);
+      await client.query("DELETE FROM assessments WHERE id = $1", [id]);
+      await client.query("COMMIT");
+      return id;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
   /**
    * Amankan soal sebelum dikirim ke client.
    *
@@ -584,5 +712,82 @@ const assessmentService = {
     };
   },
 };
+
+// ------------------------------------------------------------
+// Bentuk camelCase untuk endpoint admin (create / update / getFullById).
+// getById() tetap snake_case karena dipakai halaman peserta
+// (AssessmentPage) — jangan diubah.
+// ------------------------------------------------------------
+function toPublicAssessment(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    subjectId: row.subject_id,
+    levelId: row.level_id || null,
+    topicId: row.topic_id || null,
+    type: row.type,
+    title: row.title,
+    durationMinutes: row.duration_minutes != null ? Number(row.duration_minutes) : null,
+    passingScore: row.passing_score != null ? Number(row.passing_score) : null,
+    questionCount: Number(row.question_count || 0),
+    subjectName: row.subject_name || null,
+    levelName: row.level_name || null,
+    topicName: row.topic_name || null,
+    createdAt: row.created_at,
+  };
+}
+
+// ------------------------------------------------------------
+// Validator untuk admin CRUD (melempar ApiError -> status HTTP benar)
+// ------------------------------------------------------------
+
+function requireText(value, field) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw badRequest(`${field} wajib diisi`);
+  }
+  return value.trim();
+}
+
+function requireEnum(value, allowed, field) {
+  if (typeof value !== "string") {
+    throw badRequest(`${field} harus salah satu dari: ${allowed.join(", ")}`);
+  }
+  const v = value.toUpperCase();
+  if (!allowed.includes(v)) {
+    throw badRequest(`${field} harus salah satu dari: ${allowed.join(", ")}`);
+  }
+  return v;
+}
+
+function requireUuid(value, field) {
+  if (typeof value !== "string" || !UUID_RE.test(value)) {
+    throw badRequest(`${field} harus berupa UUID yang valid`);
+  }
+  return value;
+}
+
+function requirePositiveInt(value, field) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw badRequest(`${field} harus berupa bilangan bulat > 0`);
+  }
+  return n;
+}
+
+function requireScore(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0 || n > 100) {
+    throw badRequest("passingScore harus berada di rentang 0..100");
+  }
+  return Math.round(n * 100) / 100;
+}
+
+/** Pastikan FK benar-benar ada sebelum insert, supaya bukan 500 dari Postgres. */
+async function assertReferenceExists(id, table, message) {
+  const allowed = { subjects: "subjects", levels: "levels", topics: "topics" };
+  if (!allowed[table]) throw badRequest("Referensi tidak valid");
+  const res = await pool.query(`SELECT 1 FROM ${allowed[table]} WHERE id = $1`, [id]);
+  if (res.rows.length === 0) throw badRequest(message);
+}
 
 module.exports = assessmentService;

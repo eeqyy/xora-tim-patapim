@@ -5,7 +5,7 @@
 
 import React from "react";
 import { AuthProvider } from "./context/AuthContext";
-import { RouterProvider, useRouter, ProtectedRoute } from "./context/RouterContext";
+import { RouterProvider, useRouter, ProtectedRoute, AdminRoute } from "./context/RouterContext";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -15,6 +15,8 @@ import LearningPathPage from "./pages/LearningPathPage";
 import AssessmentListPage from "./pages/AssessmentListPage";
 import AssessmentPage from "./pages/AssessmentPage";
 import AssessmentResultPage from "./pages/AssessmentResultPage";
+import AdminAssessmentsPage from "./pages/AdminAssessmentsPage";
+import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
 
 function AppContent() {
   const { currentPath } = useRouter();
@@ -65,6 +67,19 @@ function AppContent() {
       <ProtectedRoute>
         <AssessmentPage assessmentId={assessmentId} />
       </ProtectedRoute>
+    );
+  } else if (currentPath === "/admin/assessments") {
+    pageContent = (
+      <AdminRoute>
+        <AdminAssessmentsPage />
+      </AdminRoute>
+    );
+  } else if (currentPath.startsWith("/admin/assessments/")) {
+    const assessmentId = currentPath.replace("/admin/assessments/", "").split("?")[0];
+    pageContent = (
+      <AdminRoute>
+        <AdminAssessmentEditorPage assessmentId={assessmentId} />
+      </AdminRoute>
     );
   } else {
     pageContent = <HomePage />;

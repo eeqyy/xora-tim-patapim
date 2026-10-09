@@ -661,6 +661,8 @@ CREATE INDEX idx_assessments_type
 CREATE TABLE questions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     assessment_id UUID NOT NULL,
+    concept_id UUID NOT NULL,
+    difficulty level_difficulty NOT NULL DEFAULT 'MEDIUM',
     type question_type NOT NULL,
     question_text TEXT NOT NULL,
     correct_answer JSONB NOT NULL,
@@ -673,6 +675,12 @@ CREATE TABLE questions (
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
 
+    CONSTRAINT fk_questions_concept
+        FOREIGN KEY (concept_id)
+        REFERENCES concepts(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     CONSTRAINT uq_questions_assessment_order
         UNIQUE (assessment_id, order_index),
 
@@ -682,6 +690,9 @@ CREATE TABLE questions (
 
 CREATE INDEX idx_questions_assessment_id
     ON questions(assessment_id);
+
+CREATE INDEX idx_questions_concept_id
+    ON questions(concept_id);
 
 
 CREATE TABLE attempts (

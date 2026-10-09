@@ -35,17 +35,21 @@ async function upsertRow(client, table, columns, values, conflictTarget, lookupC
 /**
  * Upsert question by (assessment_id, order_index) with DO UPDATE
  */
-async function upsertQuestion(client, assessmentId, type, text, answerJson, points, order) {
-  const sql = `INSERT INTO questions (assessment_id, type, question_text, correct_answer, points, order_index)
-               VALUES ($1, $2, $3, $4, $5, $6)
-               ON CONFLICT (assessment_id, order_index)
-               DO UPDATE SET
-                 type = EXCLUDED.type,
-                 question_text = EXCLUDED.question_text,
-                 correct_answer = EXCLUDED.correct_answer,
-                 points = EXCLUDED.points
-               RETURNING *`;
-  const res = await client.query(sql, [assessmentId, type, text, answerJson, points, order]);
+async function upsertQuestion(client, assessmentId, conceptId, difficulty, type, text, answerJson, points, order) {
+  const sql = `INSERT INTO questions (assessment_id, concept_id, difficulty, type, question_text, correct_answer, points, order_index)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT (assessment_id, order_index)
+             DO UPDATE SET
+               concept_id = EXCLUDED.concept_id,
+               difficulty = EXCLUDED.difficulty,
+               type = EXCLUDED.type,
+               question_text = EXCLUDED.question_text,
+               correct_answer = EXCLUDED.correct_answer,
+               points = EXCLUDED.points
+             RETURNING *`;
+  const res = await client.query(sql, [
+    assessmentId, conceptId, difficulty, type, text, answerJson, points, order,
+  ]);
   return res.rows[0];
 }
 
@@ -778,10 +782,25 @@ async function seed() {
       },
     ];
 
+    // Difficulty untuk tiap soal HTML Basics. Default MEDIUM; soal awal EASY.
+    const htmlBasicsDifficulty = { 1: "EASY", 2: "EASY", 3: "MEDIUM" };
+
     const savedQuestionsHtml = [];
     for (const q of questionsHtmlBasics) {
+      const conceptName = q.answer.concept;
+      if (!conceptName || !concepts[conceptName]) {
+        throw new Error(`seed: soal HTML Basics #${q.order} tidak punya konsep valid (concept="${conceptName}")`);
+      }
       const saved = await upsertQuestion(
-        client, assessHtmlBasics.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order
+        client,
+        assessHtmlBasics.id,
+        concepts[conceptName].id,
+        htmlBasicsDifficulty[q.order] || "MEDIUM",
+        q.type,
+        q.text,
+        JSON.stringify(q.answer),
+        q.points,
+        q.order
       );
       savedQuestionsHtml.push(saved);
     }
@@ -796,23 +815,23 @@ async function seed() {
 
     const questionsLevelFinal = [
       {
-        type: "MULTIPLE_CHOICE", order: 1, points: 10,
+        type: "MULTIPLE_CHOICE", order: 1, points: 10, difficulty: "MEDIUM",
+        concept: "Semantic Elements",
         text: "Elemen semantik mana yang digunakan untuk konten utama halaman?",
         answer: { correct: "B", options: ["<div>", "<main>", "<section>", "<article>"] }
       },
       {
-        type: "ESSAY", order: 2, points: 20,
+        type: "ESSAY", order: 2, points: 20, difficulty: "HARD",
+        concept: "Accessibility",
         text: "Jelaskan perbedaan antara elemen <div> dan elemen semantik HTML5.",
         answer: { criteria: ["semantic meaning", "accessibility", "SEO", "structure"] }
       },
     ];
 
     for (const q of questionsLevelFinal) {
-      await upsertRow(
-        client, "questions",
-        ["assessment_id", "type", "question_text", "correct_answer", "points", "order_index"],
-        [assessLevelFinal.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order],
-        "(assessment_id, order_index)", "assessment_id", assessLevelFinal.id
+      await upsertQuestion(
+        client, assessLevelFinal.id, concepts[q.concept].id, q.difficulty,
+        q.type, q.text, JSON.stringify(q.answer), q.points, q.order
       );
     }
 
@@ -826,23 +845,23 @@ async function seed() {
 
     const questionsJsPractice = [
       {
-        type: "MULTIPLE_CHOICE", order: 1, points: 10,
+        type: "MULTIPLE_CHOICE", order: 1, points: 10, difficulty: "EASY",
+        concept: "Variable Declaration",
         text: "Keyword mana yang membuat variabel yang TIDAK bisa di-reassign?",
         answer: { correct: "C", options: ["var", "let", "const", "function"] }
       },
       {
-        type: "CODE", order: 2, points: 15,
+        type: "CODE", order: 2, points: 15, difficulty: "MEDIUM",
+        concept: "Variable Declaration",
         text: "Tulis deklarasi variabel menggunakan const untuk menyimpan nama 'Xora' dan let untuk menyimpan angka 42.",
         answer: { expected: "const name = 'Xora';\nlet number = 42;", criteria: ["const", "let", "string", "number"] }
       },
     ];
 
     for (const q of questionsJsPractice) {
-      await upsertRow(
-        client, "questions",
-        ["assessment_id", "type", "question_text", "correct_answer", "points", "order_index"],
-        [assessJsPractice.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order],
-        "(assessment_id, order_index)", "assessment_id", assessJsPractice.id
+      await upsertQuestion(
+        client, assessJsPractice.id, concepts[q.concept].id, q.difficulty,
+        q.type, q.text, JSON.stringify(q.answer), q.points, q.order
       );
     }
 

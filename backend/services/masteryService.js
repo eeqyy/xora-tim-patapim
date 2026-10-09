@@ -12,7 +12,6 @@
 // ============================================================
 
 const pool = require("../db");
-const { QUESTION_META } = require("../config/questionMeta");
 const {
   MASTERY_CONFIG,
   getDifficultyWeight,
@@ -43,11 +42,10 @@ const masteryService = {
     // Ambil semua evidence untuk konsep ini (termasuk yang baru saja di-insert)
     const evRes = await pool.query(
       `SELECT e.id, e.score, e.error_pattern, e.created_at,
-              q.order_index, a.assessment_id, asmt.title AS assessment_title
+              q.difficulty
          FROM evidence e
          JOIN questions q ON q.id = e.question_id
          JOIN attempts a  ON a.id = e.attempt_id
-         JOIN assessments asmt ON asmt.id = a.assessment_id
         WHERE e.concept_id = $1
           AND a.learner_id = $2
         ORDER BY e.created_at ASC`,
@@ -70,15 +68,13 @@ const masteryService = {
       return { conceptId, evidenceCount: 0, gap_status: "INSUFFICIENT_EVIDENCE" };
     }
 
-    // Bangun mapping difficulty per evidence (dari config)
+    // Bangun mapping difficulty per evidence (langsung dari questions.difficulty)
     const scores = [];
     const weights = [];
     const errorList = [];
 
     for (const r of rows) {
-      const metaForOrder = QUESTION_META[r.assessment_title] || {};
-      const meta = metaForOrder[r.order_index];
-      const w = getDifficultyWeight(meta ? meta.difficulty : null);
+      const w = getDifficultyWeight(r.difficulty);
       scores.push(Number(r.score));
       weights.push(w);
       if (r.error_pattern && r.error_pattern.trim()) {

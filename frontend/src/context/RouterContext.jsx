@@ -90,3 +90,35 @@ export function ProtectedRoute({ children }) {
 
   return children;
 }
+
+/**
+ * AdminRoute component
+ * Seperti ProtectedRoute, tapi juga mewajibkan role ADMIN.
+ * Non-admin diarahkan ke beranda (bukan /login) karena ia sudah login.
+ */
+export function AdminRoute({ children }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const { navigate } = useRouter();
+
+  const isAdmin = Array.isArray(user?.roles) && user.roles.includes("ADMIN");
+
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || !isAdmin)) {
+      navigate("/");
+    }
+  }, [isLoading, isAuthenticated, isAdmin, navigate]);
+
+  if (isLoading) {
+    return (
+      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#6b7280" }}>
+        <p>Memeriksa autentikasi...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !isAdmin) {
+    return null;
+  }
+
+  return children;
+}

@@ -824,6 +824,20 @@ body {
   background-color: #38bdf8;
 }
 
+.concept-tag-locked {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.concept-tag-locked .concept-dot {
+  background-color: #64748b;
+}
+
+.concept-lock {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
 .empty-card,
 .empty-box {
   text-align: center;
@@ -1757,4 +1771,255 @@ body {
   display: flex;
   justify-content: center;
   gap: 1rem;
+}
+
+/* ============================================================
+   Admin — Kelola Asesmen (list + editor)
+   ============================================================ */
+
+.admin-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-back-btn {
+  margin-bottom: 0.75rem;
+}
+
+.admin-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.01em;
+}
+
+.admin-subheading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.admin-question-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  margin-top: 1.35rem;
+  padding-top: 1.35rem;
+  border-top: 1px dashed var(--color-border);
+}
+
+.admin-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  margin: 0;
+  padding: 1rem 1.1rem 1.15rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.admin-fieldset legend {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: 0 0.4rem;
+}
+
+.admin-group-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.admin-mapping-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  background-color: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.admin-mapping-item {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--color-text-main);
+  overflow-wrap: anywhere;
+}
+
+.admin-mapping-row select {
+  width: 100%;
+  min-width: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  color: var(--color-text-main);
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+
+.admin-mapping-row select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.admin-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88rem;
+}
+
+.admin-table-card {
+  padding: 1.25rem;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-caption {
+  caption-side: top;
+  text-align: left;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  padding-bottom: 0.75rem;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.7rem 0.65rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-table thead th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  background-color: rgba(15, 23, 42, 0.55);
+  white-space: nowrap;
+}
+
+.admin-table tbody tr:last-child th,
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.admin-cell-title {
+  color: var(--color-text-main);
+  font-weight: 600;
+}
+
+.admin-cell-question {
+  max-width: 22rem;
+  white-space: normal;
+  line-height: 1.45;
+}
+
+.admin-cell-muted {
+  color: var(--color-text-muted);
+}
+
+.admin-cell-num,
+.admin-col-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.admin-col-actions {
+  text-align: right;
+}
+
+.admin-cell-actions .btn-group {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Target sentuh nyaman untuk tombol aksi admin (min. 44px). */
+.admin-cell-actions .btn,
+.admin-form-actions .btn {
+  min-height: 2.75rem;
+}
+
+@media (max-width: 767px) {
+  .admin-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-title-row {
+    flex-direction: column;
+  }
+
+  .admin-cell-question {
+    max-width: none;
+  }
+}
+
+/* Cincin fokus keyboard yang konsisten di seluruh aplikasi. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

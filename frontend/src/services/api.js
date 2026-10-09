@@ -191,6 +191,66 @@ export const attemptsApi = {
     }),
 };
 
+/**
+ * Data referensi untuk form admin (level / topik / konsep).
+ * Endpoint ini publik, tanpa token.
+ */
+export const referenceApi = {
+  getLevels: () => apiRequest("/api/levels", { method: "GET" }),
+
+  getTopics: () => apiRequest("/api/topics", { method: "GET" }),
+
+  getConcepts: () => apiRequest("/api/concepts", { method: "GET" }),
+};
+
+/**
+ * Admin CRUD assessment — butuh role ADMIN.
+ * `getFull` mengembalikan assessment + seluruh soal termasuk kunci jawaban
+ * (dipakai editor admin; peserta tetap memakai assessmentsApi.getQuestions).
+ */
+export const adminAssessmentsApi = {
+  getFull: (id, token) =>
+    apiRequest(`/api/assessments/admin/full/${id}`, { method: "GET", token }),
+
+  create: (body, token) =>
+    apiRequest("/api/assessments", { method: "POST", body, token }),
+
+  update: (id, body, token) =>
+    apiRequest(`/api/assessments/${id}`, { method: "PUT", body, token }),
+
+  remove: (id, token) =>
+    apiRequest(`/api/assessments/${id}`, { method: "DELETE", token }),
+};
+
+export const adminQuestionsApi = {
+  create: (assessmentId, body, token) =>
+    apiRequest(`/api/assessments/${assessmentId}/questions`, {
+      method: "POST",
+      body,
+      token,
+    }),
+
+  update: (assessmentId, questionId, body, token) =>
+    apiRequest(`/api/assessments/${assessmentId}/questions/${questionId}`, {
+      method: "PUT",
+      body,
+      token,
+    }),
+
+  remove: (assessmentId, questionId, token) =>
+    apiRequest(`/api/assessments/${assessmentId}/questions/${questionId}`, {
+      method: "DELETE",
+      token,
+    }),
+
+  reorder: (assessmentId, orderedIds, token) =>
+    apiRequest(`/api/assessments/${assessmentId}/questions/reorder`, {
+      method: "PUT",
+      body: { orderedIds },
+      token,
+    }),
+};
+
 export const systemApi = {
   getHealth: () =>
     apiRequest("/api/health", {
