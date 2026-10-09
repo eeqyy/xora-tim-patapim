@@ -17,8 +17,8 @@
 
 const pool = require("../db");
 const assessmentService = require("./assessmentService");
+const gapService = require("./gapService");
 const { ApiError, notFound } = require("../utils/errors");
-
 const practiceService = {
   // Daftar assessment bertipe PRACTICE, opsional difilter per subject/level/concept.
   async listPractices({ subjectId, levelId, conceptId } = {}) {
@@ -81,6 +81,17 @@ const practiceService = {
     const questions = await assessmentService.getQuestionsByAssessmentId(assessmentId);
     const concepts = await this._conceptsForAssessment(assessmentId);
 
+    let linkedAction = null;
+    try {
+      linkedAction = await this._linkLearningAction(
+        learnerId,
+        assessmentId,
+        attempt.id,
+        concepts
+      );
+    } catch (linkError) {
+      console.warn("Auto-link learning action warning:", linkError);
+    }
     return {
       attempt: {
         id: attempt.id,
@@ -92,9 +103,9 @@ const practiceService = {
       assessment,
       concepts,
       questions,
+      linked_action: linkedAction,
     };
   },
-
   // Submit jawaban — delegasi penuh ke assessmentService (tanpa duplikasi grading).
   async submitPractice(learnerId, attemptId, answers) {
     return this._delegate(() =>
@@ -174,6 +185,92 @@ const practiceService = {
       [assessmentId]
     );
     return res.rows;
+  },
+
+  async _linkLearningAction(learnerId, assessmentId, attemptId, existingConcepts = null) {
+    const concepts = existingConcepts || (await this._conceptsForAssessment(assessmentId));
+    const conceptIds = concepts.map((c) => c.id);
+    if (conceptIds.length === 0) return null;
+
+    const actionTypes = [
+      "TARGETED_PRACTICE",
+      "PREREQUISITE_PRACTICE",
+      "COLLECT_MORE_EVIDENCE",
+      "ADVANCE",
+    ];
+
+    // Hindari membajak action IN_PROGRESS milik attempt lain.
+    // Prioritaskan:
+    // 1) Action yang sudah terikat ke attempt ini (resume)
+    // 2) Action RECOMMENDED yang belum jalan
+    // 3) Action IN_PROGRESS yang belum punya attempt_id
+    const actionRes = await pool.query(
+      `SELECT *
+         FROM learning_actions
+        WHERE learner_id = $1
+          AND concept_id = ANY($2::uuid[])
+          AND (
+            status = 'RECOMMENDED'
+            OR (status = 'IN_PROGRESS' AND (attempt_id IS NULL OR attempt_id = $3))
+          )
+          AND action_type = ANY($4::action_type[])
+        ORDER BY
+          CASE
+            WHEN attempt_id = $3 THEN 0
+            WHEN status = 'RECOMMENDED' THEN 1
+            ELSE 2
+          END ASC,
+          priority ASC,
+          created_at ASC
+        LIMIT 1`,
+      [learnerId, conceptIds, attemptId, actionTypes]
+    );
+
+    if (actionRes.rows.length === 0) return null;
+    const action = actionRes.rows[0];
+    const isNewLink = action.status !== "IN_PROGRESS" || action.attempt_id !== attemptId;
+
+    if (isNewLink) {
+      await pool.query(
+        `UPDATE learning_actions
+            SET status = 'IN_PROGRESS', attempt_id = $2
+          WHERE id = $1`,
+        [action.id, attemptId]
+      );
+
+      let gapConceptId = action.concept_id;
+      if (action.diagnostic_id) {
+        const d = await pool.query(
+          `SELECT concept_id FROM diagnostics WHERE id = $1`,
+          [action.diagnostic_id]
+        );
+        if (d.rows[0]?.concept_id) {
+          gapConceptId = d.rows[0].concept_id;
+        }
+      }
+      await gapService.markInPractice(learnerId, gapConceptId);
+
+      const metadata = {
+        conceptId: action.concept_id,
+        actionType: action.action_type,
+        attemptId,
+        assessmentId,
+        source: "practice_catalog",
+      };
+
+      await pool.query(
+        `INSERT INTO learning_events
+            (learner_id, event_type, entity_type, entity_id, metadata)
+         VALUES ($1, 'PRACTICE_STARTED', 'learning_action', $2, $3)`,
+        [learnerId, action.id, JSON.stringify(metadata)]
+      );
+    }
+
+    return {
+      ...action,
+      status: "IN_PROGRESS",
+      attempt_id: attemptId,
+    };
   },
 };
 
