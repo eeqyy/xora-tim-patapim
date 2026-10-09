@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "../context/RouterContext";
 import { profileApi, subjectsApi } from "../services/api";
 
 const EXPERIENCE_OPTIONS = [
@@ -20,6 +21,9 @@ export default function ProfilePage() {
   const [subjectsList, setSubjectsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  // 404 dari GET /api/profile = user memang belum punya learner_profiles
+  // (mis. akun admin). Tampilkan empty-state, bukan pesan error mentah.
+  const [profileMissing, setProfileMissing] = useState(false);
 
   // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +44,7 @@ export default function ProfilePage() {
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
     setFetchError(null);
+    setProfileMissing(false);
     try {
       const [profileRes, subjectsRes] = await Promise.all([
         profileApi.getProfile(),
@@ -53,7 +58,11 @@ export default function ProfilePage() {
         setSubjectsList(subjectsRes.data);
       }
     } catch (err) {
-      setFetchError(err.message || "Gagal memuat profil pembelajar.");
+      if (err.status === 404) {
+        setProfileMissing(true);
+      } else {
+        setFetchError(err.message || "Gagal memuat profil pembelajar.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -153,6 +162,34 @@ export default function ProfilePage() {
       <div className="profile-container">
         <div className="card loading-card">
           <p>Memuat profil pembelajar...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileMissing) {
+    const isAdmin =
+      Array.isArray(authUser?.roles) && authUser.roles.includes("ADMIN");
+
+    return (
+      <div className="profile-container">
+        <div className="card empty-card">
+          <p>Profil pembelajar belum tersedia untuk akun ini.</p>
+          <p className="text-muted" style={{ marginTop: "0.5rem" }}>
+            {isAdmin
+              ? "Akun admin tidak memiliki data profil pembelajar."
+              : "Lengkapi data pembelajaran Anda terlebih dahulu."}
+          </p>
+          <div className="admin-form-actions" style={{ justifyContent: "center" }}>
+            {isAdmin && (
+              <Link to="/admin/assessments" className="btn btn-primary">
+                Buka Halaman Kelola
+              </Link>
+            )}
+            <button onClick={loadProfile} className="btn btn-outline">
+              Muat Ulang
+            </button>
+          </div>
         </div>
       </div>
     );

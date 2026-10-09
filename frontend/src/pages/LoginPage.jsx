@@ -3,12 +3,12 @@
 // frontend/src/pages/LoginPage.jsx
 // ============================================================
 
-import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect, useState } from "react";
+import { useAuth, homePathFor } from "../context/AuthContext";
 import { useRouter, Link } from "../context/RouterContext";
 
 export default function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading, user } = useAuth();
   const { navigate } = useRouter();
 
   const [formData, setFormData] = useState({
@@ -19,9 +19,14 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If already authenticated, redirect to profile
+  // Sudah terautentikasi (baik dari sesi tersimpan maupun baru saja login)
+  // -> arahkan sesuai role. Dilakukan di effect, bukan saat render.
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    navigate(homePathFor(user));
+  }, [isLoading, isAuthenticated, user, navigate]);
+
   if (isAuthenticated) {
-    navigate("/profile");
     return null;
   }
 
@@ -51,8 +56,8 @@ export default function LoginPage() {
 
     try {
       await login(email.trim(), password);
-      // On success, redirect to profile
-      navigate("/profile");
+      // Redirect-nya ditangani oleh useEffect di atas (role-aware),
+      // berdasarkan user yang sudah berisi roles.
     } catch (err) {
       setError(err.message || "Email atau password tidak sesuai.");
     } finally {

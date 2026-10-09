@@ -3,14 +3,14 @@
 // frontend/src/pages/RegisterPage.jsx
 // ============================================================
 
-import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect, useState } from "react";
+import { useAuth, homePathFor } from "../context/AuthContext";
 import { useRouter, Link } from "../context/RouterContext";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterPage() {
-  const { register, isAuthenticated } = useAuth();
+  const { register, isAuthenticated, user } = useAuth();
   const { navigate } = useRouter();
 
   const [formData, setFormData] = useState({
@@ -24,9 +24,15 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If already logged in, redirect to profile
+  // Sudah login -> keluar dari halaman registrasi (redirect di effect,
+  // bukan saat render), tujuan mengikuti role.
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(homePathFor(user));
+    }
+  }, [isAuthenticated, user, navigate]);
+
   if (isAuthenticated) {
-    navigate("/profile");
     return null;
   }
 
