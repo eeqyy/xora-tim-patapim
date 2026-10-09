@@ -177,7 +177,18 @@ router.post("/:id/attempts", async (req, res) => {
     res.status(201).json({ status: "ok", data: attempt });
   } catch (error) {
     console.error("POST /api/assessments/:id/attempts ERROR:", error);
-    res.status(error.statusCode || 500).json({ status: "error", message: error.message });
+    sendError(res, error);
+  }
+});
+
+// POST /api/assessments/:id/reassess - Memulai Re-assessment (Remedial / uji ulang)
+router.post("/:id/reassess", async (req, res) => {
+  try {
+    const data = await assessmentService.reassess(req.user.id, req.params.id);
+    res.status(201).json({ status: "ok", data });
+  } catch (error) {
+    console.error("POST /api/assessments/:id/reassess ERROR:", error);
+    sendError(res, error);
   }
 });
 

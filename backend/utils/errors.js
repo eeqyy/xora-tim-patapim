@@ -34,17 +34,23 @@ const notFound = (message = "Resource not found") => new ApiError(404, message);
 /** 409 — bentrok (misal email sudah terdaftar). */
 const conflict = (message) => new ApiError(409, message);
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Validasi format UUID v4 / standard. */
+const isValidUuid = (id) => typeof id === "string" && UUID_REGEX.test(id);
+
 /**
  * Kirim error sebagai respons HTTP dengan bentuk standar XORA.
  *
- * - ApiError -> statusnya dipakai apa adanya
+ * - ApiError / statusCode / status -> statusnya dipakai apa adanya jika dalam rentang 400..599
  * - error lain -> 500 dan pesan generik (jangan bocorkan detail internal)
  */
 function sendError(res, error) {
-  if (error && error.name === "ApiError") {
-    return res.status(error.status).json({
+  const status = error?.status || error?.statusCode;
+  if (status && typeof status === "number" && status >= 400 && status < 600) {
+    return res.status(status).json({
       status: "error",
-      message: error.message,
+      message: error.message || "Permintaan tidak dapat diproses",
     });
   }
 
@@ -63,4 +69,6 @@ module.exports = {
   notFound,
   conflict,
   sendError,
+  isValidUuid,
+  UUID_REGEX,
 };

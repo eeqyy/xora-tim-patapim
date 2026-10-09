@@ -163,26 +163,26 @@ const learningPathService = {
       [conceptIds]
     );
 
-    // Semua prerequisite_concept_id yang butuh status mastery learner
-    const prereqIds = Array.from(
-      new Set(prereqRes.rows.map((r) => r.prerequisite_concept_id))
+    // Semua concept_id yang butuh status mastery learner:
+    // baik sebagai prerequisite MAUPUN sebagai node konsep itu sendiri
+    const allQueryIds = Array.from(
+      new Set([...conceptIds, ...prereqRes.rows.map((r) => r.prerequisite_concept_id)])
     );
 
-    // 2) Status mastery learner untuk prerequisite tsb (tanpa baris = belum dinilai)
-    const stateByPrereq = new Map();
-    if (prereqIds.length > 0) {
+    // 2) Status mastery learner untuk semua konsep tsb (tanpa baris = belum dinilai)
+    const stateByConcept = new Map();
+    if (allQueryIds.length > 0) {
       const stateRes = await pool.query(
-        `SELECT concept_id, mastery_score, gap_status
+        `SELECT concept_id, mastery_score, gap_status, evidence_count, evidence_confidence
            FROM learner_concept_states
           WHERE learner_id = $1
             AND concept_id = ANY($2::uuid[])`,
-        [learnerId, prereqIds]
+        [learnerId, allQueryIds]
       );
       for (const row of stateRes.rows) {
-        stateByPrereq.set(row.concept_id, row);
+        stateByConcept.set(row.concept_id, row);
       }
     }
-
     // Group prerequisite per konsep asal
     const prereqsByConcept = new Map();
     for (const row of prereqRes.rows) {
@@ -198,8 +198,8 @@ const learningPathService = {
         for (const concept of topic.concepts || []) {
           const rows = prereqsByConcept.get(concept.id) || [];
           const prerequisites = rows.map((r) => {
-            const state = stateByPrereq.get(r.prerequisite_concept_id) || null;
-            const mastery = state ? Number(state.mastery_score) : null;
+            const state = stateByConcept.get(r.prerequisite_concept_id) || null;
+            const mastery = state && state.mastery_score != null ? Number(state.mastery_score) : null;
             const satisfied =
               mastery !== null && mastery >= MASTERY_CONFIG.masteredThreshold;
             return {
@@ -210,6 +210,15 @@ const learningPathService = {
               satisfied,
             };
           });
+
+          const selfState = stateByConcept.get(concept.id) || null;
+          const selfMastery = selfState && selfState.mastery_score != null ? Number(selfState.mastery_score) : null;
+
+          concept.mastery_score = selfMastery;
+          concept.gap_status = selfState ? selfState.gap_status : "INSUFFICIENT_EVIDENCE";
+          concept.is_mastered = selfMastery !== null && selfMastery >= MASTERY_CONFIG.masteredThreshold;
+          concept.evidence_count = selfState ? Number(selfState.evidence_count) : 0;
+          concept.evidence_confidence = selfState?.evidence_confidence != null ? Number(selfState.evidence_confidence) : 0;
           concept.prerequisites = prerequisites;
           concept.is_locked = prerequisites.some((p) => !p.satisfied);
         }

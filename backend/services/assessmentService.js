@@ -48,6 +48,10 @@ const assessmentService = {
       conditions.push(`a.topic_id = $${values.length}`);
     }
 
+    if (filters.type) {
+      values.push(filters.type);
+      conditions.push(`a.type = $${values.length}`);
+    }
     if (conditions.length > 0) {
       query += " WHERE " + conditions.join(" AND ");
     }
@@ -123,7 +127,7 @@ const assessmentService = {
   /**
    * Membuat atau mengembalikan attempt aktif (IN_PROGRESS) untuk learner.
    */
-  async createAttempt(learnerId, assessmentId) {
+  async createAttempt(learnerId, assessmentId, forceNew = false) {
     // Verifikasi assessment exists
     const assessment = await this.getById(assessmentId);
     if (!assessment) {
@@ -133,19 +137,21 @@ const assessmentService = {
     }
 
     // Periksa apakah sudah ada attempt IN_PROGRESS yang sedang berjalan
-    const existingAttempt = await pool.query(`
-      SELECT id, learner_id, assessment_id, status, started_at, completed_at, score
-      FROM attempts
-      WHERE learner_id = $1 AND assessment_id = $2 AND status = 'IN_PROGRESS'
-      ORDER BY started_at DESC
-      LIMIT 1
-    `, [learnerId, assessmentId]);
+    if (!forceNew) {
+      const existingAttempt = await pool.query(`
+        SELECT id, learner_id, assessment_id, status, started_at, completed_at, score
+        FROM attempts
+        WHERE learner_id = $1 AND assessment_id = $2 AND status = 'IN_PROGRESS'
+        ORDER BY started_at DESC
+        LIMIT 1
+      `, [learnerId, assessmentId]);
 
-    if (existingAttempt.rows.length > 0) {
-      return {
-        ...existingAttempt.rows[0],
-        assessment,
-      };
+      if (existingAttempt.rows.length > 0) {
+        return {
+          ...existingAttempt.rows[0],
+          assessment,
+        };
+      }
     }
 
     // Buat attempt baru
@@ -161,6 +167,46 @@ const assessmentService = {
     };
   },
 
+  /**
+   * Memulai Re-assessment (Remedial / asesmen ulang konsep).
+   * Memaksa pembuatan attempt baru dan mengembalikan soal-soal publik yang aman.
+   */
+  async reassess(learnerId, assessmentId) {
+    const assessment = await this.getById(assessmentId);
+    if (!assessment) {
+      const err = new Error("Assessment tidak ditemukan");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const attempt = await this.createAttempt(learnerId, assessmentId, true);
+    const questions = await this.getQuestionsByAssessmentId(assessmentId);
+
+    try {
+      await pool.query(
+        `INSERT INTO learning_events (learner_id, event_type, entity_type, entity_id, metadata)
+         VALUES ($1, 'ASSESSMENT_STARTED', 'attempt', $2, $3)`,
+        [
+          learnerId,
+          attempt.id,
+          JSON.stringify({
+            assessmentId,
+            title: assessment.title,
+            type: assessment.type,
+            isReassessment: true,
+          }),
+        ]
+      );
+    } catch (e) {
+      console.warn("Failed to log assessment start event:", e.message);
+    }
+
+    return {
+      attempt,
+      assessment,
+      questions,
+    };
+  },
   /**
    * Mengambil data attempt milik learner.
    */
@@ -235,7 +281,7 @@ const assessmentService = {
     // 1. Ambil data attempt
 const attemptRes = await pool.query(`
       SELECT att.id, att.learner_id, att.assessment_id, att.status,
-             a.passing_score, a.title AS assessment_title
+             a.passing_score, a.title AS assessment_title, a.type AS assessment_type
       FROM attempts att
       JOIN assessments a ON a.id = att.assessment_id
       WHERE att.id = $1
@@ -535,6 +581,29 @@ const attemptRes = await pool.query(`
         await recommendationService.onAttemptSubmitted(learnerId, attemptId);
       } catch (recError) {
         console.error("RECOMMENDATION COMPLETE FAILED (evidence tetap tersimpan):", recError);
+      }
+
+      // Re-assessment event log bila assessment bertipe REASSESSMENT
+      if (attempt.assessment_type === "REASSESSMENT") {
+        try {
+          await pool.query(
+            `INSERT INTO learning_events (learner_id, event_type, entity_type, entity_id, metadata)
+             VALUES ($1, 'REASSESSMENT_COMPLETED', 'attempt', $2, $3)`,
+            [
+              learnerId,
+              attemptId,
+              JSON.stringify({
+                assessmentId: attempt.assessment_id,
+                title: attempt.assessment_title,
+                score: finalPercentage,
+                passingScore: passingScoreNum,
+                passed: isPassed,
+              }),
+            ]
+          );
+        } catch (evtErr) {
+          console.error("REASSESSMENT EVENT LOG ERROR:", evtErr);
+        }
       }
 
       return {
