@@ -6,7 +6,7 @@
 // API assessment, mastery, gap, diagnostic, recommendation harus terproteksi).
 //
 // Setelah middleware ini jalan, request punya:
-//   req.user     -> { id, email, name }
+//   req.user     -> { id, email, name, roles: string[] }
 //   req.sessionId-> uuid sesi aktif
 //   req.token    -> token mentah (untuk logout)
 // ============================================================

@@ -53,7 +53,8 @@ router.post("/logout", requireAuth, async (req, res) => {
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const profile = await authService.me(req.user.id);
-    res.json({ status: "ok", data: profile });
+    // Frontend (AuthContext) membaca response.data.user untuk restore sesi.
+    res.json({ status: "ok", data: { user: profile } });
   } catch (error) {
     console.error("GET /api/auth/me ERROR:", error);
     sendError(res, error);

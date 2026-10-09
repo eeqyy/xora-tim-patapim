@@ -20,7 +20,6 @@
 // ============================================================
 
 const pool = require("../db");
-const { QUESTION_META, USE_TOPIC_PRIMARY_FALLBACK, DIFFICULTIES } = require("../config/questionMeta");
 const { grade } = require("../utils/grading");
 const assessmentService = require("./assessmentService");
 const masteryService = require("./masteryService");
@@ -152,10 +151,13 @@ const attemptService = {
     if (!assessment) throw notFound("Assessment no longer exists");
 
     const questionResult = await pool.query(
-      `SELECT id, type, question_text, correct_answer, points, order_index
-         FROM questions
-        WHERE assessment_id = $1
-        ORDER BY order_index ASC`,
+      `SELECT q.id, q.type, q.question_text, q.correct_answer, q.points,
+              q.order_index, q.concept_id, q.difficulty,
+              c.name AS concept_name
+         FROM questions q
+         LEFT JOIN concepts c ON c.id = q.concept_id
+        WHERE q.assessment_id = $1
+        ORDER BY q.order_index ASC`,
       [attempt.assessment_id]
     );
     const questions = questionResult.rows;
@@ -185,7 +187,7 @@ const attemptService = {
     }
 
     // --- 2. Selesaikan mapping concept + difficulty untuk SEMUA soal ---
-    const mapping = await resolveQuestionMeta(assessment, questions);
+    const mapping = resolveQuestionMeta(questions);
 
     // --- 3. Nilai (soal tanpa jawaban dihitung salah, bukan error) ---
     const graded = mapping.map((item) => {
@@ -396,7 +398,7 @@ const attemptService = {
     const evidenceResult = await pool.query(
       `SELECT e.question_id, e.is_correct, e.score, e.error_pattern,
               e.response_time_seconds, e.answer,
-              c.name AS concept, q.order_index
+              c.name AS concept, q.order_index, q.difficulty
          FROM evidence e
          JOIN concepts c ON c.id = e.concept_id
          JOIN questions q ON q.id = e.question_id
@@ -404,10 +406,6 @@ const attemptService = {
         ORDER BY e.created_at ASC`,
       [attemptId]
     );
-
-    // difficulty tidak ada di kolom manapun (lihat config/questionMeta.js),
-    // jadi dibaca dari konfigurasi berdasarkan judul assessment + urutan soal.
-    const metaForOrder = QUESTION_META[attempt.assessment_title] || {};
 
     return {
       id: attempt.id,
@@ -417,19 +415,16 @@ const attemptService = {
       score: attempt.score,
       startedAt: attempt.started_at,
       completedAt: attempt.completed_at,
-      evidence: evidenceResult.rows.map((row) => {
-        const meta = metaForOrder[row.order_index];
-        return {
-          questionId: row.question_id,
-          isCorrect: row.is_correct,
-          score: row.score,
-          errorPattern: row.error_pattern,
-          responseTimeSeconds: row.response_time_seconds,
-          answer: row.answer,
-          concept: row.concept,
-          difficulty: meta ? meta.difficulty : "MEDIUM",
-        };
-      }),
+      evidence: evidenceResult.rows.map((row) => ({
+        questionId: row.question_id,
+        isCorrect: row.is_correct,
+        score: row.score,
+        errorPattern: row.error_pattern,
+        responseTimeSeconds: row.response_time_seconds,
+        answer: row.answer,
+        concept: row.concept,
+        difficulty: row.difficulty || "MEDIUM",
+      })),
     };
   },
 };
@@ -441,82 +436,33 @@ const attemptService = {
 /**
  * Tentukan concept + difficulty untuk setiap soal.
  *
- * Urutan sumber:
- *   1. config/questionMeta.js  [judul assessment][order_index] — otoritatif
- *   2. konsep utama topik      — hanya untuk assessment bertipe TOPIC
- *   3. tidak ada               -> 400 dengan daftar soal yang kurang
+ * Sumber tunggal: kolom `questions.concept_id` + `questions.difficulty`
+ * (dipindahkan dari config/questionMeta.js ke database — lihat migrasi 002).
  *
- * Pilihan menolak daripada menyimpan evidence tanpa konsep benar:
- * evidence.concept_id NOT NULL, dan salah atribusi akan merusak
- * perhitungan mastery & gap detection untuk konsep yang tidak bersalah.
+ * Menolak daripada menyimpan evidence tanpa konsep benar:
+ * evidence.concept_id NOT NULL, dan salah atribusi akan merusak perhitungan
+ * mastery & gap detection untuk konsep yang tidak bersalah. `concept_id`
+ * sendiri NOT NULL di DB, jadi ini hanya jaring pengaman.
  */
-async function resolveQuestionMeta(assessment, questions) {
-  const conceptResult = await pool.query(
-    `SELECT id, name FROM concepts WHERE subject_id = $1`,
-    [assessment.subject_id]
-  );
-  const conceptIdByName = new Map(
-    conceptResult.rows.map((c) => [c.name, c.id])
-  );
-
-  let fallbackConceptId = null;
-  if (assessment.topic_id) {
-    const fallbackResult = await pool.query(
-      `SELECT tc.concept_id
-         FROM topic_concepts tc
-        WHERE tc.topic_id = $1
-        ORDER BY tc.order_index ASC
-        LIMIT 1`,
-      [assessment.topic_id]
-    );
-    fallbackConceptId = fallbackResult.rows[0]?.concept_id ?? null;
-  }
-
+function resolveQuestionMeta(questions) {
   const problems = [];
-  const byOrder = QUESTION_META[assessment.title] || {};
 
   const resolved = questions.map((question) => {
-    const meta = byOrder[question.order_index];
-
-    if (meta) {
-      const conceptId = conceptIdByName.get(meta.concept);
-      if (!conceptId) {
-        problems.push(
-          `question #${question.order_index}: concept "${meta.concept}" ` +
-            `from config/questionMeta.js does not exist in the "${assessment.title}" subject`
-        );
-        return null;
-      }
-      return {
-        question,
-        conceptId,
-        conceptName: meta.concept,
-        difficulty: DIFFICULTIES.includes(meta.difficulty)
-          ? meta.difficulty
-          : "MEDIUM",
-      };
+    if (!question.concept_id) {
+      problems.push(`question #${question.order_index}: concept_id kosong`);
+      return null;
     }
-
-    if (USE_TOPIC_PRIMARY_FALLBACK && fallbackConceptId) {
-      return {
-        question,
-        conceptId: fallbackConceptId,
-        conceptName: null,
-        difficulty: "MEDIUM",
-      };
-    }
-
-    problems.push(
-      `question #${question.order_index}: no entry in config/questionMeta.js ` +
-        `and no topic fallback available (assessment type ${assessment.type})`
-    );
-    return null;
+    return {
+      question,
+      conceptId: question.concept_id,
+      conceptName: question.concept_name || null,
+      difficulty: question.difficulty || "MEDIUM",
+    };
   });
 
   if (problems.length > 0) {
     throw badRequest(
-      "Cannot grade: question -> concept mapping is incomplete. " +
-        "Add these to backend/config/questionMeta.js: " +
+      "Cannot grade: soal berikut belum punya pemetaan konsep di database: " +
         problems.join("; ")
     );
   }

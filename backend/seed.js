@@ -33,6 +33,27 @@ async function upsertRow(client, table, columns, values, conflictTarget, lookupC
 }
 
 /**
+ * Upsert question by (assessment_id, order_index) with DO UPDATE
+ */
+async function upsertQuestion(client, assessmentId, conceptId, difficulty, type, text, answerJson, points, order) {
+  const sql = `INSERT INTO questions (assessment_id, concept_id, difficulty, type, question_text, correct_answer, points, order_index)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT (assessment_id, order_index)
+             DO UPDATE SET
+               concept_id = EXCLUDED.concept_id,
+               difficulty = EXCLUDED.difficulty,
+               type = EXCLUDED.type,
+               question_text = EXCLUDED.question_text,
+               correct_answer = EXCLUDED.correct_answer,
+               points = EXCLUDED.points
+             RETURNING *`;
+  const res = await client.query(sql, [
+    assessmentId, conceptId, difficulty, type, text, answerJson, points, order,
+  ]);
+  return res.rows[0];
+}
+
+/**
  * Find an existing row by a WHERE clause, or insert a new one.
  * For tables without suitable unique constraints (assessments, attempts, etc.).
  */
@@ -415,35 +436,371 @@ async function seed() {
     const assessHtmlBasics = await findOrInsert(
       client, "assessments",
       ["subject_id", "level_id", "topic_id", "type", "title", "duration_minutes", "passing_score"],
-      [subject.id, levels["HTML & Web Fundamentals"].id, topics["HTML Basics"].id, "TOPIC", "Quiz: HTML Basics", 15, 70.00],
+      [subject.id, levels["HTML & Web Fundamentals"].id, topics["HTML Basics"].id, "TOPIC", "Quiz: HTML Basics", 30, 70.00],
       "title = $1", ["Quiz: HTML Basics"]
     );
 
+    // Update duration in case assessment row already existed
+    await client.query("UPDATE assessments SET duration_minutes = 30 WHERE id = $1", [assessHtmlBasics.id]);
+
     const questionsHtmlBasics = [
+      // 1. Multiple Choice 1 - HTML Element
       {
-        type: "MULTIPLE_CHOICE", order: 1, points: 10,
-        text: "Apa kepanjangan HTML?",
-        answer: { correct: "B", options: ["Hyper Transfer Markup Language", "HyperText Markup Language", "High Text Markup Language", "Home Tool Markup Language"] }
+        type: "MULTIPLE_CHOICE", order: 1, points: 5.00,
+        text: "Manakah pernyataan yang paling tepat mengenai perbedaan mendasar antara elemen 'block-level' dan elemen 'inline' dalam dokumen HTML?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "HTML Element",
+          correct: "A",
+          options: [
+            "Elemen block-level selalu memulai baris baru dan memenuhi lebar container yang tersedia, sedangkan elemen inline hanya menempati ruang selebar kontennya.",
+            "Elemen inline secara otomatis memicu pergantian baris dan dapat menampung elemen block-level apa pun di dalamnya.",
+            "Elemen block-level tidak dapat diberikan nilai margin dan padding, sedangkan elemen inline selalu memiliki margin vertikal.",
+            "Elemen inline wajib memiliki tag penutup tersendiri, sedangkan elemen block-level selalu merupakan void element."
+          ]
+        }
       },
+      // 2. Multiple Choice 2 - HTML Attribute
       {
-        type: "MULTIPLE_CHOICE", order: 2, points: 10,
-        text: "Tag HTML mana yang digunakan untuk membuat paragraf?",
-        answer: { correct: "C", options: ["<br>", "<h1>", "<p>", "<div>"] }
+        type: "MULTIPLE_CHOICE", order: 2, points: 5.00,
+        text: "Atribut alt pada elemen <img> memiliki peran penting dalam standar web. Fungsi utama manakah yang paling akurat dari atribut tersebut?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "HTML Attribute",
+          correct: "A",
+          options: [
+            "Menyediakan teks alternatif bagi teknologi pembaca layar (screen reader) dan tampil ketika file gambar gagal dimuat.",
+            "Mengubah resolusi dan dimensi visual gambar secara otomatis saat diakses melalui perangkat seluler.",
+            "Menentukan alamat URL cadangan tempat browser mengunduh gambar alternatif dari server lain.",
+            "Menampilkan tooltip melayang berwarna kuning setiap kali kursor mouse digerakkan di atas gambar."
+          ]
+        }
       },
+      // 3. Multiple Choice 3 - Document Structure
       {
-        type: "CODE", order: 3, points: 20,
-        text: "Tulis struktur dasar dokumen HTML5 dengan judul 'Hello World'.",
-        answer: { expected: "<!DOCTYPE html><html><head><title>Hello World</title></head><body></body></html>", criteria: ["DOCTYPE", "<html>", "<head>", "<title>", "<body>"] }
+        type: "MULTIPLE_CHOICE", order: 3, points: 5.00,
+        text: "Mengapa deklarasi <!DOCTYPE html> wajib diletakkan pada baris pertama sebuah dokumen HTML5?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "Document Structure",
+          correct: "A",
+          options: [
+            "Untuk menginstruksikan peramban agar merender halaman menggunakan mode standar (standards mode) dan mencegah quirks mode.",
+            "Untuk memvalidasi dokumen secara langsung dengan menghubungi server W3C sebelum konten ditampilkan.",
+            "Untuk mengaktifkan fitur strict mode pada seluruh skrip JavaScript eksternal yang diimpor.",
+            "Untuk mewajibkan seluruh komunikasi jaringan dalam dokumen menggunakan enkripsi protokol HTTPS."
+          ]
+        }
+      },
+      // 4. Multiple Choice 4 - Semantic Elements
+      {
+        type: "MULTIPLE_CHOICE", order: 4, points: 5.00,
+        text: "Dalam perancangan struktur halaman web modern, elemen semantik HTML5 manakah yang paling tepat digunakan untuk membungkus tautan navigasi utama situs?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "Semantic Elements",
+          correct: "A",
+          options: [
+            "<nav>",
+            "<div class=\"navigation-menu\">",
+            "<section id=\"links\">",
+            "<aside class=\"nav-bar\">"
+          ]
+        }
+      },
+      // 5. Multiple Choice 5 - Accessibility
+      {
+        type: "MULTIPLE_CHOICE", order: 5, points: 5.00,
+        text: "Dalam pembuatan formulir web, apa keuntungan utama menghubungkan elemen <label> dengan <input> menggunakan atribut for dan id yang cocok?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "Accessibility",
+          correct: "A",
+          options: [
+            "Meningkatkan aksesibilitas bagi screen reader dan memperluas area interaksi klik pengguna ke teks label.",
+            "Menjadikan formulir dapat dikirim ke server secara otomatis tanpa memerlukan tombol submit.",
+            "Melindungi input dari manipulasi kode berbahaya dan serangan injeksi SQL.",
+            "Membuat teks pada label secara otomatis berubah warna menjadi merah saat terjadi kesalahan validasi."
+          ]
+        }
+      },
+      // 6. Multiple Choice 6 - Form Controls
+      {
+        type: "MULTIPLE_CHOICE", order: 6, points: 5.00,
+        text: "Kontrol input formulir HTML manakah yang dirancang khusus untuk memungkinkan pengguna memilih lebih dari satu pilihan secara bersamaan dalam sebuah kelompok?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "Form Controls",
+          correct: "A",
+          options: [
+            "<input type=\"checkbox\">",
+            "<input type=\"radio\">",
+            "<input type=\"select-single\">",
+            "<input type=\"text\">"
+          ]
+        }
+      },
+      // 7. Multiple Choice 7 - Form Validation
+      {
+        type: "MULTIPLE_CHOICE", order: 7, points: 5.00,
+        text: "Apa dampak langsung dari penambahan atribut required pada elemen <input> ketika pengguna mencoba mengirimkan formulir yang masih kosong?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "Form Validation",
+          correct: "A",
+          options: [
+            "Peramban akan menahan pengiriman formulir dan menampilkan pesan peringatan bawaan bahwa bidang tersebut wajib diisi.",
+            "Server secara otomatis mengabaikan field tersebut dan mengisi nilai default string kosong.",
+            "Halaman web otomatis melakukan refresh dan mereset seluruh input pengguna ke keadaan awal.",
+            "Input secara otomatis terisi dengan teks placeholder yang telah didefinisikan sebelumnya."
+          ]
+        }
+      },
+      // 8. Multiple Choice 8 - HTML Element
+      {
+        type: "MULTIPLE_CHOICE", order: 8, points: 5.00,
+        text: "Di antara elemen-elemen HTML berikut, manakah yang tergolong sebagai 'void element' (elemen yang tidak memiliki tag penutup dan tidak dapat menampung konten teks atau anak)?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "HTML Element",
+          correct: "A",
+          options: [
+            "<hr>",
+            "<p>",
+            "<span>",
+            "<button>"
+          ]
+        }
+      },
+      // 9. Multiple Choice 9 - HTML Attribute
+      {
+        type: "MULTIPLE_CHOICE", order: 9, points: 5.00,
+        text: "Ketika membuat tautan eksternal menggunakan atribut target=\"_blank\", mengapa sangat disarankan menambahkan rel=\"noopener noreferrer\"?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "HTML Attribute",
+          correct: "A",
+          options: [
+            "Untuk mencegah halaman baru mengakses objek window.opener demi keamanan dan menjaga performa thread proses peramban.",
+            "Agar mesin pencari otomatis menghitung tautan tersebut sebagai backlink do-follow berkekuatan tinggi.",
+            "Untuk memaksa halaman web tujuan dibuka dalam jendela mode penyamaran (incognito mode).",
+            "Agar peramban memverifikasi sertifikat SSL halaman tujuan sebelum navigasi dilakukan."
+          ]
+        }
+      },
+      // 10. Multiple Choice 10 - Document Structure
+      {
+        type: "MULTIPLE_CHOICE", order: 10, points: 5.00,
+        text: "Di manakah posisi yang paling tepat untuk meletakkan tag metadata pengkodean karakter <meta charset=\"UTF-8\">?",
+        answer: {
+          category: "MULTIPLE_CHOICE",
+          concept: "Document Structure",
+          correct: "A",
+          options: [
+            "Di dalam elemen <head>, diletakkan sedini mungkin sebagai elemen awal sebelum title dan tag lainnya.",
+            "Tepat di bagian bawah elemen <body>, setelah penutup seluruh elemen visual.",
+            "Di luar elemen <html>, sebelum deklarasi doctype dibuka.",
+            "Di dalam elemen <title> sebagai atribut penjelas judul dokumen."
+          ]
+        }
+      },
+      // 11. Drag & Drop 1 - Semantic Elements
+      {
+        type: "DRAG_DROP", order: 11, points: 5.00,
+        text: "Pasangkan sintaks HTML berikut ke dalam kategori peran semantik dan atribut yang tepat:",
+        answer: {
+          category: "DRAG_DROP",
+          concept: "Semantic Elements",
+          items: [
+            { id: "item-1", label: "<nav>" },
+            { id: "item-2", label: "href" },
+            { id: "item-3", label: "<aside>" },
+            { id: "item-4", label: "alt" }
+          ],
+          targets: [
+            { id: "target-1", label: "Elemen Navigasi Dokumen" },
+            { id: "target-2", label: "Atribut URL / Link Tujuan" },
+            { id: "target-3", label: "Elemen Konten Pelengkap / Sidebar" },
+            { id: "target-4", label: "Atribut Aksesibilitas Gambar" }
+          ],
+          correct: {
+            "item-1": "target-1",
+            "item-2": "target-2",
+            "item-3": "target-3",
+            "item-4": "target-4"
+          }
+        }
+      },
+      // 12. Drag & Drop 2 - Form Controls
+      {
+        type: "DRAG_DROP", order: 12, points: 5.00,
+        text: "Pasangkan kontrol atau struktur formulir HTML berikut dengan tujuan dan fungsinya:",
+        answer: {
+          category: "DRAG_DROP",
+          concept: "Form Controls",
+          items: [
+            { id: "item-1", label: "<fieldset>" },
+            { id: "item-2", label: "<legend>" },
+            { id: "item-3", label: "<input type=\"checkbox\">" },
+            { id: "item-4", label: "<input type=\"radio\">" }
+          ],
+          targets: [
+            { id: "target-1", label: "Pengelompok Logis Sekumpulan Input" },
+            { id: "target-2", label: "Judul / Keterangan Grup Kontrol" },
+            { id: "target-3", label: "Pemilihan Multi-Pilihan (Bisa Banyak)" },
+            { id: "target-4", label: "Pemilihan Tunggal Eksklusif dalam Grup" }
+          ],
+          correct: {
+            "item-1": "target-1",
+            "item-2": "target-2",
+            "item-3": "target-3",
+            "item-4": "target-4"
+          }
+        }
+      },
+      // 13. True/False 1 - HTML Element
+      {
+        type: "MULTIPLE_CHOICE", order: 13, points: 5.00,
+        text: "Elemen <div> secara bawaan membawa makna semantik formal yang mengindikasikan bahwa konten di dalamnya merupakan dokumen legal resmi.",
+        answer: {
+          category: "TRUE_FALSE",
+          concept: "HTML Element",
+          correct: "B",
+          options: [
+            "Benar",
+            "Salah"
+          ]
+        }
+      },
+      // 14. True/False 2 - Accessibility
+      {
+        type: "MULTIPLE_CHOICE", order: 14, points: 5.00,
+        text: "Penggunaan elemen semantik HTML5 seperti <header>, <main>, <nav>, dan <footer> secara otomatis menyediakan landmark roles yang dapat dikenali oleh teknologi asistif tanpa konfigurasi manual.",
+        answer: {
+          category: "TRUE_FALSE",
+          concept: "Accessibility",
+          correct: "A",
+          options: [
+            "Benar",
+            "Salah"
+          ]
+        }
+      },
+      // 15. True/False 3 - Form Validation
+      {
+        type: "MULTIPLE_CHOICE", order: 15, points: 5.00,
+        text: "Validasi formulir sisi klien (client-side) menggunakan atribut bawaan HTML5 seperti required dan pattern sudah sepenuhnya cukup untuk menjamin integritas data sistem tanpa perlu melakukan validasi di sisi server.",
+        answer: {
+          category: "TRUE_FALSE",
+          concept: "Form Validation",
+          correct: "B",
+          options: [
+            "Benar",
+            "Salah"
+          ]
+        }
+      },
+      // 16. Code Interpretation 1 - Document Structure
+      {
+        type: "MULTIPLE_CHOICE", order: 16, points: 5.00,
+        text: "Perhatikan potongan kode HTML berikut:\n\n```html\n<!DOCTYPE html>\n<html>\n  <body>\n    <title>Dashboard Aplikasi</title>\n    <h1>Ringkasan Akun</h1>\n  </body>\n</html>\n```\n\nBerdasarkan spesifikasi standar HTML5, kekeliruan struktural apakah yang terdapat pada dokumen di atas?",
+        answer: {
+          category: "CODE_INTERPRETATION",
+          concept: "Document Structure",
+          correct: "A",
+          options: [
+            "Elemen <title> diletakkan di dalam <body>, padahal seharusnya wajib berada di dalam elemen <head>.",
+            "Elemen <h1> tidak boleh digunakan sebelum elemen <title> dideklarasikan.",
+            "Dokumen HTML5 dilarang memiliki elemen <body> jika tidak memiliki atribut language pada doctype.",
+            "Tag penutup </html> harus ditulis dengan huruf kapital agar valid."
+          ]
+        }
+      },
+      // 17. Code Interpretation 2 - Form Controls
+      {
+        type: "MULTIPLE_CHOICE", order: 17, points: 5.00,
+        text: "Perhatikan cuplikan formulir HTML berikut:\n\n```html\n<form>\n  <input type=\"radio\" name=\"paket\" value=\"basic\"> Paket Dasar\n  <input type=\"radio\" name=\"paket\" value=\"pro\"> Paket Pro\n  <input type=\"radio\" name=\"addon\" value=\"cloud\"> Cloud Storage\n</form>\n```\n\nJika pengguna mengklik opsi 'Paket Dasar' lalu kemudian mengklik 'Cloud Storage', apa yang terjadi pada status pemilihan tombol radio tersebut?",
+        answer: {
+          category: "CODE_INTERPRETATION",
+          concept: "Form Controls",
+          correct: "A",
+          options: [
+            "Kedua opsi ('Paket Dasar' dan 'Cloud Storage') akan tetap terpilih bersamaan karena memiliki nilai atribut 'name' yang berbeda.",
+            "Pilihan 'Paket Dasar' otomatis batal karena dalam satu tag <form> hanya boleh ada satu tombol radio aktif.",
+            "Browser memicu error formulir karena nama kelompok radio tidak identik.",
+            "Tombol 'Cloud Storage' tidak akan bisa diklik sebelum paket utama disubmit."
+          ]
+        }
+      },
+      // 18. Code Interpretation 3 - HTML Attribute
+      {
+        type: "MULTIPLE_CHOICE", order: 18, points: 5.00,
+        text: "Perhatikan elemen tautan navigasi internal berikut:\n\n```html\n<a href=\"#kebijakan-privasi\">Lihat Kebijakan Privasi</a>\n```\n\nKetika pengguna mengklik tautan tersebut pada peramban, bagaimana perilaku default yang terjadi?",
+        answer: {
+          category: "CODE_INTERPRETATION",
+          concept: "HTML Attribute",
+          correct: "A",
+          options: [
+            "Peramban akan menggulir tampilan halaman (scroll) ke elemen yang memiliki atribut id=\"kebijakan-privasi\" tanpa memuat ulang halaman.",
+            "Peramban mengirimkan permintaan HTTP GET baru untuk mengunduh file terpisah bernama kebijakan-privasi.html.",
+            "Peramban memuat ulang halaman secara penuh dari awal lalu menampilkan pesan peringatan modal.",
+            "Tautan tidak melakukan tindakan apa pun karena simbol tanda pagar (#) menandakan link nonaktif."
+          ]
+        }
+      },
+      // 19. Scenario 1 - Semantic Elements
+      {
+        type: "MULTIPLE_CHOICE", order: 19, points: 5.00,
+        text: "Seorang developer menemukan kode komponen artikel lama yang seluruhnya menggunakan elemen <div>:\n\n```html\n<div class=\"post-wrapper\">\n  <div class=\"post-heading\">Panduan Memulai CSS Grid</div>\n  <div class=\"post-content\">CSS Grid memudahkan tata letak dua dimensi...</div>\n</div>\n```\n\nUntuk meningkatkan kualitas SEO, keterbacaan kode, dan aksesibilitas web standar, refactoring semantik manakah yang paling ideal?",
+        answer: {
+          category: "SCENARIO",
+          concept: "Semantic Elements",
+          correct: "A",
+          options: [
+            "Mengganti pembungkus luar menjadi <article>, judul menjadi heading semantik <h2>, dan isi paragraf menjadi elemen <p>.",
+            "Mengganti seluruh elemen <div> menjadi elemen generic <span> dengan atribut title.",
+            "Membungkus kode tersebut di dalam tag <nav> dan menambahkan inline style font-weight: bold.",
+            "Cukup menambahkan atribut class=\"semantic\" pada setiap div tanpa mengubah struktur tag HTML."
+          ]
+        }
+      },
+      // 20. Scenario 2 - Form Validation
+      {
+        type: "MULTIPLE_CHOICE", order: 20, points: 5.00,
+        text: "Sebuah aplikasi web mengharuskan pengguna mengisi formulir registrasi yang memuat alamat email dan nomor telepon (10 hingga 13 digit angka). Keduanya wajib diisi sebelum data dapat dikirim. Kombinasi atribut standar HTML5 manakah yang paling tepat diterapkan pada kedua elemen <input> tersebut?",
+        answer: {
+          category: "SCENARIO",
+          concept: "Form Validation",
+          correct: "A",
+          options: [
+            "Gunakan type=\"email\" required untuk input email, dan type=\"tel\" pattern=\"[0-9]{10,13}\" required untuk nomor telepon.",
+            "Gunakan type=\"text\" untuk kedua input tanpa atribut tambahan, lalu serahkan validasi sepenuhnya pada event klik tombol.",
+            "Gunakan type=\"number\" untuk email dan type=\"password\" untuk nomor telepon agar terenkripsi.",
+            "Gunakan type=\"search\" required pada kedua input agar peramban otomatis mencari format yang sesuai."
+          ]
+        }
       },
     ];
 
+    // Difficulty untuk tiap soal HTML Basics. Default MEDIUM; soal awal EASY.
+    const htmlBasicsDifficulty = { 1: "EASY", 2: "EASY", 3: "MEDIUM" };
+
     const savedQuestionsHtml = [];
     for (const q of questionsHtmlBasics) {
-      const saved = await upsertRow(
-        client, "questions",
-        ["assessment_id", "type", "question_text", "correct_answer", "points", "order_index"],
-        [assessHtmlBasics.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order],
-        "(assessment_id, order_index)", "assessment_id", assessHtmlBasics.id
+      const conceptName = q.answer.concept;
+      if (!conceptName || !concepts[conceptName]) {
+        throw new Error(`seed: soal HTML Basics #${q.order} tidak punya konsep valid (concept="${conceptName}")`);
+      }
+      const saved = await upsertQuestion(
+        client,
+        assessHtmlBasics.id,
+        concepts[conceptName].id,
+        htmlBasicsDifficulty[q.order] || "MEDIUM",
+        q.type,
+        q.text,
+        JSON.stringify(q.answer),
+        q.points,
+        q.order
       );
       savedQuestionsHtml.push(saved);
     }
@@ -458,23 +815,23 @@ async function seed() {
 
     const questionsLevelFinal = [
       {
-        type: "MULTIPLE_CHOICE", order: 1, points: 10,
+        type: "MULTIPLE_CHOICE", order: 1, points: 10, difficulty: "MEDIUM",
+        concept: "Semantic Elements",
         text: "Elemen semantik mana yang digunakan untuk konten utama halaman?",
         answer: { correct: "B", options: ["<div>", "<main>", "<section>", "<article>"] }
       },
       {
-        type: "ESSAY", order: 2, points: 20,
+        type: "ESSAY", order: 2, points: 20, difficulty: "HARD",
+        concept: "Accessibility",
         text: "Jelaskan perbedaan antara elemen <div> dan elemen semantik HTML5.",
         answer: { criteria: ["semantic meaning", "accessibility", "SEO", "structure"] }
       },
     ];
 
     for (const q of questionsLevelFinal) {
-      await upsertRow(
-        client, "questions",
-        ["assessment_id", "type", "question_text", "correct_answer", "points", "order_index"],
-        [assessLevelFinal.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order],
-        "(assessment_id, order_index)", "assessment_id", assessLevelFinal.id
+      await upsertQuestion(
+        client, assessLevelFinal.id, concepts[q.concept].id, q.difficulty,
+        q.type, q.text, JSON.stringify(q.answer), q.points, q.order
       );
     }
 
@@ -488,23 +845,23 @@ async function seed() {
 
     const questionsJsPractice = [
       {
-        type: "MULTIPLE_CHOICE", order: 1, points: 10,
+        type: "MULTIPLE_CHOICE", order: 1, points: 10, difficulty: "EASY",
+        concept: "Variable Declaration",
         text: "Keyword mana yang membuat variabel yang TIDAK bisa di-reassign?",
         answer: { correct: "C", options: ["var", "let", "const", "function"] }
       },
       {
-        type: "CODE", order: 2, points: 15,
+        type: "CODE", order: 2, points: 15, difficulty: "MEDIUM",
+        concept: "Variable Declaration",
         text: "Tulis deklarasi variabel menggunakan const untuk menyimpan nama 'Xora' dan let untuk menyimpan angka 42.",
         answer: { expected: "const name = 'Xora';\nlet number = 42;", criteria: ["const", "let", "string", "number"] }
       },
     ];
 
     for (const q of questionsJsPractice) {
-      await upsertRow(
-        client, "questions",
-        ["assessment_id", "type", "question_text", "correct_answer", "points", "order_index"],
-        [assessJsPractice.id, q.type, q.text, JSON.stringify(q.answer), q.points, q.order],
-        "(assessment_id, order_index)", "assessment_id", assessJsPractice.id
+      await upsertQuestion(
+        client, assessJsPractice.id, concepts[q.concept].id, q.difficulty,
+        q.type, q.text, JSON.stringify(q.answer), q.points, q.order
       );
     }
 
@@ -556,9 +913,9 @@ async function seed() {
     // Evidence for each HTML Basics question
     if (savedQuestionsHtml.length >= 3) {
       const evidenceData = [
-        { question: savedQuestionsHtml[0], concept: "HTML Element",      answer: { selected: "B" }, correct: true,  score: 10.00, time: 30 },
-        { question: savedQuestionsHtml[1], concept: "HTML Attribute",    answer: { selected: "C" }, correct: true,  score: 10.00, time: 25 },
-        { question: savedQuestionsHtml[2], concept: "Document Structure",answer: { code: "<!DOCTYPE html><html><head><title>Hello World</title></head><body></body></html>" }, correct: true, score: 18.00, time: 120 },
+        { question: savedQuestionsHtml[0], concept: "HTML Element",      answer: { selected: "A" }, correct: true,  score: 5.00, time: 25 },
+        { question: savedQuestionsHtml[1], concept: "HTML Attribute",    answer: { selected: "A" }, correct: true,  score: 5.00, time: 20 },
+        { question: savedQuestionsHtml[2], concept: "Document Structure",answer: { selected: "A" }, correct: true, score: 5.00, time: 30 },
       ];
 
       for (const ev of evidenceData) {

@@ -14,11 +14,24 @@ const assessmentRoutes = require("./routes/assessments");
 const authRoutes = require("./routes/auth");
 const attemptRoutes = require("./routes/attempts");
 const masteryRoutes = require("./routes/mastery");
+const profileRoutes = require("./routes/profile");
+const learningPathRoutes = require("./routes/learningPath");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Health check
@@ -38,15 +51,17 @@ app.get("/api/health", async (req, res) => {
 });
 
 // API routes
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/learning-path", learningPathRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/levels", levelRoutes);
 app.use("/api/topics", topicRoutes);
 app.use("/api/concepts", conceptRoutes);
 app.use("/api/assessments", assessmentRoutes);
-app.use("/api/auth", authRoutes);
 app.use("/api/attempts", attemptRoutes);
 app.use("/api/mastery", masteryRoutes);
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend Xora berjalan di http://localhost:${PORT}`);
 });
