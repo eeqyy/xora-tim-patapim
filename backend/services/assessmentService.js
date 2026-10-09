@@ -5,6 +5,7 @@
 
 const pool = require("../db");
 const masteryService = require("./masteryService");
+const gapService = require("./gapService");
 const questionService = require("./questionService");
 const { badRequest, notFound, conflict } = require("../utils/errors");
 // Grader bersama untuk ESSAY/CODE — dipakai juga oleh attemptService,
@@ -517,6 +518,14 @@ const attemptRes = await pool.query(`
         );
       } catch (masteryError) {
         console.error("MASTERY RECALC FAILED (evidence tetap tersimpan):", masteryError);
+      }
+
+      // Gap pipeline: bila attempt ini adalah attempt verifikasi diagnostic,
+      // selesaikan verifikasi (CONFIRMED/REJECTED) setelah evidence ter-commit.
+      try {
+        await gapService.resolveVerification(learnerId, attemptId);
+      } catch (gapError) {
+        console.error("GAP VERIFICATION RESOLVE FAILED (evidence tetap tersimpan):", gapError);
       }
 
       return {

@@ -19,6 +19,7 @@ const {
   round2,
   clamp01,
 } = require("../config/masteryThresholds");
+const gapService = require("./gapService");
 
 const masteryService = {
   /**
@@ -137,6 +138,16 @@ const masteryService = {
       gap_status,
       last_assessed_at,
     });
+
+    // Gap pipeline: begitu konsep berstatus POSSIBLE_GAP, jalankan diagnosis
+    // otomatis (idempotent). Kegagalan di sini tidak boleh membatalkan recalc.
+    if (gap_status === "POSSIBLE_GAP") {
+      try {
+        await gapService.onPossibleGapDetected(learnerId, conceptId);
+      } catch (gapErr) {
+        console.error("gapService.onPossibleGapDetected ERROR:", gapErr);
+      }
+    }
 
     return {
       conceptId,

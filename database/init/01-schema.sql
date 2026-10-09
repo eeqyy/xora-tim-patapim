@@ -855,6 +855,7 @@ CREATE TABLE diagnostic_verifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     diagnostic_id UUID NOT NULL,
     verification_assessment_id UUID NOT NULL,
+    attempt_id UUID,
     result TEXT NOT NULL,
     evidence_score NUMERIC(5,2),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -871,6 +872,12 @@ CREATE TABLE diagnostic_verifications (
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
 
+    CONSTRAINT fk_diagnostic_verifications_attempt
+        FOREIGN KEY (attempt_id)
+        REFERENCES attempts(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     CONSTRAINT chk_diagnostic_verification_score
         CHECK (
             evidence_score IS NULL
@@ -883,6 +890,9 @@ CREATE INDEX idx_diagnostic_verifications_diagnostic
 
 CREATE INDEX idx_diagnostic_verifications_assessment
     ON diagnostic_verifications(verification_assessment_id);
+
+CREATE INDEX idx_diagnostic_verifications_attempt
+    ON diagnostic_verifications(attempt_id);
 
 
 -- ============================================================
