@@ -21,6 +21,10 @@ import MasteryDetailPage from "./pages/MasteryDetailPage";
 import AssessmentListPage from "./pages/AssessmentListPage";
 import AssessmentPage from "./pages/AssessmentPage";
 import AssessmentResultPage from "./pages/AssessmentResultPage";
+import GapsListPage from "./pages/GapsListPage";
+import GapsDetailPage from "./pages/GapsDetailPage";
+import RecommendationsPage from "./pages/RecommendationsPage";
+import MateriPage from "./pages/MateriPage";
 import AdminAssessmentsPage from "./pages/AdminAssessmentsPage";
 import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
 
@@ -103,6 +107,32 @@ function AppContent() {
     pageContent = (
       <ProtectedRoute>
         <AssessmentPage assessmentId={assessmentId} />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/gaps") {
+    pageContent = (
+      <ProtectedRoute>
+        <GapsListPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/gaps/")) {
+    const conceptId = currentPath.replace("/gaps/", "").split("?")[0];
+    pageContent = (
+      <ProtectedRoute>
+        <GapsDetailPage params={{ conceptId }} />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/recommendations") {
+    pageContent = (
+      <ProtectedRoute>
+        <RecommendationsPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/materials/")) {
+    const actionId = currentPath.replace("/materials/", "").split("?")[0];
+    pageContent = (
+      <ProtectedRoute>
+        <MateriPage params={{ actionId }} />
       </ProtectedRoute>
     );
   } else if (currentPath === "/admin/assessments") {

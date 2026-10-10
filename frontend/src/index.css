@@ -4082,5 +4082,74 @@ margin-top: 2px;
 .ui-result-verdict { display: flex; flex-direction: column; gap: 10px; }
 .ui-result-note { font-size: 13px; color: var(--text-2); }
 @media (max-width: 720px) {
-  .ui-result-banner { grid-template-columns: 1fr; text-align: center; }
+.ui-result-banner { grid-template-columns: 1fr; text-align: center; }
 }
+
+/* ============================================================
+   F4 — Gaps / Diagnostics / Recommendations / Materi
+   ============================================================ */
+.ui-stat-num.err { color: var(--error); }
+
+/* Meter inline (root cause dip  baris) */
+.ui-meter-inline { width: 100%; min-width: 120px; }
+
+/* Gap state banner */
+.ui-gap-state { padding: 20px; margin-bottom: 20px; }
+.ui-gap-state-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.ui-gap-state-block { display: flex; flex-direction: column; gap: 6px; }
+.ui-gap-state-big { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; padding-top: 4px; }
+.ui-gap-pattern { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--text-3); }
+@media (max-width: 720px) {
+  .ui-gap-state-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Error pattern rows */
+.ui-gap-pattern-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ui-gap-pattern-row:last-child { border-bottom: 0; }
+
+/* Suspect root cause */
+.ui-gap-rc { display: flex; flex-direction: column; gap: 12px; }
+.ui-gap-rc-name { font-size: 16px; font-weight: 700; }
+.ui-gap-rc-alts { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+/* KV row (diagnostic) */
+.ui-kv-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 720px) {
+  .ui-kv-row { grid-template-columns: 1fr; }
+}
+
+/* Action list (rekomendasi) */
+.ui-action-list { display: flex; flex-direction: column; gap: 12px; }
+.ui-action { padding: 16px; }
+.ui-action-elevated { box-shadow: 0 0 0 1px var(--accent-weak), 0 6px 24px rgba(0, 0, 0, 0.06); }
+.ui-action-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ui-action-concept { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.ui-action-reason { font-size: 13px; color: var(--text-2); margin: 0 0 12px; line-height: 1.5; }
+.ui-action-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Materi list */
+.ui-material-list { display: flex; flex-direction: column; gap: 10px; }
+.ui-material { padding: 14px 16px; }
+.ui-material-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; font-size: 12px; }
+.ui-material-title { font-size: 14px; font-weight: 600; color: var(--text-1); }

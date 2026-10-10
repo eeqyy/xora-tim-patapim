@@ -72,6 +72,18 @@ export default function Navbar() {
               >
                 Asesmen
               </Link>
+              <Link
+                to="/gaps"
+                className={["ui-nav-link", isActive("/gaps") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
+              >
+                Gap
+              </Link>
+              <Link
+                to="/recommendations"
+                className={["ui-nav-link", isActive("/recommendations") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
+              >
+                Rekomendasi
+              </Link>
               {isAdmin && (
                 <Link
                   to="/admin/assessments"

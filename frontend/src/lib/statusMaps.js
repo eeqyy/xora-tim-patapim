@@ -159,3 +159,22 @@ export function categoryMeta(value) {
     "neutral"
   );
 }
+
+export const MATERIAL_TYPE_LABELS = {
+  ARTICLE: "Artikel",
+  VIDEO: "Video",
+  CODE_EXAMPLE: "Contoh Kode",
+  DOCUMENT: "Dokumen",
+  LINK: "Tautan",
+};
+
+export function materialTypeMeta(value) {
+  return toneFor(MATERIAL_TYPE_LABELS, { VIDEO: "cyan", CODE_EXAMPLE: "indigo", ARTICLE: "neutral" }, value, "neutral");
+}
+
+export const DIAGNOSTIC_LABELS = {
+  PENDING: "Menunggu",
+  HYPOTHESIS: "Hipotesis",
+  VERIFIED: "Terverifikasi",
+  FAILED: "Gagal",
+};
