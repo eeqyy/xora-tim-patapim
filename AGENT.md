@@ -456,16 +456,17 @@ Future AI agents must follow this 8-step lifecycle:
 ## 13. Current State & Known Limitations
 
 ### 13.1 Verified Working Features (Current Snapshot)
-- **Authentication & Sessions:** Full registration, login, and JWT persistence.
-- **Onboarding:** 3-step onboarding flow (`/onboarding`) saving preferences to database.
-- **Homepage:** Light Pastel Glassmorphism redesign complete with responsive floating navbar.
-- **Dashboard:** Hierarchical curriculum view (`Subject → Level → Topic → Concept`) with progress bars and honest data state.
-- **Assessment Engine:** Complete 20-question test runner (`AssessmentPage.jsx`), supporting Multiple Choice and interactive Drag-and-Drop challenges, with server-side transaction scoring and `evidence` record creation.
+- **Frontend rebuild F0–F8 selesai** (branch `feat/frontend-rebuild`, commit per fase): foundation design system & api client (F0), auth & onboarding (F1), dashboard/learning path/mastery (F2), assessment list/runner/result (F3), gaps/recommendations/materials (F4), practice/history/checkpoint (F5), admin catalog CRUD subjects·levels·topics·concepts (F6), admin materials CRUD (F7), admin oversight users & learning paths (F8).
+- **Auth & Sessions:** Register, login, logout via token (key `xora_auth_token`) + `sessionService.resolve` untuk `req.user {id, email, name, roles}`.
+- **Assessment Engine:** Runner + server-side transaction scoring + `evidence`; dua jalur attempt (`/api/attempts` legacy vs `/api/assessments/attempts/*` — hanya jalur assessment yang dipakai frontend).
+- **Area Admin** (`/admin/*`, `AdminRoute`): asesmen (sudah ada sejak awal), lalu CRUD katalog + materi + oversight pengguna & learning path (F6–F8). Semua halaman memakai kelas legacy `card`/`admin-table`/`btn` + `AdminNav` tab.
+- **Backend admin routes:** semua mutasi validasi UUID/enum + pre-check dependents (409), pengaman F8 (admin tidak bisa mencabut ADMIN sendiri / ADMIN aktif terakhir).
 
 ### 13.2 Known System Limitations (To Address in Next Phases)
-- **Concept State Aggregation:** While the `learner_concept_states` table exists in PostgreSQL DDL (`01-schema.sql`), there is currently no background worker or trigger that aggregates raw `evidence` rows into computed `mastery_score`, `gap_status`, and `evidence_confidence`.
-- **Diagnostic Engine:** The `diagnostics` and `action_recommendations` tables exist in DDL, but root-cause tracing through `concept_prerequisites` has not yet been built into a dedicated backend service.
-- **Content Breadth:** Currently only the "Web Development" subject and its Level 01–05 curriculum are seeded in `backend/seed.js`.
+- **Migrations tidak auto-apply:** `database/migrations/002..005` harus dijalankan manual ke Supabase.
+- **Grading:** ESSAY/CODE diperbaiki; DRAG_DROP masih 0 (`UNGRADED_NO_CRITERIA`) — di luar scope.
+- **Content Breadth:** Kurikulum seeder hanya subjek "Web Development" (Level 01–05).
+- **Dead code (G5, menunggu konfirmasi hapus):** `backend/middlewares/` (plural), `backend/config/auth.js`, `jsonwebtoken` — sistem memakai `backend/middleware/` (singular) + token sesi.
 
 ---
 
