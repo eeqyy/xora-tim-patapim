@@ -23,6 +23,8 @@ const recommendationRoutes = require("./routes/recommendations");
 const practiceRoutes = require("./routes/practices");
 const historyRoutes = require("./routes/history");
 const aiRoutes = require("./routes/ai");
+const adminUserRoutes = require("./routes/adminUsers");
+const adminLearningPathRoutes = require("./routes/adminLearningPaths");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -74,6 +76,8 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/practices", practiceRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/admin/users", adminUserRoutes);
+app.use("/api/admin/learning-paths", adminLearningPathRoutes);
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend Xora berjalan di http://localhost:${PORT}`);
 });

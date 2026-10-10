@@ -271,11 +271,29 @@ export const adminQuestionsApi = {
 const CATALOG_MAP = {
   id: "id",
   name: "name",
+  email: "email",
+  roles: "roles",
+  status: "status",
   title: "title",
   type: "type",
   content: "content",
+  learning_goal: "learningGoal",
+  experience_level: "experienceLevel",
+  onboarding_completed: "onboardingCompleted",
+  preferred_subject_name: "preferredSubjectName",
+  employee_code: "employeeCode",
+  learner_id: "learnerId",
+  learner_name: "learnerName",
+  learner_email: "learnerEmail",
+  initial_level_id: "initialLevelId",
+  initial_level_name: "initialLevelName",
+  current_level_id: "currentLevelId",
+  current_level_name: "currentLevelName",
+  current_level_order: "currentLevelOrder",
+  total_levels: "totalLevels",
+  started_at: "startedAt",
+  completed_at: "completedAt",
   description: "description",
-  status: "status",
   difficulty: "difficulty",
   created_at: "createdAt",
   updated_at: "updatedAt",
@@ -379,6 +397,32 @@ export const adminCatalogApi = {
       withCatalog(apiRequest(`/api/materials/${id}`, { method: "PUT", body, token })),
     remove: (id, token) => withCatalog(apiRequest(`/api/materials/${id}`, { method: "DELETE", token })),
   },
+};
+
+// Oversight admin: akun pengguna (role + status) & learning path learner.
+export const adminUserApi = {
+  list: (token, params = {}) => {
+    const qs = params.search ? `?search=${encodeURIComponent(params.search)}` : "";
+    return withCatalog(apiRequest(`/api/admin/users${qs}`, { method: "GET", token }));
+  },
+  setRoles: (id, roles, token) =>
+    withCatalog(apiRequest(`/api/admin/users/${id}/roles`, { method: "PUT", body: { roles }, token })),
+  setStatus: (id, status, token) =>
+    withCatalog(apiRequest(`/api/admin/users/${id}/status`, { method: "PATCH", body: { status }, token })),
+};
+
+export const adminLearningPathApi = {
+  list: (token, params = {}) => {
+    const qs = new URLSearchParams();
+    if (params.search) qs.set("search", params.search);
+    if (params.status) qs.set("status", params.status);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return withCatalog(apiRequest(`/api/admin/learning-paths${suffix}`, { method: "GET", token }));
+  },
+  setStatus: (id, status, token) =>
+    withCatalog(apiRequest(`/api/admin/learning-paths/${id}/status`, { method: "PATCH", body: { status }, token })),
+  setCurrentLevel: (id, levelId, token) =>
+    withCatalog(apiRequest(`/api/admin/learning-paths/${id}/current-level`, { method: "PATCH", body: { levelId }, token })),
 };
 
 export const masteryApi = {

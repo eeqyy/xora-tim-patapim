@@ -34,6 +34,8 @@ import AdminLevelsPage from "./pages/AdminLevelsPage";
 import AdminTopicsPage from "./pages/AdminTopicsPage";
 import AdminConceptsPage from "./pages/AdminConceptsPage";
 import AdminMaterialsPage from "./pages/AdminMaterialsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminLearningPathsPage from "./pages/AdminLearningPathsPage";
 import AdminAssessmentsPage from "./pages/AdminAssessmentsPage";
 import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
 
@@ -211,6 +213,18 @@ function AppContent() {
     pageContent = (
       <AdminRoute>
         <AdminMaterialsPage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/users") {
+    pageContent = (
+      <AdminRoute>
+        <AdminUsersPage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/learning-paths") {
+    pageContent = (
+      <AdminRoute>
+        <AdminLearningPathsPage />
       </AdminRoute>
     );
   } else {

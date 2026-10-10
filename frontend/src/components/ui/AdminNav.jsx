@@ -17,6 +17,8 @@ const TABS = [
   { path: "/admin/topics", label: "Topik" },
   { path: "/admin/concepts", label: "Konsep" },
   { path: "/admin/materials", label: "Materi" },
+  { path: "/admin/users", label: "Pengguna" },
+  { path: "/admin/learning-paths", label: "Learning Path" },
 ];
 
 export default function AdminNav() {

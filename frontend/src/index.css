@@ -4175,3 +4175,18 @@ margin-top: 2px;
   color: #f87171;
   margin-top: 4px;
 }
+
+/* Admin Users: baris checkbox role inline */
+.admin-fieldset .checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Admin Learning Paths: baris email di bawah nama learner */
+.block-sub {
+  display: block;
+  font-weight: 400;
+  margin-top: 2px;
+}
