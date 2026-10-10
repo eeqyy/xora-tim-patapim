@@ -134,3 +134,28 @@ export function actionTypeMeta(value) {
   if (value === "RUN_DIAGNOSTIC") return { label: ACTION_TYPE_LABELS.RUN_DIAGNOSTIC, tone: "warning" };
   return practiceTypeMeta(value);
 }
+
+export function assessmentTypeMeta(value) {
+  return toneFor(ASSESSMENT_TYPE_LABELS, { TOPIC: "neutral", LEVEL_FINAL: "warning", PRACTICE: "success" }, value, "neutral");
+}
+
+export const CATEGORY_LABELS = {
+  CONCEPTUAL: "Konseptual",
+  TRUE_FALSE: "Benar / Salah",
+  CODE_INTERPRETATION: "Interpretasi Kode",
+  SCENARIO: "Skenario",
+};
+
+export function categoryMeta(value) {
+  return toneFor(
+    CATEGORY_LABELS,
+    {
+      TRUE_FALSE: "neutral",
+      CODE_INTERPRETATION: "warning",
+      SCENARIO: "success",
+      CONCEPTUAL: "neutral",
+    },
+    value,
+    "neutral"
+  );
+}
