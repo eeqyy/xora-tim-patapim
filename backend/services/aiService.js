@@ -1,6 +1,9 @@
 const pool = require("../db");
-const { SYSTEM_INSTRUCTION, USER_INPUT_FORMAT, EXPECTED_OUTPUT_SCHEMA, buildPrompt } = require("../config/aiPrompt");
+const { SYSTEM_INSTRUCTION, EXPECTED_OUTPUT_SCHEMA, buildPrompt } = require("../config/aiPrompt");
 const aiProvider = require("../config/aiProvider");
+const { MASTERY_CONFIG } = require("../config/masteryThresholds");
+const gapService = require("./gapService");
+const { validateAiDiagnosis } = require("../utils/aiValidator");
 
 async function analyzeEvidence(learnerId, { conceptId } = {}) {
   if (!learnerId || typeof learnerId !== "string") {
@@ -41,25 +44,69 @@ async function analyzeEvidence(learnerId, { conceptId } = {}) {
   }
   const dominantPattern = Object.entries(patternCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 
+  const conceptsRes = await pool.query(`SELECT id, name FROM concepts`);
+  const validConceptIds = conceptsRes.rows.map((r) => r.id);
+  const conceptNameById = new Map(conceptsRes.rows.map((r) => [r.id, r.name]));
+
   const evidenceList = evidenceRows.map((r) => ({
     evidence_id: r.evidence_id,
     concept_id: r.concept_id,
+    concept_name: conceptNameById.get(r.concept_id) || null,
     score: Number(r.score),
     difficulty: r.difficulty,
     error_pattern: r.error_pattern,
     created_at: r.created_at,
     attempt_id: r.attempt_id,
   }));
-  const conceptIdsQuery = await pool.query(`SELECT id FROM concepts`);
-  const validConceptIds = conceptIdsQuery.rows.map((r) => r.id);
-  const validEvidenceIds = evidenceIds;
+
+  const targetConceptId = conceptId || evidenceRows[0].concept_id;
+
+  // Konteks status gap learner pada konsep target (null bila belum ada state).
+  const stateRes = await pool.query(
+    `SELECT gap_status FROM learner_concept_states
+      WHERE learner_id = $1 AND concept_id = $2`,
+    [learnerId, targetConceptId]
+  );
+
+  // Rantai prerequisite (kandidat root cause) — enrich analisis AI.
+  let prerequisiteChain = [];
+  try {
+    const rootCause = await gapService.suspectRootCause(learnerId, targetConceptId);
+    if (rootCause) {
+      prerequisiteChain = [
+        {
+          concept_id: rootCause.conceptId,
+          name: rootCause.name,
+          mastery_score: rootCause.masteryScore,
+          evidence_count: rootCause.evidenceCount,
+          gap_status: rootCause.gapStatus,
+        },
+        ...rootCause.alternatives.map((a) => ({
+          concept_id: a.conceptId,
+          name: a.name,
+          mastery_score: a.masteryScore,
+          evidence_count: null,
+          gap_status: null,
+        })),
+      ];
+    }
+  } catch (e) {
+    // Non-fatal: rantai prerequisite hanya enrichment, jangan gagalkan analisis.
+    console.warn("suspectRootCause gagal (diabaikan):", e.message);
+  }
+
   const userInput = {
     learner_id: learnerId,
-    target_concept_id: conceptId || evidenceRows[0].concept_id,
-    target_concept_name: null,
-    gap_status: null,
+    target_concept_id: targetConceptId,
+    target_concept_name: conceptNameById.get(targetConceptId) || null,
+    gap_status: stateRes.rows[0]?.gap_status || null,
     evidence_records: evidenceList,
-    prerequisite_chain: [],
+    prerequisite_chain: prerequisiteChain,
+    aggregation_context: {
+      min_evidence_threshold: MASTERY_CONFIG.minEvidence,
+      mastered_threshold: MASTERY_CONFIG.masteredThreshold,
+      possible_gap_threshold: MASTERY_CONFIG.possibleGapThreshold,
+    },
     error_analysis: {
       dominant_error_pattern: dominantPattern,
       pattern_distribution: patternCounts,
@@ -88,33 +135,23 @@ async function analyzeEvidence(learnerId, { conceptId } = {}) {
   }
 
   // Validate against contract
-  let validatorModule;
-  try {
-    validatorModule = require("../utils/aiValidator");
-  } catch (e) {
-    // File pending; skip validation but log
-    console.warn("aiValidator module tidak tersedia (pending)");
+  const result = validateAiDiagnosis(candidate, {
+    validConceptIds,
+    validEvidenceIds: evidenceIds,
+  });
+  if (!result.ok) {
+    const err = new Error(`Respons AI tidak valid: ${(result.errors || []).join("; ")}`);
+    err.statusCode = 502;
+    throw err;
   }
-
-  if (validatorModule && validatorModule.validateAiDiagnosis) {
-    const result = validatorModule.validateAiDiagnosis(candidate, {
-      validConceptIds,
-      validEvidenceIds: evidenceIds,
-    });
-    if (!result.ok) {
-      const err = new Error(`Respons AI tidak valid: ${(result.errors || []).join("; ")}`);
-      err.statusCode = 502;
-      throw err;
-    }
-    candidate = result.value || candidate;
-  }
+  candidate = result.value || candidate;
 
   return {
     suspected_concept: candidate.suspected_concept || candidate,
     confidence: candidate.confidence,
     reason: candidate.reason,
     reference_evidence_ids: candidate.reference_evidence_ids,
-    provider_model: process.env.AI_MODEL || "gpt-4o-mini",
+    provider_model: process.env.AI_MODEL || aiProvider.DEFAULT_MODEL,
     evidence_count: evidenceList.length,
   };
 }

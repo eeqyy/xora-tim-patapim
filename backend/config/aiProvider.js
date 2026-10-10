@@ -53,7 +53,9 @@ async function chat(messages, { jsonMode = null } = {}) {
       if (!res.ok) {
         const text = await res.text();
         const err = new Error(`AI provider error ${res.status}: ${text}`);
-        err.statusCode = 504;
+        // Transien (429/5xx) -> 504 gateway-ish; 4xx nyata (400/401/403/404)
+        // dipertahankan agar client tahu error konfigurasi/auth, bukan timeout.
+        err.statusCode = isTransientHttpStatus(res.status) ? 504 : res.status;
         err.httpStatus = res.status; // untuk keputusan retry
         throw err;
       }
@@ -113,4 +115,4 @@ async function chat(messages, { jsonMode = null } = {}) {
   throw lastError;
 }
 
-module.exports = { chat };
+module.exports = { chat, DEFAULT_MODEL };
