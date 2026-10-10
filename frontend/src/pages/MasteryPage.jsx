@@ -22,7 +22,7 @@ export default function MasteryPage() {
   const { navigate } = useRouter();
   const mastery = useAsync(() => masteryApi.getSummary(token), [token]);
 
-  const rows = mastery.data || [];
+  const rows = Array.isArray(mastery.data) ? mastery.data : [];
   const mastered = rows.filter((r) => r.gap_status === "MASTERED" || r.mastery_score >= 80).length;
   const gaps = rows.filter((r) => GAP_OPEN.has(r.gap_status)).length;
   const avg = rows.length ? rows.reduce((a, r) => a + (Number(r.mastery_score) || 0), 0) / rows.length : null;

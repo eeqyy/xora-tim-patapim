@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const mastery = useAsync(() => masteryApi.getSummary(token), [token]);
   const next = useAsync(() => recommendationsApi.getNextStep(token), [token]);
 
-  const rows = mastery.data || [];
+  const rows = Array.isArray(mastery.data) ? mastery.data : [];
   const mastered = rows.filter((r) => r.gap_status === "MASTERED" || r.mastery_score >= 80);
   const gapsOpen = rows.filter((r) => GAP_IN_PROGRESS.has(r.gap_status));
   const avgScore = rows.length ? rows.reduce((a, r) => a + (Number(r.mastery_score) || 0), 0) / rows.length : null;

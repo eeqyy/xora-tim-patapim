@@ -14,9 +14,12 @@ export default function useAsync(fn, deps = []) {
   const run = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const data = await fnRef.current();
-      if (mountedRef.current) setState({ loading: false, data, error: null });
-      return data;
+      const res = await fnRef.current();
+      if (mountedRef.current) {
+        const payload = res && typeof res === "object" && "data" in res ? res.data : res;
+        setState({ loading: false, data: payload, error: null });
+      }
+      return res;
     } catch (err) {
       if (mountedRef.current) setState({ loading: false, data: null, error: err });
       throw err;
