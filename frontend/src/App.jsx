@@ -11,6 +11,8 @@ import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import OnboardingPage from "./pages/OnboardingPage";
+import LearningPathConfirmPage from "./pages/LearningPathConfirmPage";
 import ProfilePage from "./pages/ProfilePage";
 import LearningPathPage from "./pages/LearningPathPage";
 import AssessmentListPage from "./pages/AssessmentListPage";
@@ -30,6 +32,18 @@ function AppContent() {
     pageContent = <LoginPage />;
   } else if (currentPath === "/register") {
     pageContent = <RegisterPage />;
+  } else if (currentPath === "/onboarding") {
+    pageContent = (
+      <ProtectedRoute>
+        <OnboardingPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/learning-path/confirm") {
+    pageContent = (
+      <ProtectedRoute>
+        <LearningPathConfirmPage />
+      </ProtectedRoute>
+    );
   } else if (currentPath === "/profile") {
     pageContent = (
       <ProtectedRoute>

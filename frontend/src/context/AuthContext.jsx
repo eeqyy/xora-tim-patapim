@@ -9,14 +9,15 @@ import { authApi, tokenStorage } from "../services/api";
 const AuthContext = createContext(null);
 
 /**
- * Tujuan utama setelah login/registrasi berdasar role.
+ * Tujuan utama setelah login/registrasi berdasar role & status onboarding.
  * /profile memanggil GET /api/profile yang 404 untuk user tanpa
  * learner_profiles (akun admin) — jadi admin diarahkan ke halaman kelola.
+ * Learner yang belum menyelesaikan onboarding diarahkan ke /onboarding.
  */
 export function homePathFor(user) {
-  return Array.isArray(user?.roles) && user.roles.includes("ADMIN")
-    ? "/admin/assessments"
-    : "/profile";
+  if (isUserAdmin(user)) return "/admin/assessments";
+  if (user && user.onboarding && user.onboarding.completed === false) return "/onboarding";
+  return "/profile";
 }
 
 export function isUserAdmin(user) {

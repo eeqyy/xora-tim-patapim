@@ -6,21 +6,20 @@
 import React, { useEffect, useState } from "react";
 import { useAuth, homePathFor } from "../context/AuthContext";
 import { useRouter, Link } from "../context/RouterContext";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { useToast } from "../components/ui/Toast";
 
 export default function LoginPage() {
   const { login, isAuthenticated, isLoading, user } = useAuth();
   const { navigate } = useRouter();
+  const { toast } = useToast();
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sudah terautentikasi (baik dari sesi tersimpan maupun baru saja login)
-  // -> arahkan sesuai role. Dilakukan di effect, bukan saat render.
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
     navigate(homePathFor(user));
@@ -41,23 +40,19 @@ export default function LoginPage() {
     setError(null);
 
     const { email, password } = formData;
-
     if (!email || !email.trim()) {
       setError("Email wajib diisi.");
       return;
     }
-
     if (!password) {
       setError("Password wajib diisi.");
       return;
     }
 
     setIsSubmitting(true);
-
     try {
       await login(email.trim(), password);
-      // Redirect-nya ditangani oleh useEffect di atas (role-aware),
-      // berdasarkan user yang sudah berisi roles.
+      toast({ title: "Berhasil masuk", tone: "success" });
     } catch (err) {
       setError(err.message || "Email atau password tidak sesuai.");
     } finally {
@@ -67,56 +62,55 @@ export default function LoginPage() {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
+      <Card surface className="ui-auth-card">
+        <div className="ui-eyebrow">Selamat datang kembali</div>
         <h2 className="auth-title">Masuk ke Xora</h2>
-        <p className="auth-subtitle">Akses profil belajar dan progres kompetensi Anda</p>
+        <p className="auth-subtitle">Lanjutkan dari posisi terakhir belajar Anda</p>
 
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="login-email">Alamat Email</label>
-            <input
-              id="login-email"
-              name="email"
-              type="email"
-              placeholder="nama@email.com"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              autoComplete="email"
-              required
-            />
+        {error && (
+          <div className="ui-form-error" role="alert">
+            {error}
           </div>
+        )}
 
-          <div className="form-group">
-            <label htmlFor="login-password">Password</label>
-            <input
-              id="login-password"
-              name="password"
-              type="password"
-              placeholder="Masukkan password Anda"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              autoComplete="current-password"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-block"
+        <form onSubmit={handleSubmit} className="ui-stack">
+          <Input
+            id="login-email"
+            name="email"
+            label="Alamat Email"
+            type="email"
+            placeholder="nama@email.com"
+            value={formData.email}
+            onChange={handleChange}
             disabled={isSubmitting}
-          >
-            {isSubmitting ? "Sedang Memeriksa..." : "Masuk"}
-          </button>
+            autoComplete="email"
+            required
+          />
+          <Input
+            id="login-password"
+            name="password"
+            label="Password"
+            type="password"
+            placeholder="Masukkan password Anda"
+            value={formData.password}
+            onChange={handleChange}
+            disabled={isSubmitting}
+            autoComplete="current-password"
+            required
+          />
+
+          <Button type="submit" block size="lg" loading={isSubmitting}>
+            Masuk
+          </Button>
         </form>
 
         <p className="auth-footer">
-          Belum memiliki akun? <Link to="/register" className="text-link">Daftar sekarang</Link>
+          Belum memiliki akun?{" "}
+          <Link to="/register" className="text-link">
+            Daftar sekarang
+          </Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }
