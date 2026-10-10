@@ -3,6 +3,14 @@
 // https://openrouter.ai/models?tab=free
 const DEFAULT_MODEL = "google/gemma-3-27b-it:free";
 const DEFAULT_BASE = "https://openrouter.ai/api/v1";
+// Retry hanya untuk kegagalan transien (429, 5xx, jaringan, timeout).
+// 4xx lain (400/401/403/404) = error konfigurasi/auth/model → fail fast.
+const MAX_ATTEMPTS = 3;
+const BACKOFF_MS = [500, 1000]; // sebelum attempt ke-2 dan ke-3
+
+function isTransientHttpStatus(status) {
+  return status === 429 || (status >= 500 && status < 600);
+}
 
 async function chat(messages, { jsonMode = null } = {}) {
   const apiKey = process.env.AI_API_KEY || "";
@@ -26,40 +34,85 @@ async function chat(messages, { jsonMode = null } = {}) {
   if (process.env.AI_REFERRER) headers["HTTP-Referer"] = process.env.AI_REFERRER;
   if (process.env.AI_TITLE) headers["X-Title"] = process.env.AI_TITLE;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  // Satu percobaan: AbortController + timeout segar per attempt.
+  const makeAttempt = async (attemptModel) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const payload = {
+        model: attemptModel,
+        messages,
+        ...(useJsonMode ? { response_format: { type: "json_object" } } : {}),
+      };
+      const res = await fetch(`${base.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        const err = new Error(`AI provider error ${res.status}: ${text}`);
+        // Transien (429/5xx) -> 504 gateway-ish; 4xx nyata (400/401/403/404)
+        // dipertahankan agar client tahu error konfigurasi/auth, bukan timeout.
+        err.statusCode = isTransientHttpStatus(res.status) ? 504 : res.status;
+        err.httpStatus = res.status; // untuk keputusan retry
+        throw err;
+      }
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content || "";
+      return content;
+    } catch (e) {
+      if (e.name === "AbortError") {
+        const err = new Error("AI provider timeout (504)");
+        err.statusCode = 504;
+        err.transient = true;
+        throw err;
+      }
+      if (e instanceof TypeError) {
+        // fetch network error — transien, boleh retry
+        const err = new Error(`AI provider network error: ${e.message}`);
+        err.statusCode = 504;
+        err.transient = true;
+        throw err;
+      }
+      throw e;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
 
-  try {
-    const payload = {
-      model,
-      messages,
-      ...(useJsonMode ? { response_format: { type: "json_object" } } : {}),
-    };
-    const res = await fetch(`${base.replace(/\/$/, "")}/chat/completions`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    if (!res.ok) {
-      const text = await res.text();
-      const err = new Error(`AI provider error ${res.status}: ${text}`);
-      err.statusCode = 504;
-      throw err;
+  const isTransient = (e) =>
+    e.transient === true ||
+    isTransientHttpStatus(e.httpStatus);
+
+  // Primary: retry hingga MAX_ATTEMPTS kali, hanya untuk kegagalan transien.
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    if (attempt > 1) {
+      await new Promise((r) => setTimeout(r, BACKOFF_MS[attempt - 2]));
     }
-    const data = await res.json();
-    const content = data.choices?.[0]?.message?.content || "";
-    return content;
-  } catch (e) {
-    clearTimeout(timeoutId);
-    if (e.name === "AbortError") {
-      const err = new Error("AI provider timeout (504)");
-      err.statusCode = 504;
-      throw err;
+    try {
+      return await makeAttempt(model);
+    } catch (e) {
+      lastError = e;
+      if (!isTransient(e)) throw e; // 4xx non-transien: fail fast
     }
-    throw e;
   }
+
+  // Fallback: satu percobaan terakhir dengan model cadangan
+  // (jika diset dan berbeda dari model utama), tanpa retry lagi.
+  const fallbackModel = process.env.AI_FALLBACK_MODEL || "";
+  if (fallbackModel && fallbackModel !== model) {
+    try {
+      return await makeAttempt(fallbackModel);
+    } catch (e) {
+      lastError = e;
+    }
+  }
+
+  lastError.statusCode = 504;
+  throw lastError;
 }
 
-module.exports = { chat };
+module.exports = { chat, DEFAULT_MODEL };

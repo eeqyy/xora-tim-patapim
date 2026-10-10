@@ -93,6 +93,7 @@ VALIDATION CONSTRAINTS:
 - suspected_concept MUST be a valid UUID string existing in DB.
 - reason MUST contain (substring) at least one UUID from reference_evidence_ids.
 - reference_evidence_ids MUST be non-empty array; every UUID MUST exist in input evidence_records.
+- If confidence < 0.5, reason MUST explain the data gap using one of: insufficient, uncertain, data gap, limited.
 - No extra fields allowed.
 `.trim();
 

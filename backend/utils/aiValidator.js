@@ -26,6 +26,24 @@ function validateAiDiagnosis(candidate, { validConceptIds = [], validEvidenceIds
     errors.push("reason must be a non-empty string with at least 10 characters");
   }
 
+  // Low-confidence must explain the data gap (honest reporting).
+  // Evaluate only when confidence is a valid number AND reason is a
+  // string, so malformed inputs don't cascade into this rule.
+  if (
+    typeof candidate.confidence === "number" &&
+    Number.isFinite(candidate.confidence) &&
+    candidate.confidence < 0.5 &&
+    typeof candidate.reason === "string"
+  ) {
+    const lower = candidate.reason.toLowerCase();
+    const hasGapKeyword = ["insufficient", "uncertain", "data gap", "limited"].some((kw) =>
+      lower.includes(kw)
+    );
+    if (!hasGapKeyword) {
+      errors.push("reason must explain the data gap when confidence < 0.5");
+    }
+  }
+
   // reference_evidence_ids
   if (!Array.isArray(candidate.reference_evidence_ids) || candidate.reference_evidence_ids.length === 0) {
     errors.push("reference_evidence_ids must be a non-empty array");
