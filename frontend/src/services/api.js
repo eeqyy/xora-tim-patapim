@@ -102,6 +102,11 @@ export const authApi = {
       method: "GET",
       token,
     }),
+
+  logout: () =>
+    apiRequest("/api/auth/logout", {
+      method: "POST",
+    }),
 };
 
 export const profileApi = {
@@ -287,7 +292,7 @@ export const recommendationsApi = {
     apiRequest("/api/recommendations", { method: "GET", token }),
 
   getNextStep: (token) =>
-    apiRequest("/api/recommendations/next-step", { method: "GET", token }),
+    apiRequest("/api/recommendations/next", { method: "GET", token }),
 
   getDetail: (id, token) =>
     apiRequest(`/api/recommendations/${id}`, { method: "GET", token }),
@@ -295,24 +300,25 @@ export const recommendationsApi = {
   getMaterials: (id, token) =>
     apiRequest(`/api/recommendations/${id}/materials`, { method: "GET", token }),
 
-  startPractice: (id, token) =>
-    apiRequest(`/api/recommendations/${id}/start-practice`, { method: "POST", token }),
+  start: (id, token) =>
+    apiRequest(`/api/recommendations/${id}/start`, { method: "POST", token }),
 
+  // Submit & result milik assessmentService PRACTICE (sama dgn practicesApi).
   submit: (attemptId, answers, token) =>
-    apiRequest(`/api/recommendations/attempts/${attemptId}/submit`, {
+    apiRequest(`/api/practices/attempts/${attemptId}/submit`, {
       method: "POST",
       body: { answers },
       token,
     }),
 
   getResult: (attemptId, token) =>
-    apiRequest(`/api/recommendations/attempts/${attemptId}/result`, { method: "GET", token }),
+    apiRequest(`/api/practices/attempts/${attemptId}/result`, { method: "GET", token }),
 
   complete: (id, token) =>
-    apiRequest(`/api/recommendations/${id}/complete`, { method: "PATCH", token }),
+    apiRequest(`/api/recommendations/${id}/complete`, { method: "POST", token }),
 
   skip: (id, token) =>
-    apiRequest(`/api/recommendations/${id}/skip`, { method: "PATCH", token }),
+    apiRequest(`/api/recommendations/${id}/skip`, { method: "POST", token }),
 };
 
 export const practicesApi = {
@@ -350,6 +356,22 @@ export const historyApi = {
     if (params.eventType) query.append("eventType", params.eventType);
     const qs = query.toString() ? `?${query.toString()}` : "";
     return apiRequest(`/api/history${qs}`, { method: "GET", token });
+  },
+};
+
+export const aiApi = {
+  /**
+   * Analisis error pattern berbasis bukti (OpenRouter).
+   * @param {{ concept_id?: string|null }} body
+   */
+  analyze: (body = {}, token) => {
+    const payload = {};
+    if (body.concept_id) payload.concept_id = body.concept_id;
+    return apiRequest("/api/ai/analyze", {
+      method: "POST",
+      body: payload,
+      token,
+    });
   },
 };
 

@@ -6,6 +6,7 @@
 import React from "react";
 import { AuthProvider } from "./context/AuthContext";
 import { RouterProvider, useRouter, ProtectedRoute, AdminRoute } from "./context/RouterContext";
+import { ToastProvider } from "./components/ui/Toast";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -97,7 +98,9 @@ export default function App() {
   return (
     <AuthProvider>
       <RouterProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </RouterProvider>
     </AuthProvider>
   );

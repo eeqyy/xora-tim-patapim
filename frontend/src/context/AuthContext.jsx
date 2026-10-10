@@ -19,6 +19,10 @@ export function homePathFor(user) {
     : "/profile";
 }
 
+export function isUserAdmin(user) {
+  return Array.isArray(user?.roles) && user.roles.includes("ADMIN");
+}
+
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => tokenStorage.get());
   const [user, setUser] = useState(null);
@@ -110,11 +114,18 @@ export function AuthProvider({ children }) {
     return res;
   }, []);
 
-  const logout = useCallback(() => {
-    tokenStorage.clear();
-    setToken(null);
-    setUser(null);
-  }, []);
+const logout = useCallback(() => {
+  authApi
+    .logout()
+    .catch(() => {
+      // Logout tetap lokal walau sesi backend sudah kedaluwarsa.
+    })
+    .finally(() => {
+      tokenStorage.clear();
+      setToken(null);
+      setUser(null);
+    });
+}, []);
 
   const refreshUser = useCallback(async () => {
     const activeToken = tokenStorage.get();
@@ -142,6 +153,7 @@ export function AuthProvider({ children }) {
     user,
     token,
     isAuthenticated: Boolean(user && token),
+    isAdmin: isUserAdmin(user),
     isLoading,
     login,
     register,

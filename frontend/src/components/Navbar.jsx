@@ -6,32 +6,43 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter, Link } from "../context/RouterContext";
+import ThemeToggle from "./ui/ThemeToggle";
+
+const INITIALS = (name = "") =>
+  name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
 export default function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { currentPath, navigate } = useRouter();
-
-  const isAdmin = Array.isArray(user?.roles) && user.roles.includes("ADMIN");
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
+  const isActive = (path) => {
+    if (path === "/") return currentPath === "/";
+    return currentPath === path || currentPath.startsWith(`${path}/`);
+  };
+
   return (
-    <header className="navbar">
-      <div className="navbar-container">
-        <div className="navbar-brand">
-          <Link to="/" className="brand-logo">
-            <span className="brand-dot"></span> Xora
+    <header className="ui-navbar">
+      <div className="ui-navbar-inner">
+        <div className="ui-navbar-brand">
+          <Link to="/" className="ui-navbar-logo" aria-label="Xora — beranda">
+            <span className="ui-brand-dot" aria-hidden="true" />
+            Xora
           </Link>
         </div>
 
-        <nav className="navbar-links">
-          <Link
-            to="/"
-            className={`nav-link ${currentPath === "/" ? "nav-link-active" : ""}`}
-          >
+        <nav className="ui-navbar-links" aria-label="Navigasi utama">
+          <Link to="/" className={["ui-nav-link", isActive("/") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}>
             Beranda
           </Link>
 
@@ -39,41 +50,40 @@ export default function Navbar() {
             <>
               <Link
                 to="/learning-path"
-                className={`nav-link ${currentPath === "/learning-path" ? "nav-link-active" : ""}`}
+                className={["ui-nav-link", isActive("/learning-path") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
               >
                 Learning Path
               </Link>
               <Link
                 to="/assessments"
-                className={`nav-link ${currentPath.startsWith("/assessments") || currentPath.startsWith("/attempts") ? "nav-link-active" : ""}`}
+                className={["ui-nav-link", isActive("/assessments") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
               >
                 Asesmen
               </Link>
               {isAdmin && (
                 <Link
                   to="/admin/assessments"
-                  className={`nav-link ${currentPath.startsWith("/admin/") ? "nav-link-active" : ""}`}
+                  className={["ui-nav-link", isActive("/admin") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
                 >
                   Kelola
                 </Link>
               )}
-              {/* /profile hanya untuk learner: admin tidak punya
-                  learner_profiles sehingga endpoint-nya 404. */}
               {!isAdmin && (
                 <Link
                   to="/profile"
-                  className={`nav-link ${currentPath === "/profile" ? "nav-link-active" : ""}`}
+                  className={["ui-nav-link", isActive("/profile") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
                 >
-                  Profil Saya
+                  Profil
                 </Link>
               )}
-              <div className="nav-user-pill">
-                <span className="nav-user-name">{user?.name}</span>
-                {Array.isArray(user?.roles) && user.roles.length > 0 && (
-                  <span className="nav-user-role">{user.roles[0]}</span>
-                )}
+              <div className="ui-nav-user">
+                <span className="ui-nav-avatar" aria-hidden="true">
+                  {INITIALS(user?.name)}
+                </span>
+                <span className="ui-nav-user-name">{user?.name}</span>
+                {isAdmin && <span className="ui-nav-role">ADMIN</span>}
               </div>
-              <button onClick={handleLogout} className="btn btn-sm btn-outline">
+              <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm ui-nav-logout" onClick={handleLogout}>
                 Keluar
               </button>
             </>
@@ -81,15 +91,17 @@ export default function Navbar() {
             <>
               <Link
                 to="/login"
-                className={`nav-link ${currentPath === "/login" ? "nav-link-active" : ""}`}
+                className={["ui-nav-link", isActive("/login") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
               >
                 Masuk
               </Link>
-              <Link to="/register" className="btn btn-sm btn-primary">
+              <Link to="/register" className="ui-btn ui-btn-primary ui-btn-sm">
                 Daftar
               </Link>
             </>
           )}
+
+          <ThemeToggle />
         </nav>
       </div>
     </header>

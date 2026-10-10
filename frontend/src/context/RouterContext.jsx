@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import { SkeletonList } from "../components/ui/Skeleton";
 
 const RouterContext = createContext(null);
 
@@ -78,8 +79,8 @@ export function ProtectedRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#6b7280" }}>
-        <p>Memeriksa autentikasi...</p>
+      <div className="ui-auth-check" aria-label="Memeriksa autentikasi">
+        <SkeletonList count={3} variant="card" />
       </div>
     );
   }
@@ -110,8 +111,8 @@ export function AdminRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#6b7280" }}>
-        <p>Memeriksa autentikasi...</p>
+      <div className="ui-auth-check" aria-label="Memeriksa autentikasi">
+        <SkeletonList count={3} variant="card" />
       </div>
     );
   }
