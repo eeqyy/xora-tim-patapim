@@ -13,6 +13,7 @@
 import React, { useEffect, useState } from "react";
 import { assessmentsApi, adminAssessmentsApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
+import AdminNav from "../components/ui/AdminNav";
 
 const TYPE_LABELS = {
   PRACTICE: "Latihan",
@@ -76,6 +77,7 @@ export default function AdminAssessmentsPage() {
 
   return (
     <div className="assessment-container">
+      <AdminNav />
       {/* Header */}
       <div className="card assessment-header-card">
         <div className="assessment-header-badge">ADMIN</div>

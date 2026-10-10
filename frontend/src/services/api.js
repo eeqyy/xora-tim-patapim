@@ -260,6 +260,107 @@ export const adminQuestionsApi = {
     }),
 };
 
+/**
+ * Admin CRUD catalog (subjects / levels / topics / concepts) — role ADMIN.
+ *
+ * Endpoint public GET dipakai sebagai sumber daftar; endpoint admin
+ * (POST/PUT/DELETE) menuntut token admin. Semua respons di-normalisasi ke
+ * camelCase di sini supaya halaman admin tidak perlu tahu perbedaan bentuk
+ * snake/camel antara endpoint publik dan CRUD.
+ */
+const CATALOG_MAP = {
+  id: "id",
+  name: "name",
+  description: "description",
+  status: "status",
+  difficulty: "difficulty",
+  created_at: "createdAt",
+  updated_at: "updatedAt",
+  subject_id: "subjectId",
+  subject_name: "subjectName",
+  level_id: "levelId",
+  level_name: "levelName",
+  topic_id: "topicId",
+  order_index: "orderIndex",
+  prerequisiteIds: "prerequisiteIds",
+  prerequisite_concept_id: "prerequisiteId",
+  prerequisite_name: "prerequisiteName",
+  dependency_weight: "dependencyWeight",
+};
+
+function toCamel(row) {
+  if (!row || typeof row !== "object") return row;
+  const out = {};
+  for (const [key, camel] of Object.entries(CATALOG_MAP)) {
+    if (row[key] !== undefined) out[camel] = row[key];
+  }
+  return out;
+}
+
+async function withCatalog(resPromise, mapFn = toCamel) {
+  const res = await resPromise;
+  const data = Array.isArray(res?.data)
+    ? res.data.map(mapFn)
+    : res?.data
+      ? mapFn(res.data)
+      : res?.data;
+  return { status: res?.status, data };
+}
+
+export const adminCatalogApi = {
+  subjects: {
+    list: (token) => withCatalog(apiRequest("/api/subjects", { method: "GET", token })),
+    create: (body, token) =>
+      withCatalog(apiRequest("/api/subjects", { method: "POST", body, token })),
+    update: (id, body, token) =>
+      withCatalog(apiRequest(`/api/subjects/${id}`, { method: "PUT", body, token })),
+    remove: (id, token) => withCatalog(apiRequest(`/api/subjects/${id}`, { method: "DELETE", token })),
+  },
+  levels: {
+    list: (token) => withCatalog(apiRequest("/api/levels", { method: "GET", token })),
+    create: (body, token) =>
+      withCatalog(apiRequest("/api/levels", { method: "POST", body, token })),
+    update: (id, body, token) =>
+      withCatalog(apiRequest(`/api/levels/${id}`, { method: "PUT", body, token })),
+    remove: (id, token) => withCatalog(apiRequest(`/api/levels/${id}`, { method: "DELETE", token })),
+  },
+  topics: {
+    list: (token) => withCatalog(apiRequest("/api/topics", { method: "GET", token })),
+    create: (body, token) =>
+      withCatalog(apiRequest("/api/topics", { method: "POST", body, token })),
+    update: (id, body, token) =>
+      withCatalog(apiRequest(`/api/topics/${id}`, { method: "PUT", body, token })),
+    remove: (id, token) => withCatalog(apiRequest(`/api/topics/${id}`, { method: "DELETE", token })),
+  },
+  concepts: {
+    list: (token) => withCatalog(apiRequest("/api/concepts", { method: "GET", token })),
+    getPrerequisites: (id, token) =>
+      withCatalog(
+        apiRequest(`/api/concepts/${id}/prerequisites`, { method: "GET", token }),
+        (row) =>
+          toCamel({
+            prerequisite_concept_id: row?.prerequisite_concept_id,
+            prerequisite_name: row?.prerequisite_name,
+            dependency_weight: row?.dependency_weight,
+            id: row?.id,
+          })
+      ),
+    create: (body, token) =>
+      withCatalog(apiRequest("/api/concepts", { method: "POST", body, token })),
+    update: (id, body, token) =>
+      withCatalog(apiRequest(`/api/concepts/${id}`, { method: "PUT", body, token })),
+    setPrerequisites: (id, prerequisiteIds, token) =>
+      withCatalog(
+        apiRequest(`/api/concepts/${id}/prerequisites`, {
+          method: "PUT",
+          body: { prerequisiteIds },
+          token,
+        })
+      ),
+    remove: (id, token) => withCatalog(apiRequest(`/api/concepts/${id}`, { method: "DELETE", token })),
+  },
+};
+
 export const masteryApi = {
   getSummary: (token) =>
     apiRequest("/api/mastery", { method: "GET", token }),

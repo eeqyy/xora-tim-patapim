@@ -29,6 +29,10 @@ import PracticeListPage from "./pages/PracticeListPage";
 import PracticeResultPage from "./pages/PracticeResultPage";
 import HistoryPage from "./pages/HistoryPage";
 import CheckpointPage from "./pages/CheckpointPage";
+import AdminSubjectsPage from "./pages/AdminSubjectsPage";
+import AdminLevelsPage from "./pages/AdminLevelsPage";
+import AdminTopicsPage from "./pages/AdminTopicsPage";
+import AdminConceptsPage from "./pages/AdminConceptsPage";
 import AdminAssessmentsPage from "./pages/AdminAssessmentsPage";
 import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
 
@@ -176,6 +180,30 @@ function AppContent() {
     pageContent = (
       <AdminRoute>
         <AdminAssessmentEditorPage assessmentId={assessmentId} />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/subjects") {
+    pageContent = (
+      <AdminRoute>
+        <AdminSubjectsPage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/levels") {
+    pageContent = (
+      <AdminRoute>
+        <AdminLevelsPage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/topics") {
+    pageContent = (
+      <AdminRoute>
+        <AdminTopicsPage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/concepts") {
+    pageContent = (
+      <AdminRoute>
+        <AdminConceptsPage />
       </AdminRoute>
     );
   } else {

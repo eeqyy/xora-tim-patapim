@@ -23,6 +23,7 @@ import {
 } from "../services/api";
 import { useRouter } from "../context/RouterContext";
 import AssessmentMetaFields from "../components/AssessmentMetaFields";
+import AdminNav from "../components/ui/AdminNav";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
@@ -522,6 +523,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
 
   return (
     <div className="assessment-container">
+      <AdminNav />
       {/* Header */}
       <div className="card assessment-header-card">
         <div className="assessment-header-badge">ADMIN</div>

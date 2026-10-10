@@ -4153,3 +4153,25 @@ margin-top: 2px;
 .ui-material { padding: 14px 16px; }
 .ui-material-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; font-size: 12px; }
 .ui-material-title { font-size: 14px; font-weight: 600; color: var(--text-1); }
+
+/* Legacy gaps: badge-topic dipakai area admin (AdminAssessmentsPage) */
+.badge-topic {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* Legacy gaps: hint & error untuk form admin */
+.field-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-2, #94a3b8);
+  margin-top: 4px;
+}
+
+.field-error {
+  display: block;
+  font-size: 0.75rem;
+  color: #f87171;
+  margin-top: 4px;
+}
