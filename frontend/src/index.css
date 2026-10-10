@@ -116,6 +116,22 @@
   --shadow-elevated: var(--shadow-lg);
   --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   --color-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Alias ringkas untuk UI kit (.ui-*); mencegah deklarasi var() patah */
+  --bg: var(--color-bg);
+  --bg-2: var(--color-surface);
+  --text-1: var(--color-text-main);
+  --text-2: var(--color-text-muted);
+  --text-3: var(--color-text-dim);
+  --color-text: var(--color-text-main);
+  --accent: var(--color-accent);
+  --accent-2: var(--color-accent-light);
+  --accent-weak: var(--color-primary-light);
+  --border: var(--color-border);
+  --border-strong: rgba(255, 255, 255, 0.22);
+  --success: var(--color-success);
+  --error: var(--color-error);
+  --warn: var(--color-warning);
 }
 
 /* ------------------------------------------------------------
@@ -162,6 +178,22 @@
   --shadow-elevated: var(--shadow-lg);
   --shadow-popover: 0 8px 24px rgba(15, 23, 42, 0.14), inset 0 0 0 1px rgba(0, 0, 0, 0.06);
   --color-overlay: rgba(15, 23, 42, 0.4);
+
+  /* Alias ringkas untuk UI kit (.ui-*) — nilai light */
+  --bg: var(--color-bg);
+  --bg-2: var(--color-surface);
+  --text-1: var(--color-text-main);
+  --text-2: var(--color-text-muted);
+  --text-3: var(--color-text-dim);
+  --color-text: var(--color-text-main);
+  --accent: var(--color-accent);
+  --accent-2: var(--color-accent-light);
+  --accent-weak: var(--color-primary-light);
+  --border: var(--color-border);
+  --border-strong: rgba(15, 23, 42, 0.24);
+  --success: var(--color-success);
+  --error: var(--color-error);
+  --warn: var(--color-warning);
 }
 
 /* ------------------------------------------------------------
