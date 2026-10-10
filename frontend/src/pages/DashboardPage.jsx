@@ -14,6 +14,7 @@ import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import Meter from "../components/ui/Meter";
+import StatusPill from "../components/ui/StatusPill";
 import { SkeletonList } from "../components/ui/Skeleton";
 import { ErrorState } from "../components/ui/State";
 import { actionTypeMeta } from "../lib/statusMaps";
