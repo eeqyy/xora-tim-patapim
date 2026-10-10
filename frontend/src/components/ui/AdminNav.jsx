@@ -3,7 +3,8 @@
 // frontend/src/components/ui/AdminNav.jsx
 // ============================================================
 // Deretan tab horizontal untuk area admin. Dipakai AdminAssessmentsPage,
-// AdminSubjectsPage, AdminLevelsPage, AdminTopicsPage, AdminConceptsPage.
+// AdminSubjectsPage, AdminLevelsPage, AdminTopicsPage, AdminConceptsPage,
+// dan AdminMaterialsPage.
 // Memakai kelas legacy `btn` yang sudah ada — konsisten dengan area admin.
 
 import React from "react";
@@ -15,6 +16,7 @@ const TABS = [
   { path: "/admin/levels", label: "Level" },
   { path: "/admin/topics", label: "Topik" },
   { path: "/admin/concepts", label: "Konsep" },
+  { path: "/admin/materials", label: "Materi" },
 ];
 
 export default function AdminNav() {

@@ -271,6 +271,9 @@ export const adminQuestionsApi = {
 const CATALOG_MAP = {
   id: "id",
   name: "name",
+  title: "title",
+  type: "type",
+  content: "content",
   description: "description",
   status: "status",
   difficulty: "difficulty",
@@ -281,6 +284,9 @@ const CATALOG_MAP = {
   level_id: "levelId",
   level_name: "levelName",
   topic_id: "topicId",
+  topic_name: "topicName",
+  concept_id: "conceptId",
+  concept_name: "conceptName",
   order_index: "orderIndex",
   prerequisiteIds: "prerequisiteIds",
   prerequisite_concept_id: "prerequisiteId",
@@ -358,6 +364,20 @@ export const adminCatalogApi = {
         })
       ),
     remove: (id, token) => withCatalog(apiRequest(`/api/concepts/${id}`, { method: "DELETE", token })),
+  },
+  materials: {
+    list: (token, params = {}) => {
+      const qs = new URLSearchParams();
+      if (params.topicId) qs.set("topicId", params.topicId);
+      if (params.conceptId) qs.set("conceptId", params.conceptId);
+      const suffix = qs.toString() ? `?${qs.toString()}` : "";
+      return withCatalog(apiRequest(`/api/materials${suffix}`, { method: "GET", token }));
+    },
+    create: (body, token) =>
+      withCatalog(apiRequest("/api/materials", { method: "POST", body, token })),
+    update: (id, body, token) =>
+      withCatalog(apiRequest(`/api/materials/${id}`, { method: "PUT", body, token })),
+    remove: (id, token) => withCatalog(apiRequest(`/api/materials/${id}`, { method: "DELETE", token })),
   },
 };
 
