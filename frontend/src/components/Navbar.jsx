@@ -84,6 +84,18 @@ export default function Navbar() {
               >
                 Rekomendasi
               </Link>
+              <Link
+                to="/practices"
+                className={["ui-nav-link", isActive("/practices") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
+              >
+                Latihan
+              </Link>
+              <Link
+                to="/history"
+                className={["ui-nav-link", isActive("/history") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
+              >
+                Riwayat
+              </Link>
               {isAdmin && (
                 <Link
                   to="/admin/assessments"

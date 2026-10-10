@@ -124,6 +124,14 @@ export default function AssessmentResultPage({ attemptId }) {
         <Button to="/assessments" variant="ghost">
           ← Daftar Asesmen
         </Button>
+        {result.assessment_type === "PRACTICE" && (
+          <Button to={`/practices/attempts/${result.id}/result`} variant="subtle">
+            Detail Latihan
+          </Button>
+        )}
+        {!isPassed && result.assessment_id && (
+          <Button to={`/reassess/${result.assessment_id}`}>Uji Ulang</Button>
+        )}
         <Button to="/learning-path">Buka Learning Path →</Button>
       </div>
     </div>

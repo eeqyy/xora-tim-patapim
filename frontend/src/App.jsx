@@ -25,6 +25,10 @@ import GapsListPage from "./pages/GapsListPage";
 import GapsDetailPage from "./pages/GapsDetailPage";
 import RecommendationsPage from "./pages/RecommendationsPage";
 import MateriPage from "./pages/MateriPage";
+import PracticeListPage from "./pages/PracticeListPage";
+import PracticeResultPage from "./pages/PracticeResultPage";
+import HistoryPage from "./pages/HistoryPage";
+import CheckpointPage from "./pages/CheckpointPage";
 import AdminAssessmentsPage from "./pages/AdminAssessmentsPage";
 import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
 
@@ -133,6 +137,32 @@ function AppContent() {
     pageContent = (
       <ProtectedRoute>
         <MateriPage params={{ actionId }} />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/practices") {
+    pageContent = (
+      <ProtectedRoute>
+        <PracticeListPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/practices/attempts/")) {
+    const attemptId = currentPath.replace("/practices/attempts/", "").split("?")[0];
+    pageContent = (
+      <ProtectedRoute>
+        <PracticeResultPage attemptId={attemptId} />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/history") {
+    pageContent = (
+      <ProtectedRoute>
+        <HistoryPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/reassess/")) {
+    const assessmentId = currentPath.replace("/reassess/", "").split("?")[0];
+    pageContent = (
+      <ProtectedRoute>
+        <CheckpointPage params={{ assessmentId }} />
       </ProtectedRoute>
     );
   } else if (currentPath === "/admin/assessments") {
