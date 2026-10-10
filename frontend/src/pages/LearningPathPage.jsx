@@ -1,272 +1,147 @@
 // ============================================================
-// XORA — Learning Path Page
+// XORA — Learning Path (hierarki: level → topik → konsep)
 // frontend/src/pages/LearningPathPage.jsx
 // ============================================================
 
-import React, { useEffect, useState, useCallback } from "react";
-import { subjectsApi, learningPathApi } from "../services/api";
+import React from "react";
+import { useAuth } from "../context/AuthContext";
 import { useRouter } from "../context/RouterContext";
+import { learningPathApi } from "../services/api";
+import useAsync from "../hooks/useAsync";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import Meter from "../components/ui/Meter";
+import { SkeletonList } from "../components/ui/Skeleton";
+import { ErrorState } from "../components/ui/State";
+import { difficultyMeta } from "../lib/statusMaps";
+import { formatScore } from "../lib/formatters";
+
+function countNodes(levels) {
+  let topics = 0;
+  let concepts = 0;
+  for (const lvl of levels || []) {
+    topics += lvl.topics?.length || 0;
+    for (const t of lvl.topics || []) concepts += t.concepts?.length || 0;
+  }
+  return { levels: levels?.length || 0, topics, concepts };
+}
 
 export default function LearningPathPage() {
+  const { token } = useAuth();
   const { navigate } = useRouter();
-  const [subjects, setSubjects] = useState([]);
-  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
-  const [learningPath, setLearningPath] = useState(null);
+  const path = useAsync(() => learningPathApi.getPath(null, token), [token]);
 
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
-  const [isLoadingPath, setIsLoadingPath] = useState(false);
-  const [error, setError] = useState(null);
-
-  // 1. Fetch available subjects
-  const fetchSubjects = useCallback(async () => {
-    setIsLoadingSubjects(true);
-    setError(null);
-    try {
-      const res = await subjectsApi.getAll();
-      const list = Array.isArray(res?.data) ? res.data : [];
-      setSubjects(list);
-
-      // Auto-select first subject if none selected
-      if (list.length > 0) {
-        setSelectedSubjectId((prev) => prev || list[0].id);
-      }
-    } catch (err) {
-      setError(err.message || "Gagal memuat daftar mata pelajaran.");
-    } finally {
-      setIsLoadingSubjects(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSubjects();
-  }, [fetchSubjects]);
-
-  // 2. Fetch learning path when selectedSubjectId changes
-  const fetchPath = useCallback(async (subjectId) => {
-    if (!subjectId) return;
-    setIsLoadingPath(true);
-    setError(null);
-    try {
-      const res = await learningPathApi.getPath(subjectId);
-      setLearningPath(res?.data || null);
-    } catch (err) {
-      setError(err.message || "Gagal memuat struktur alur belajar.");
-      setLearningPath(null);
-    } finally {
-      setIsLoadingPath(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (selectedSubjectId) {
-      fetchPath(selectedSubjectId);
-    }
-  }, [selectedSubjectId, fetchPath]);
-
-  const handleSelectSubject = (id) => {
-    if (id !== selectedSubjectId) {
-      setSelectedSubjectId(id);
-    }
-  };
-
-  const getDifficultyBadge = (difficulty) => {
-    switch (difficulty) {
-      case "EASY":
-        return <span className="badge badge-difficulty badge-easy">Mudah (Easy)</span>;
-      case "MEDIUM":
-        return <span className="badge badge-difficulty badge-medium">Menengah (Medium)</span>;
-      case "HARD":
-        return <span className="badge badge-difficulty badge-hard">Sulit (Hard)</span>;
-      default:
-        return <span className="badge badge-role">{difficulty}</span>;
-    }
-  };
-
-  if (isLoadingSubjects) {
-    return (
-      <div className="learning-path-container">
-        <div className="card loading-card">
-          <p>Memuat kurikulum alur belajar...</p>
-        </div>
-      </div>
-    );
-  }
+  const data = path.data;
+  const stats = data ? countNodes(data.levels) : null;
 
   return (
-    <div className="learning-path-container">
-      {/* Page Header */}
-      <div className="card path-header-card">
-        <h1 className="path-page-title">Alur Pembelajaran (Learning Path)</h1>
-        <p className="path-page-desc">
-          Eksplorasi struktur kurikulum bertingkat dari Level, Topik, hingga Konsep kompetensi.
-        </p>
+    <div className="page-container">
+      <PageHeader
+        eyebrow="Learning Path"
+        title={data?.subject?.name || "Learning Path"}
+        desc={data?.subject?.description}
+        actions={
+          stats && (
+            <>
+              <Badge variant="outline">{stats.levels} level</Badge>
+              <Badge variant="outline">{stats.topics} topik</Badge>
+              <Badge variant="outline">{stats.concepts} konsep</Badge>
+            </>
+          )
+        }
+      />
 
-        {/* Subjects Selector */}
-        {subjects.length === 0 ? (
-          <div className="empty-box" style={{ marginTop: "1rem" }}>
-            <p>Belum ada mata pelajaran yang tersedia di database.</p>
-          </div>
-        ) : (
-          <div className="subject-tabs-container">
-            <span className="subject-tabs-label">Pilih Mata Pelajaran:</span>
-            <div className="subject-tabs">
-              {subjects.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => handleSelectSubject(s.id)}
-                  className={`btn-subject-tab ${
-                    selectedSubjectId === s.id ? "btn-subject-tab-active" : ""
-                  }`}
-                >
-                  {s.name}
-                </button>
-              ))}
+      {path.error ? (
+        <ErrorState message="Gagal memuat learning path." detail={path.error.message} onRetry={path.run} />
+      ) : path.loading ? (
+        <SkeletonList count={4} variant="card" />
+      ) : !data || !data.levels || data.levels.length === 0 ? (
+        <Card>
+          <div className="ui-empty">
+            <div className="ui-empty-title">Belum ada jalur untuk subject ini</div>
+            <div className="ui-empty-desc">
+              Hubungi admin untuk melengkapi kurikulum, atau mulai dari asesmen yang tersedia.
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <p>{error}</p>
-          <button
-            onClick={() => (selectedSubjectId ? fetchPath(selectedSubjectId) : fetchSubjects())}
-            className="btn btn-sm btn-outline"
-            style={{ marginTop: "0.5rem" }}
-          >
-            Coba Lagi
-          </button>
-        </div>
-      )}
-
-      {/* Path Loading */}
-      {isLoadingPath && (
-        <div className="card loading-card">
-          <p>Memuat detail alur belajar untuk subject terpilih...</p>
-        </div>
-      )}
-
-      {/* Path Content */}
-      {!isLoadingPath && learningPath && (
-        <div className="learning-path-content">
-          {/* Selected Subject Overview */}
-          <div className="card selected-subject-card">
-            <div className="subject-meta-row">
-              <div>
-                <h2 className="selected-subject-title">{learningPath.subject?.name}</h2>
-                {learningPath.subject?.description && (
-                  <p className="selected-subject-desc">{learningPath.subject.description}</p>
-                )}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                <span className="badge badge-success">
-                  {learningPath.subject?.status || "PUBLISHED"}
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  onClick={() => navigate("/assessments")}
-                >
-                  Buka Asesmen →
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Levels & Hierarchy */}
-          {!learningPath.levels || learningPath.levels.length === 0 ? (
-            <div className="card empty-card">
-              <p>Belum ada level pembelajaran pada mata pelajaran ini.</p>
-            </div>
-          ) : (
-            <div className="levels-list">
-              {learningPath.levels.map((level, lvlIdx) => (
-                <div key={level.id} className="card level-card">
-                  {/* Level Header */}
-                  <div className="level-header">
-                    <div className="level-order-pill">Level {level.order_index ?? lvlIdx + 1}</div>
-                    <div className="level-title-block">
-                      <h3 className="level-name">{level.name}</h3>
-                      {level.description && (
-                        <p className="level-desc">{level.description}</p>
-                      )}
-                    </div>
-                    <div>{getDifficultyBadge(level.difficulty)}</div>
+        </Card>
+      ) : (
+        <div className="ui-lp">
+          {data.levels.map((level) => {
+            const diff = difficultyMeta(level.difficulty);
+            return (
+              <section key={level.id} className="ui-lp-level">
+                <div className="ui-lp-level-head">
+                  <div className="ui-lp-level-title">
+                    <span className="ui-lp-level-order ui-mono">{String(level.order_index ?? "").padStart(2, "0")}</span>
+                    <h2 className="ui-lp-level-name">{level.name}</h2>
                   </div>
-
-                  {/* Topics under Level */}
-                  <div className="topics-section">
-                    <h4 className="topics-heading">Daftar Topik:</h4>
-
-                    {!level.topics || level.topics.length === 0 ? (
-                      <p className="text-muted" style={{ fontSize: "0.9rem" }}>
-                        Belum ada topik pada level ini.
-                      </p>
-                    ) : (
-                      <div className="topics-grid">
-                        {level.topics.map((topic, topIdx) => (
-                          <div key={topic.id} className="topic-card">
-                            <div className="topic-header">
-                              <span className="topic-number">
-                                {topIdx + 1}.
-                              </span>
-                              <div style={{ flex: 1 }}>
-                                <h5 className="topic-name">{topic.name}</h5>
-                                {topic.description && (
-                                  <p className="topic-desc">{topic.description}</p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Concepts under Topic */}
-                            <div className="concepts-section">
-                              <span className="concepts-label">Konsep Kompetensi:</span>
-                              {!topic.concepts || topic.concepts.length === 0 ? (
-                                <p className="text-muted" style={{ fontSize: "0.825rem" }}>
-                                  Belum ada konsep terhubung.
-                                </p>
-                              ) : (
-                                <div className="concepts-tags">
-                                  {topic.concepts.map((concept) => {
-                                    const locked = concept.is_locked === true;
-                                    const prereqTitle =
-                                      concept.prerequisites && concept.prerequisites.length > 0
-                                        ? "Prasyarat: " +
-                                          concept.prerequisites
-                                            .map(
-                                              (p) =>
-                                                `${p.name} — mastery ${p.mastery_score ?? 0}/70 ${
-                                                  p.satisfied ? "✓" : "✗"
-                                                }`
-                                            )
-                                            .join("; ")
-                                        : concept.description || "";
-                                    return (
-                                      <span
-                                        key={concept.id}
-                                        className={`concept-tag${locked ? " concept-tag-locked" : ""}`}
-                                        title={prereqTitle}
-                                      >
-                                        {locked && <span className="concept-lock">🔒</span>}
-                                        <span className="concept-dot"></span>
-                                        {concept.name}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="ui-lp-level-meta">
+                    <Badge variant={diff.tone} dot>
+                      {diff.label}
+                    </Badge>
+                    <span className="ui-mono ui-dim">
+                      {level.topics?.length || 0} topik
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+
+                {level.topics?.length ? (
+                  <div className="ui-lp-topics">
+                    {level.topics.map((topic) => (
+                      <Card key={topic.id} className="ui-lp-topic">
+                        <div className="ui-lp-topic-name">{topic.name}</div>
+                        {topic.description && <div className="ui-lp-topic-desc">{topic.description}</div>}
+                        {topic.concepts?.length ? (
+                          <div className="ui-lp-concepts">
+                            {topic.concepts.map((concept) => (
+                              <button
+                                key={concept.id}
+                                type="button"
+                                className="ui-lp-concept"
+                                onClick={() => navigate(`/mastery/${concept.id}`)}
+                              >
+                                <div className="ui-lp-concept-main">
+                                  <span className="ui-lp-concept-name">{concept.name}</span>
+                                  {concept.is_locked && (
+                                    <span className="ui-lp-lock" title="Prasyarat belum dikuasai">
+                                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                      </svg>
+                                      prasyarat
+                                    </span>
+                                  )}
+                                </div>
+                                <Meter
+                                  value={Number(concept.mastery_score) || 0}
+                                  display={concept.mastery_score == null ? "belum dinilai" : formatScore(concept.mastery_score)}
+                                  tone={
+                                    concept.is_mastered
+                                      ? "success"
+                                      : concept.gap_status === "CONFIRMED"
+                                        ? "error"
+                                        : concept.mastery_score == null
+                                          ? ""
+                                          : "warning"
+                                  }
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="ui-mono ui-dim">Belum ada konsep</div>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="ui-mono ui-dim">Belum ada topik pada level ini</div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
     </div>

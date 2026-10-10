@@ -17,7 +17,7 @@ const AuthContext = createContext(null);
 export function homePathFor(user) {
   if (isUserAdmin(user)) return "/admin/assessments";
   if (user && user.onboarding && user.onboarding.completed === false) return "/onboarding";
-  return "/profile";
+  return "/dashboard";
 }
 
 export function isUserAdmin(user) {

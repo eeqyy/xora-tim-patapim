@@ -31,6 +31,11 @@ export const PRACTICE_TYPE_LABELS = {
   ADVANCE: "Lanjutkan",
 };
 
+export const ACTION_TYPE_LABELS = {
+  RUN_DIAGNOSTIC: "Diagnostik Konfirmasi",
+  ...PRACTICE_TYPE_LABELS,
+};
+
 export const ASSESSMENT_TYPE_LABELS = {
   PREREQUISITE: "Cek Prasyarat",
   PRACTICE: "Latihan",
@@ -123,4 +128,9 @@ export function practiceTypeMeta(type) {
 
 export function difficultyMeta(value) {
   return toneFor(DIFFICULTY_LABELS, { EASY: "success", MEDIUM: "warning", HARD: "error" }, value, "neutral");
+}
+
+export function actionTypeMeta(value) {
+  if (value === "RUN_DIAGNOSTIC") return { label: ACTION_TYPE_LABELS.RUN_DIAGNOSTIC, tone: "warning" };
+  return practiceTypeMeta(value);
 }

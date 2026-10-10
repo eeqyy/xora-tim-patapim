@@ -54,7 +54,7 @@ export default function OnboardingPage() {
       return;
     }
     if (user && user.onboarding && user.onboarding.completed === true) {
-      navigate("/profile");
+      navigate("/dashboard");
     }
   }, [user, isAdmin, navigate]);
 

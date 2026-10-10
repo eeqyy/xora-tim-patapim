@@ -14,6 +14,7 @@ export default function DataTable({
   empty = null,
   rowKey = (row, index) => index,
   className = "",
+  onRowClick = null,
 }) {
   if (loading) {
     return (
@@ -47,7 +48,22 @@ export default function DataTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={rowKey(row, i)}>
+            <tr
+              key={rowKey(row, i)}
+              className={onRowClick ? "ui-table-clickable" : ""}
+              onClick={onRowClick ? () => onRowClick(row, i) : undefined}
+              tabIndex={onRowClick ? 0 : undefined}
+              onKeyDown={
+                onRowClick
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onRowClick(row, i);
+                      }
+                    }
+                  : undefined
+              }
+            >
               {columns.map((col) => {
                 const cell = typeof col.render === "function" ? col.render(row, i) : row[col.key];
                 const cls = [

@@ -60,7 +60,7 @@ export default function LearningPathConfirmPage() {
     try {
       await profileApi.completeOnboarding(token);
       toast({ title: "Onboarding selesai", message: "Learning map kamu siap dijelajahi.", tone: "success" });
-      navigate("/profile");
+      navigate("/dashboard");
     } catch (err) {
       setConfirmError(err.message || "Gagal menyelesaikan onboarding.");
     } finally {

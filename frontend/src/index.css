@@ -3662,3 +3662,168 @@ margin-top: 2px;
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   F2 — Dashboard, Learning Path, Mastery
+   ============================================================ */
+
+/* Stat grid (4 kartu ringkas) */
+.ui-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 4px 0 28px;
+}
+.ui-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px 16px;
+}
+.ui-stat-num {
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.ui-stat-num.ok { color: var(--success); }
+.ui-stat-num.warn { color: var(--warn); }
+
+/* Section */
+.ui-section { margin-top: 30px; }
+.ui-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.ui-section-title { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+
+/* Next step card */
+.ui-next-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ui-next-concept { font-size: 15px; font-weight: 700; }
+.ui-next-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ui-next-reason { font-size: 13px; color: var(--text-2); margin-bottom: 16px; max-width: 640px; }
+.ui-next-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Mastery row (dashboard) */
+.ui-mastery-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  cursor: pointer;
+}
+.ui-mastery-row + .ui-mastery-row { margin-top: 8px; }
+.ui-mastery-row-main { flex: 1; min-width: 0; }
+.ui-mastery-row-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.ui-mastery-row-meta { font-size: 12px; white-space: nowrap; }
+@media (max-width: 720px) {
+  .ui-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .ui-mastery-row { flex-wrap: wrap; }
+}
+
+/* Back button di PageHeader */
+.ui-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.ui-back:hover { color: var(--text-1); border-color: var(--border-strong); }
+
+/* Pasangan tombol */
+.ui-pair { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+/* KV pair */
+.ui-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ui-kv-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
+.ui-kv-value { font-size: 14px; font-weight: 600; color: var(--text-1); }
+
+/* Mastery detail */
+.ui-mastery-detail { display: flex; flex-direction: column; gap: 20px; }
+.ui-mastery-detail-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ui-mastery-detail-name { font-size: 18px; font-weight: 700; }
+.ui-mastery-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 720px) { .ui-mastery-detail-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Learning path: level -> topic -> concept */
+.ui-lp { display: flex; flex-direction: column; gap: 28px; }
+.ui-lp-level-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ui-lp-level-title { display: flex; align-items: baseline; gap: 12px; }
+.ui-lp-level-order { font-size: 18px; color: var(--accent-2); }
+.ui-lp-level-name { font-size: 16px; font-weight: 700; }
+.ui-lp-level-meta { display: flex; align-items: center; gap: 10px; }
+.ui-lp-topics { display: flex; flex-direction: column; gap: 10px; }
+.ui-lp-topic { padding: 14px 18px; }
+.ui-lp-topic-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.ui-lp-topic-desc { font-size: 12px; color: var(--text-2); margin-bottom: 10px; }
+.ui-lp-concepts { display: flex; flex-direction: column; }
+.ui-lp-concept {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 9px 2px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.ui-lp-concept:first-child { border-top: 0; }
+.ui-lp-concept:hover .ui-lp-concept-name { color: var(--accent-2); }
+.ui-lp-concept-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ui-lp-concept-name { font-size: 13px; font-weight: 500; transition: color 0.15s; }
+.ui-lp-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.ui-lp-concept .ui-meter { max-width: 220px; flex: 1; }
+.ui-lp-concept .ui-meter-top { margin-bottom: 3px; }
+@media (max-width: 720px) { .ui-lp-concept { flex-wrap: wrap; } }

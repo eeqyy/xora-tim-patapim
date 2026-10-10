@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { systemApi } from "../services/api";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, homePathFor } from "../context/AuthContext";
 import { Link } from "../context/RouterContext";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
@@ -38,7 +38,7 @@ export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
   const isAdmin = Array.isArray(user?.roles) && user.roles.includes("ADMIN");
   const [backendStatus, setBackendStatus] = useState("memuat...");
-  const homeTarget = isAdmin ? "/admin/assessments" : "/profile";
+  const homeTarget = homePathFor(user);
 
   useEffect(() => {
     systemApi

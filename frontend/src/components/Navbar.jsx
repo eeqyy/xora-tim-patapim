@@ -49,10 +49,22 @@ export default function Navbar() {
           {isAuthenticated ? (
             <>
               <Link
+                to="/dashboard"
+                className={["ui-nav-link", isActive("/dashboard") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
+              >
+                Dashboard
+              </Link>
+              <Link
                 to="/learning-path"
                 className={["ui-nav-link", isActive("/learning-path") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
               >
                 Learning Path
+              </Link>
+              <Link
+                to="/mastery"
+                className={["ui-nav-link", isActive("/mastery") ? "ui-nav-link-active" : ""].filter(Boolean).join(" ")}
+              >
+                Mastery
               </Link>
               <Link
                 to="/assessments"

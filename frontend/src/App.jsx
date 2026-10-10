@@ -15,6 +15,9 @@ import OnboardingPage from "./pages/OnboardingPage";
 import LearningPathConfirmPage from "./pages/LearningPathConfirmPage";
 import ProfilePage from "./pages/ProfilePage";
 import LearningPathPage from "./pages/LearningPathPage";
+import DashboardPage from "./pages/DashboardPage";
+import MasteryPage from "./pages/MasteryPage";
+import MasteryDetailPage from "./pages/MasteryDetailPage";
 import AssessmentListPage from "./pages/AssessmentListPage";
 import AssessmentPage from "./pages/AssessmentPage";
 import AssessmentResultPage from "./pages/AssessmentResultPage";
@@ -48,6 +51,25 @@ function AppContent() {
     pageContent = (
       <ProtectedRoute>
         <ProfilePage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/dashboard") {
+    pageContent = (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/mastery") {
+    pageContent = (
+      <ProtectedRoute>
+        <MasteryPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/mastery/")) {
+    const conceptId = currentPath.replace("/mastery/", "").split("?")[0];
+    pageContent = (
+      <ProtectedRoute>
+        <MasteryDetailPage params={{ conceptId }} />
       </ProtectedRoute>
     );
   } else if (currentPath === "/learning-path") {
