@@ -131,6 +131,12 @@ export const authApi = {
       method: "GET",
       token,
     }),
+
+  logout: (token) =>
+    apiRequest("/api/auth/logout", {
+      method: "POST",
+      token,
+    }),
 };
 
 export const profileApi = {
@@ -382,9 +388,6 @@ export const recommendationsApi = {
 
   getNextStep: (token) =>
     apiRequest("/api/recommendations/next", { method: "GET", token }),
-
-  getDetail: (id, token) =>
-    apiRequest(`/api/recommendations/${id}`, { method: "GET", token }),
 
   getMaterials: (id, token) =>
     apiRequest(`/api/recommendations/${id}/materials`, { method: "GET", token }),

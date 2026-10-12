@@ -1,96 +1,208 @@
 # Xora Project
 
-Proyek ini menggunakan arsitektur monorepo sederhana yang terdiri dari Frontend (React/Vite), Backend (Node.js/Express), dan Database (MySQL). Seluruh environment sudah di-dockerisasi agar semua anggota tim memiliki lingkungan development yang identik tanpa perlu setup manual di OS lokal masing-masing.
+**Xora** adalah platform *Evidence-Based Learning Diagnostic & Root-Cause Navigator*:
+asesmen dipetakan ke **konsep**, setiap jawaban disimpan sebagai **evidence**, lalu
+dipakai untuk mendeteksi *gap* dan merekomendasikan remediasi yang tepat sasaran.
+
+> Dokumentasi arsitektur & aturan engineering ada di [`AGENT.md`](./AGENT.md).
+> Panduan upgrade setelah `git pull` ada di [`UPGRADE.md`](./UPGRADE.md).
+
+---
+
+## 🧱 Tech Stack
+
+| Lapisan | Teknologi |
+| :--- | :--- |
+| Frontend | React 18 + Vite 5 (CSS murni, tanpa UI framework) |
+| Backend | Node.js + Express 4 (`pg`, `bcryptjs`, `cors`) |
+| Database | PostgreSQL (+ ekstensi `pgcrypto`) |
+| Auth | **Session token** (tabel `sessions`, `Authorization: Bearer <token>`) — bukan JWT |
+| AI (opsional) | OpenRouter (aktif hanya jika `AI_API_KEY` diisi) |
+
+---
 
 ## 📁 Struktur Folder Utama
+
 ```text
 /project-root
- ├── backend/            # Source code Node.js + Express
- │   ├── index.js        # Entry point Express server
- │   ├── db.js           # Connection pool MySQL (mysql2)
- │   ├── package.json    # Dependency backend
- │   ├── nodemon.json    # Konfigurasi hot reload
- │   ├── Dockerfile      # Konfigurasi Docker khusus backend
- │   └── .dockerignore
- ├── frontend/           # Source code React + Vite
- │   ├── index.html      # Root HTML Vite
- │   ├── vite.config.js  # Konfigurasi Vite dev server
- │   ├── src/            # Source React (main.jsx, App.jsx, index.css)
- │   ├── package.json    # Dependency frontend
- │   ├── Dockerfile      # Konfigurasi Docker khusus frontend
- │   └── .dockerignore
+ ├── AGENT.md                 # Acuan arsitektur & aturan engineering
+ ├── README.md                 # Dokumentasi setup (file ini)
+ ├── docker-compose.yml        # PostgreSQL + backend + frontend
+ ├── .env.example              # Template environment (salin ke .env)
+ │
  ├── database/
- │   └── init/           # Script SQL yang auto-run saat MySQL container pertama start
- ├── docker-compose.yml  # Orkestrasi semua container (Frontend, Backend, MySQL)
- ├── .env.example        # Template konfigurasi environment variables
- ├── .gitignore          # Mengabaikan file yang tidak perlu di push ke Github
- └── README.md           # Panduan ini
+ │   ├── init/01-schema.sql    # DDL PostgreSQL kanonik (dijalankan otomatis di Docker)
+ │   ├── migrations/           # Migrasi historis (002–008); sebagian sudah menyatu ke 01-schema.sql
+ │   └── seeds/                # Data soal tambahan (question bank)
+ │
+ ├── backend/
+ │   ├── index.js              # Entry point Express + mounting route + 404/error handler
+ │   ├── db.js                 # Pool PostgreSQL (SSL kondisional via DATABASE_SSL)
+ │   ├── seed.js               # Seed data dev (npm run seed)
+ │   ├── middleware/           # auth.js, requireAdmin.js (session token)
+ │   ├── routes/               # 16 file route (/api/*)
+ │   ├── services/             # 17 file service (business logic)
+ │   ├── config/               # aiPrompt.js, aiProvider.js, masteryThresholds.js
+ │   └── utils/                # errors.js, grading.js, password.js, session.js, aiValidator.js
+ │
+ └── frontend/
+     ├── index.html
+     ├── vite.config.js
+     └── src/
+         ├── App.jsx               # Router outlet + layout
+         ├── index.css             # Design system
+         ├── context/              # AuthContext.jsx, RouterContext.jsx
+         ├── services/api.js       # API client terpusat
+         ├── components/           # Button, Icons, Navbar, GlassPanel, StatusBadge, dll.
+         └── pages/                # 12 halaman (termasuk NotFoundPage 404)
 ```
 
 ---
 
-## 🚀 Panduan Setup Awal (Wajib dibaca sebelum ngoding!)
+## ✅ Prasyarat
 
-Jika kamu baru saja men-clone repositori ini, ikuti langkah-langkah berikut secara berurutan:
+- **Node.js 20+** dan npm
+- **PostgreSQL 16+** (untuk jalan lokal), **atau** Docker + Docker Desktop
 
-### 1. Persiapan Environment Variables
-Kamu butuh file konfigurasi lokal agar database dan aplikasi bisa berjalan.
-- **Copy file `.env.example`** dan ubah namanya menjadi `.env`.
-- (Opsional) Buka file `.env` dan sesuaikan nilainya jika diperlukan. Untuk tahap awal *development*, biarkan nilainya secara *default* karena sudah disetting siap pakai.
+---
 
-> **Mac/Linux/Git Bash:** 
-> ```bash
-> cp .env.example .env
-> ```
+## ⚙️ 1. Persiapan Environment
 
-### 2. Jalankan Docker Compose
-Pastikan kamu sudah meng-install **Docker** & **Docker Desktop** (jika pakai Mac/Windows) di komputermu, dan dalam keadaan berjalan.
-Di terminal root proyek ini, jalankan:
+```bash
+cp .env.example .env
+```
+
+Sesuaikan `.env` bila perlu. Untuk pengembangan lokal (Postgres Homebrew), cukup:
+
+```env
+DATABASE_URL=postgresql://USERNAME@127.0.0.1:5432/xora
+DATABASE_SSL=false
+```
+
+> **SSL database aktif secara default** (untuk remote seperti Supabase). Untuk Postgres lokal,
+> wajib set `DATABASE_SSL=false`.
+
+> Root `.env` adalah **sumber tunggal** config backend (dibaca oleh `backend/db.js` & `backend/index.js`).
+
+---
+
+## 🚀 2. Menjalankan (Docker)
 
 ```bash
 docker compose up --build
 ```
-*(Tambahkan `-d` di akhir jika tidak ingin log-nya memenuhi terminal, contoh: `docker compose up --build -d`)*
 
-Proses ini akan men-download image, meng-install dependensi (`npm install`) secara terisolasi, dan menyalakan semua sistem. 
+- Frontend: http://localhost:5173
+- Backend:  http://localhost:5001
+- PostgreSQL: `localhost:5432` (volume `postgres_data`)
 
-### 3. Mulai Ngoding!
-Ketika terminal sudah menunjukkan status bahwa server berjalan:
-- **Frontend** dapat diakses di browser pada: `http://localhost:5173`
-- **Backend API** dapat diakses pada: `http://localhost:5000`
-- **Database MySQL** berjalan di port `3306` (host: `localhost` jika akses via DBeaver/DataGrip, atau `mysql` jika diakses via script backend).
+DDL di `database/init/*.sql` **hanya dijalankan saat volume masih kosong**. Jika mengubah
+schema setelah pernah menjalankan, reset dulu (⚠️ menghapus seluruh data):
 
-> **Penting (Hot Reload):** Karena kita menggunakan volume mount, semua perubahan kode yang kamu tulis di folder `backend/` atau `frontend/` akan langsung me-reload otomatis (berkat `nodemon` dan `vite`). Untuk environment Docker di Windows (bind mount), kami mengaktifkan `legacyWatch` (nodemon) dan `usePolling` (Vite) agar perubahan file terdeteksi dengan stabil. **Kamu tidak perlu stop/start ulang docker setiap mengubah kode!**
+```bash
+docker compose down -v && docker compose up --build
+```
 
----
+Setelah container hidup, isi data dev:
 
-## 🗄️ Menjalankan Script SQL Otomatis
-
-Letakkan file `.sql` di folder `database/init/` dengan prefix angka agar urut (misal `01-schema.sql`, `02-seed.sql`).
-
-> **⚠️ PENTING:** File SQL di `database/init/` **hanya dieksekusi saat container MySQL start untuk pertama kali** (ketika volume `mysql_data` masih kosong). Jika kamu menambah atau mengubah file SQL setelah database pernah running, kamu perlu me-reset database:
-> ```bash
-> docker compose down -v && docker compose up --build
-> ```
-> Perintah `-v` akan **MENGHAPUS seluruh data** pada volume MySQL. Pastikan tidak ada data penting yang tersimpan sebelum menjalankannya.
+```bash
+docker compose exec backend npm run seed
+```
 
 ---
 
-## 🔧 Panduan Troubleshooting
+## 💻 3. Menjalankan (Lokal tanpa Docker)
 
-- **Gagal akses Frontend dari browser?** 
-  Pastikan Vite dijalankan dengan argumen `--host` atau dikonfigurasi `host: true` di `vite.config.js` frontend kamu. (Hal ini sudah ditangani otomatis oleh `Dockerfile` frontend).
-- **Backend Error CORS ke Frontend?**
-  Pastikan backend kamu mengizinkan URL frontend (http://localhost:5173). Instal dan gunakan `cors` middleware di Express.
-- **Butuh nambah package / NPM install baru?**
-  Jika kamu menambahkan dependensi baru (misalnya install `axios` di frontend: `cd frontend && npm install axios`), kamu perlu me-rebuild container kamu agar Docker memasukkan dependensi baru tersebut:
-  ```bash
-  docker compose up --build
-  ```
-- **Cara stop service?**
-  Tekan `Ctrl+C` di terminal yang sedang menjalankan docker compose, atau jika berjalan di background (`-d`), gunakan:
-  ```bash
-  docker compose down
-  ```
-- **Cek semua sistem sehat?**
-  Buka `http://localhost:5000/api/health`. Endpoint ini akan menampilkan `{"status":"ok","database":"connected"}` apabila backend berhasil terhubung ke MySQL.
+```bash
+# 1) Siapkan database
+createdb xora
+psql -d xora -f database/init/01-schema.sql
+
+# 2) Backend
+cd backend
+npm install
+npm run seed        # isi data contoh
+npm run dev         # http://localhost:5001
+
+# 3) Frontend (terminal terpisah)
+cd frontend
+npm install
+npm run dev         # http://localhost:5173
+```
+
+> Port backend memakai **5001** karena `5000` sering dipakai macOS ControlCenter (AirPlay).
+
+### Akun seed
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| Learner | `learner@xora.dev` | `password123` |
+| Admin | `admin@xora.dev` | `password123` |
+
+---
+
+## 🔐 Autentikasi (Session Token)
+
+1. `POST /api/auth/login` → `{ data: { user, token } }`.
+2. Kirim token di header: `Authorization: Bearer <token>`.
+3. `POST /api/auth/logout` (butuh token) → mencabut sesi di server (`sessions.status = 'REVOKED'`).
+4. `GET /api/auth/me` → profil user aktif.
+
+Token disimpan sebagai hash di tabel `sessions` dengan masa berlaku `expires_at`.
+
+---
+
+## 🔌 Endpoint Penting
+
+| Kelompok | Endpoint |
+| :--- | :--- |
+| Health | `GET /api/health` → `{"status":"ok","database":"connected"}` |
+| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` |
+| Katalog | `GET /api/subjects`, `/api/levels`, `/api/topics`, `/api/concepts` |
+| Learning path | `GET /api/learning-path`, `/api/learning-path/:subjectId` |
+| Asesmen | `GET /api/assessments`, `/:id`, `/:id/questions`, `POST /:id/attempts`, `POST /api/assessments/attempts/:id/submit` |
+| Attempt | `POST /api/attempts`, `GET /api/attempts`, `GET /api/attempts/:id`, `POST /api/attempts/:id/submit`, `DELETE /api/attempts/:id` |
+| Diagnostik | `GET /api/mastery`, `/api/gaps`, `/api/diagnostics/:id`, `POST /api/diagnostics/:id/verify/start` |
+| Remediasi | `GET /api/recommendations`, `/next`, `POST /:id/start|complete|skip`, `GET /:id/materials`, `GET /api/practices`, `GET /api/history` |
+| Admin | `/api/assessments/admin/questions/bank` (CRUD soal), `/api/assessments/admin/full/:id` (harus role `ADMIN`) |
+| AI (opsional) | `POST /api/ai/analyze`, `GET /api/ai/health` |
+
+Detail lengkap: lihat `AGENT.md` §4.
+
+---
+
+## 🤖 Fitur AI
+
+Tanpa `AI_API_KEY`, endpoint `/api/ai/*` mengembalikan **503** dan kolom analisis AI pada
+attempt berstatus `FAILED`. Fitur inti (asesmen, scoring, mastery, gap, rekomendasi) **tetap berjalan**.
+
+---
+
+## 🗄️ Mengelola Script SQL
+
+- Letakkan file `.sql` di `database/init/` dengan prefix angka (mis. `01-schema.sql`) agar urut.
+- File tersebut hanya dieksekusi pada volume database yang baru.
+
+---
+
+## 🧪 Verifikasi Cepat
+
+```bash
+# Backend sehat?
+curl http://localhost:5001/api/health
+
+# Frontend bisa di-build tanpa error?
+cd frontend && npm run build
+```
+
+---
+
+## 🛠️ Troubleshooting
+
+- **Port 5000 bentrok (macOS)?** Gunakan `PORT=5001` (default proyek).
+- **Error "server does not support SSL connections"?** Postgres lokal tidak memakai SSL —
+  set `DATABASE_SSL=false`.
+- **Perubahan schema tidak terlihat?** SQL init hanya jalan saat volume kosong:
+  `docker compose down -v`.
+- **Endpoint balas 404 JSON** (`{"status":"error","message":"Endpoint tidak ditemukan..."}`) —
+  path salah; cek daftar endpoint di atas.

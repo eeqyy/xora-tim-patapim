@@ -348,6 +348,41 @@ CREATE INDEX idx_topics_status
     ON topics(status);
 
 
+-- ============================================================
+-- KNOWLEDGE STRUCTURE
+-- ============================================================
+
+CREATE TABLE concepts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    subject_id UUID NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    status content_status NOT NULL DEFAULT 'DRAFT',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_concepts_subject
+        FOREIGN KEY (subject_id)
+        REFERENCES subjects(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT uq_concepts_subject_name
+        UNIQUE (subject_id, name)
+);
+
+CREATE INDEX idx_concepts_subject_id
+    ON concepts(subject_id);
+
+CREATE INDEX idx_concepts_status
+    ON concepts(status);
+
+
+-- ============================================================
+-- LEARNING MATERIALS
+-- Diletakkan setelah `concepts` karena FK materials.concept_id -> concepts.id
+-- ============================================================
+
 CREATE TABLE materials (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     topic_id UUID NOT NULL,
@@ -384,36 +419,6 @@ CREATE INDEX idx_materials_concept_id
 
 CREATE INDEX idx_materials_status
     ON materials(status);
-
-
--- ============================================================
--- KNOWLEDGE STRUCTURE
--- ============================================================
-
-CREATE TABLE concepts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    subject_id UUID NOT NULL,
-    name TEXT NOT NULL,
-    description TEXT,
-    status content_status NOT NULL DEFAULT 'DRAFT',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT fk_concepts_subject
-        FOREIGN KEY (subject_id)
-        REFERENCES subjects(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
-
-    CONSTRAINT uq_concepts_subject_name
-        UNIQUE (subject_id, name)
-);
-
-CREATE INDEX idx_concepts_subject_id
-    ON concepts(subject_id);
-
-CREATE INDEX idx_concepts_status
-    ON concepts(status);
 
 
 CREATE TABLE topic_concepts (
@@ -607,6 +612,8 @@ CREATE TABLE assessments (
     level_id UUID,
     topic_id UUID,
     type assessment_type NOT NULL,
+    -- Tingkat kesulitan assessment (dipakai pemilihan soal MIXED). Migrasi 006.
+    difficulty level_difficulty,
     title TEXT NOT NULL,
     duration_minutes INTEGER,
     passing_score NUMERIC(5,2),
@@ -667,17 +674,28 @@ CREATE INDEX idx_assessments_topic_id
 CREATE INDEX idx_assessments_type
     ON assessments(type);
 
+CREATE INDEX idx_assessments_difficulty
+    ON assessments(difficulty);
+
 
 CREATE TABLE questions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    assessment_id UUID NOT NULL,
+    -- Nullable: soal di Bank Soal boleh belum terikat ke satu assessment (migrasi 007).
+    assessment_id UUID,
     concept_id UUID NOT NULL,
     difficulty level_difficulty NOT NULL DEFAULT 'MEDIUM',
+    -- Materi/kategori soal: 'HTML', 'CSS', 'JAVASCRIPT' (migrasi 006).
+    material VARCHAR(50),
     type question_type NOT NULL,
     question_text TEXT NOT NULL,
     correct_answer JSONB NOT NULL,
     points NUMERIC(5,2) NOT NULL,
-    order_index INTEGER NOT NULL,
+    -- Nullable: soal Bank Soal belum tentu punya urutan dalam assessment (migrasi 007).
+    order_index INTEGER,
+    -- Status publikasi soal (Bank Soal) + soft delete agar riwayat evidence aman.
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    explanation TEXT,
+    deleted_at TIMESTAMPTZ,
 
     CONSTRAINT fk_questions_assessment
         FOREIGN KEY (assessment_id)
@@ -704,6 +722,15 @@ CREATE INDEX idx_questions_assessment_id
 CREATE INDEX idx_questions_concept_id
     ON questions(concept_id);
 
+CREATE INDEX idx_questions_material
+    ON questions(material);
+
+CREATE INDEX idx_questions_is_active
+    ON questions(is_active);
+
+CREATE INDEX idx_questions_deleted_at
+    ON questions(deleted_at);
+
 
 CREATE TABLE attempts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -713,6 +740,12 @@ CREATE TABLE attempts (
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
     score NUMERIC(5,2),
+    -- Hasil kelulusan + rincian skor per materi/topik + hasil analisis AI (migrasi 006).
+    is_passed BOOLEAN DEFAULT false,
+    material_scores JSONB,
+    topic_scores JSONB,
+    ai_analysis JSONB,
+    ai_status VARCHAR(20) NOT NULL DEFAULT 'NONE',
 
     CONSTRAINT fk_attempts_learner
         FOREIGN KEY (learner_id)
@@ -744,6 +777,45 @@ CREATE INDEX idx_attempts_status
 
 CREATE INDEX idx_attempts_learner_assessment
     ON attempts(learner_id, assessment_id);
+
+
+-- ============================================================
+-- ATTEMPT QUESTION SNAPSHOT (migrasi 006)
+-- Menyimpan daftar & urutan soal per attempt agar konsisten
+-- ketika learner me-refresh/keluar-masuk sesi.
+-- ============================================================
+
+CREATE TABLE attempt_questions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    attempt_id UUID NOT NULL,
+    question_id UUID NOT NULL,
+    order_index INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_attempt_questions_attempt
+        FOREIGN KEY (attempt_id)
+        REFERENCES attempts(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_attempt_questions_question
+        FOREIGN KEY (question_id)
+        REFERENCES questions(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT uq_attempt_question_order
+        UNIQUE (attempt_id, order_index),
+
+    CONSTRAINT uq_attempt_question
+        UNIQUE (attempt_id, question_id)
+);
+
+CREATE INDEX idx_attempt_questions_attempt_id
+    ON attempt_questions(attempt_id);
+
+CREATE INDEX idx_attempt_questions_question_id
+    ON attempt_questions(question_id);
 
 
 CREATE TABLE evidence (

@@ -1,22 +1,20 @@
 services:
-  mysql:
-    image: mysql:8
-    container_name: project_mysql
+  postgres:
+    image: postgres:16-alpine
+    container_name: xora_postgres
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER:-xora_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-xora_password}
+      POSTGRES_DB: ${POSTGRES_DB:-xora}
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "${DB_PORT:-5432}:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
+      # DDL dijalankan otomatis saat volume masih kosong (fresh install).
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-xora_user} -d ${POSTGRES_DB:-xora}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,31 +23,30 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: project_backend
+    container_name: xora_backend
     restart: unless-stopped
     env_file:
       - .env
     ports:
-      - "${BACKEND_PORT:-5000}:5000"
+      - "${BACKEND_PORT:-5001}:5001"
     volumes:
       - ./backend:/app
       - /app/node_modules # Anonymous volume untuk mencegah override dari host
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     environment:
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - PORT=5000
+      # DATABASE_URL menunjuk ke hostname service `postgres` di dalam network Docker.
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-xora_user}:${POSTGRES_PASSWORD:-xora_password}@postgres:5432/${POSTGRES_DB:-xora}
+      - DATABASE_SSL=false
+      - PORT=5001
+      - CLIENT_URL=http://localhost:${FRONTEND_PORT:-5173}
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: project_frontend
+    container_name: xora_frontend
     restart: unless-stopped
     env_file:
       - .env
@@ -59,7 +56,7 @@ services:
       - ./frontend:/app
       - /app/node_modules # Anonymous volume untuk mencegah override dari host
     environment:
-      - VITE_API_URL=http://localhost:${BACKEND_PORT:-5000}
+      - VITE_API_URL=http://localhost:${BACKEND_PORT:-5001}
 
 volumes:
-  mysql_data:
+  postgres_data:

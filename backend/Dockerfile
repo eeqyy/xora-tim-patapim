@@ -15,7 +15,7 @@ RUN npm install
 COPY . .
 
 # Ekspose port yang digunakan backend
-EXPOSE 5000
+EXPOSE 5001
 
 # Jalankan backend menggunakan nodemon untuk hot reload
 # Pastikan entrypoint script backend kamu (misal index.js, server.js atau app.js)

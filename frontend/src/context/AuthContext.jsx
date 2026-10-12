@@ -110,7 +110,16 @@ export function AuthProvider({ children }) {
     return res;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const activeToken = tokenStorage.get();
+    if (activeToken) {
+      try {
+        // Best-effort: cabut sesi di server agar token tidak tetap ACTIVE.
+        await authApi.logout(activeToken);
+      } catch {
+        // Abaikan kegagalan jaringan — sesi lokal tetap dibersihkan.
+      }
+    }
     tokenStorage.clear();
     setToken(null);
     setUser(null);

@@ -18,6 +18,7 @@ import AssessmentResultPage from "./pages/AssessmentResultPage";
 import AdminAssessmentsPage from "./pages/AdminAssessmentsPage";
 import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
 import ProgressPage from "./pages/ProgressPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function AppContent() {
   const { currentPath } = useRouter();
@@ -55,42 +56,42 @@ function AppContent() {
       </ProtectedRoute>
     );
   } else if (currentPath.startsWith("/assessments/result/") || currentPath.startsWith("/assessments/results/")) {
-    const attemptId = currentPath.replace(/^\/assessments\/results?\//, "").split("?")[0];
+    const attemptId = currentPath.replace(/^\/assessments\/results?\//, "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentResultPage attemptId={attemptId} />
       </ProtectedRoute>
     );
   } else if (currentPath.startsWith("/attempts/")) {
-    const attemptId = currentPath.replace("/attempts/", "").split("?")[0];
+    const attemptId = currentPath.replace("/attempts/", "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentResultPage attemptId={attemptId} />
       </ProtectedRoute>
     );
   } else if (currentPath.startsWith("/verification/")) {
-    const diagnosticId = currentPath.replace("/verification/", "").split("?")[0];
+    const diagnosticId = currentPath.replace("/verification/", "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentPage diagnosticId={diagnosticId} isVerification={true} />
       </ProtectedRoute>
     );
   } else if (currentPath.startsWith("/practice/")) {
-    const actionId = currentPath.replace("/practice/", "").split("?")[0];
+    const actionId = currentPath.replace("/practice/", "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentPage actionId={actionId} isPractice={true} />
       </ProtectedRoute>
     );
   } else if (currentPath.startsWith("/reassess/")) {
-    const assessmentId = currentPath.replace("/reassess/", "").split("?")[0];
+    const assessmentId = currentPath.replace("/reassess/", "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentPage assessmentId={assessmentId} isReassessment={true} />
       </ProtectedRoute>
     );
   } else if (currentPath.startsWith("/assessments/")) {
-    const assessmentId = currentPath.replace("/assessments/", "").split("?")[0];
+    const assessmentId = currentPath.replace("/assessments/", "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentPage assessmentId={assessmentId} />
@@ -103,14 +104,14 @@ function AppContent() {
       </AdminRoute>
     );
   } else if (currentPath.startsWith("/admin/assessments/")) {
-    const assessmentId = currentPath.replace("/admin/assessments/", "").split("?")[0];
+    const assessmentId = currentPath.replace("/admin/assessments/", "");
     pageContent = (
       <AdminRoute>
         <AdminAssessmentEditorPage assessmentId={assessmentId} />
       </AdminRoute>
     );
   } else {
-    pageContent = <HomePage />;
+    pageContent = <NotFoundPage />;
   }
 
   return (

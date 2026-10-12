@@ -3,18 +3,23 @@
 // frontend/src/context/RouterContext.jsx
 // ============================================================
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { useAuth } from "./AuthContext";
 
 const RouterContext = createContext(null);
 
+// Pisahkan pathname & query string agar `currentPath` selalu bersih
+// (tanpa "?query=...") dan query tetap bisa dibaca lewat `query`.
+const readLocation = () => ({
+  pathname: window.location.pathname || "/",
+  search: window.location.search || "",
+});
+
 export function RouterProvider({ children }) {
-  const [currentPath, setCurrentPath] = useState(() => window.location.pathname || "/");
+  const [location, setLocation] = useState(readLocation);
 
   useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname || "/");
-    };
+    const handlePopState = () => setLocation(readLocation());
 
     window.addEventListener("popstate", handlePopState);
     return () => {
@@ -23,14 +28,22 @@ export function RouterProvider({ children }) {
   }, []);
 
   const navigate = (to) => {
-    if (window.location.pathname !== to) {
-      window.history.pushState({}, "", to);
-      setCurrentPath(to);
+    // `to` boleh berupa path polos maupun menyertakan query string.
+    const url = new URL(to, window.location.origin);
+    const next = `${url.pathname}${url.search}`;
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (current !== next) {
+      window.history.pushState({}, "", next);
+      setLocation({ pathname: url.pathname, search: url.search });
     }
   };
 
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
   return (
-    <RouterContext.Provider value={{ currentPath, navigate }}>
+    <RouterContext.Provider
+      value={{ currentPath: location.pathname, search: location.search, query, navigate }}
+    >
       {children}
     </RouterContext.Provider>
   );

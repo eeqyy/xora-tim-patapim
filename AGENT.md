@@ -2,49 +2,44 @@
 
 > **Target Audience:** AI Coding Agents & Software Engineers
 > **Repository:** Xora — Evidence-Based Learning Diagnostic & Root-Cause Navigator
-> **Last Audited:** October 9, 2026
-> **Active Working Branch:** `feat/user-profile`
+> **Last Audited:** October 12, 2026
+> **Active Working Branch:** `main`
+
+> Dokumen ini adalah **acuan utama**. `README.md` mengikuti dokumen ini.
+> Bila ada perbedaan antara kode dan dokumen ini, **kode adalah kebenaran** —
+> perbarui dokumen ini setelah memverifikasi kode.
 
 ---
 
 ## 1. Project Overview
 
 ### 1.1 Mission and Purpose
-**Xora** is an **Evidence-Based Learning Diagnostic & Root-Cause Navigator**. It transforms modern software engineering education from rote memorization and arbitrary test scoring into a continuous diagnostic loop.
+**Xora** is an **Evidence-Based Learning Diagnostic & Root-Cause Navigator**. It transforms
+software engineering education from rote memorization and coarse test scoring into a
+continuous diagnostic loop: measure at concept granularity → store immutable evidence →
+detect gaps → remediate the specific root cause.
 
 ### 1.2 The Problem Xora Solves
-Traditional learning platforms (LMSs, video courses, coding bootcamps) suffer from two core failure modes:
-1. **Superficial Completion & Coarse Scoring:** Learners are evaluated with percentage scores (e.g., "70% passed") without identifying *why* the 30% failed. Gaps in foundational prerequisite concepts compound silently until the learner is blocked in advanced topics.
-2. **Ungrounded "AI Tutoring":** Generic LLM tutors frequently hallucinate advice because they lack deterministic, granular telemetry on what the learner actually knows and where their mental model breaks down.
+1. **Superficial Completion & Coarse Scoring:** A "70% passed" score never explains *which
+   foundational concept* broke down. Gaps in prerequisites compound silently.
+2. **Ungrounded "AI Tutoring":** Generic LLM tutors hallucinate because they lack granular,
+   deterministic telemetry of what the learner actually knows.
 
-### 1.3 How Xora Differs
-| Dimension | Traditional LMS / Bootcamp | Generic AI Tutor | Xora Platform |
-| :--- | :--- | :--- | :--- |
-| **Progress Metric** | Video watch-time & quizzes | Chat message exchanges | Verifiable concept evidence |
-| **Assessment Model** | Pass/fail grade | Open-ended conversational | Concept-mapped diagnostic challenges |
-| **Remediation** | Retake entire module | Generic conversational hints | Root-cause prerequisite navigation |
-| **Data Integrity** | High-level scores only | Ephemeral chat history | Immutable, concept-tagged evidence rows |
-
-### 1.4 The Core Diagnostic Loop
+### 1.3 The Core Diagnostic Loop
 ```
-[1. Curriculum Hierarchy]
-Subject → Level → Topic → Concept (with explicit Prerequisites)
-             │
-             ▼
-[2. Diagnostic Assessment]
-Multiple Choice & Interactive Drag-and-Drop Challenges
-             │
-             ▼
-[3. Server-Side Scoring & Evidence Ingestion]
-Evaluated at concept granularity → Immutable `evidence` records
-             │
-             ▼
-[4. Concept Mastery State] (Database Schema Ready)
-`learner_concept_states` (mastery_score, evidence_confidence, gap_status)
-             │
-             ▼
-[5. Root-Cause Navigation & Targeted Remediation] (Planned Engine)
-Tracing errors backward through concept prerequisites to unblock the learner
+[1] Curriculum:  Subject → Level → Topic → Concept (with prerequisites)
+        │
+        ▼
+[2] Diagnostic assessment (MCQ / CODE) served with sanitized answer keys
+        │
+        ▼
+[3] Server-side scoring → immutable `evidence` rows (per question, per concept)
+        │
+        ▼
+[4] Concept mastery state → `learner_concept_states` (mastery_score, confidence, gap_status)
+        │
+        ▼
+[5] Root-cause navigation → `learning_actions` (recommendations / practice / verification)
 ```
 
 ---
@@ -52,426 +47,329 @@ Tracing errors backward through concept prerequisites to unblock the learner
 ## 2. Technology Stack
 
 ### 2.1 Frontend
-- **Framework:** React 18 (`react` `^18.3.1`, `react-dom` `^18.3.1`)
-- **Build Tool & Dev Server:** Vite 5 (`vite` `^5.4.0`, `@vitejs/plugin-react` `^4.3.1`)
-- **Styling:** Pure Vanilla CSS using custom CSS design tokens (`frontend/src/index.css`). **Do NOT install or use TailwindCSS**; the project strictly uses CSS custom properties and structured utility classes.
-- **Routing:** Lightweight in-repo History API router (`frontend/src/context/RouterContext.jsx`). **Do NOT install `react-router-dom`**.
-- **State Management:** React Context API (`AuthContext.jsx`, `RouterContext.jsx`) and local component state.
-- **HTTP Client:** Centralized fetch wrapper (`frontend/src/services/api.js`).
+- **Framework:** React 18 (`^18.3.1`)
+- **Build tool / dev server:** Vite 5 (`^5.4.0`, `@vitejs/plugin-react` `^4.3.1`)
+- **Styling:** Vanilla CSS with custom design tokens in `frontend/src/index.css`.
+  **Do NOT install TailwindCSS or any UI framework.**
+- **Routing:** Custom History-API router in `frontend/src/context/RouterContext.jsx`
+  (`useRouter`, `Link`, `ProtectedRoute`, `AdminRoute`). **Do NOT install react-router.**
+- **State:** React Context (`AuthContext`, `RouterContext`) + local component state.
+- **HTTP:** Always through the centralized client `frontend/src/services/api.js`.
 
 ### 2.2 Backend
-- **Runtime:** Node.js (v18+)
-- **Server Framework:** Express 4 (`express` `^4.19.2`)
-- **Cross-Origin Handling:** `cors` `^2.8.5` (configured for `http://localhost:5173`, `http://127.0.0.1:5173`, and `process.env.CLIENT_URL`)
-- **Environment Management:** `dotenv` `^16.6.1` loading root `.env`
-- **Authentication & Security:**
-  - `jsonwebtoken` `^9.0.3` (JWT Bearer tokens, default 7-day expiration)
-  - `bcryptjs` `^3.0.3` (salted password hashing)
-- **Database Driver:** `pg` `^8.23.1` (PostgreSQL client pool)
-- **Dev Process Manager:** `nodemon` `^3.1.4`
+- **Runtime:** Node.js 20+
+- **HTTP:** Express 4 (`^4.19.2`), `cors` (`^2.8.5`)
+- **Config:** `dotenv` — reads the **root `.env`** (`backend/db.js`, `backend/index.js`)
+- **Auth:** **Opaque session tokens**, NOT JWT. `bcryptjs` (`^3.0.3`) hashes passwords;
+  random tokens are hashed and stored in the `sessions` table.
+  (`jsonwebtoken` and the old `middlewares/` + `config/auth.js` cluster were **removed**.)
+- **DB driver:** `pg` (`^8.23.1`)
+- **Dev:** `nodemon` (`^3.1.4`)
 
 ### 2.3 Database
-- **Engine:** PostgreSQL (with `pgcrypto` extension for `gen_random_uuid()`).
-- **Connection:** `backend/db.js` initializes `pg.Pool` with `process.env.DATABASE_URL` and `ssl: { rejectUnauthorized: false }`.
-- **Schema Initialization:** `database/init/01-schema.sql` (PostgreSQL DDL).
-- **Seed Script:** `backend/seed.js` executed via `npm run seed`.
+- **Engine:** PostgreSQL (extension `pgcrypto` for `gen_random_uuid()`).
+- **Connection:** `backend/db.js` builds a `pg.Pool` from `DATABASE_URL`; **SSL is enabled by
+  default** (safe for remote Supabase). Disable it with `DATABASE_SSL=false` for local
+  Homebrew Postgres that doesn't support SSL.
+- **Canonical schema:** `database/init/01-schema.sql`. Historical migrations `002`–`008`
+  live in `database/migrations/`; the changes still relevant for a fresh install have been
+  **merged into `01-schema.sql`**.
+- **Seed:** `backend/seed.js` via `npm run seed`.
 
 > [!IMPORTANT]
-> **Database Clarification:** While the legacy `docker-compose.yml` and `README.md` contain historical MySQL boilerplate templates, the active backend codebase is **100% PostgreSQL** using the `pg` client library and UUID primary keys. All database queries must use PostgreSQL SQL dialect (`$1, $2`, `RETURNING *`, `JSONB`, `ARRAY_AGG`).
+> The project is **100% PostgreSQL**. `docker-compose.yml`, `.env.example`, and `README.md`
+> have been updated to PostgreSQL (they previously contained legacy MySQL boilerplate).
+> All queries must use PostgreSQL dialect (`$1, $2`, `RETURNING *`, `JSONB`, `ON CONFLICT`).
 
 ---
 
-## 3. Existing Architecture & Directory Map
+## 3. Directory Map
 
 ```text
 xora-project/
-├── AGENT.md                       # This permanent engineering guideline
-├── README.md                      # General project setup documentation
-├── .env.example                   # Environment variable template
-├── .gitignore                     # Git ignore rules
+├── AGENT.md                       # This guideline (source of truth for architecture)
+├── README.md                      # Setup documentation
+├── UPGRADE.md                     # Langkah upgrade setelah git pull
+├── docker-compose.yml             # PostgreSQL + backend + frontend
+├── .env.example                   # Environment template
 │
 ├── database/
-│   └── init/
-│       └── 01-schema.sql          # Canonical PostgreSQL DDL schema & enums
+│   ├── init/01-schema.sql         # Canonical PostgreSQL DDL (28 tables, enums, indexes, triggers)
+│   ├── migrations/                # 002..008 (historical; core parts merged into 01)
+│   └── seeds/                     # Extra question-bank data & scripts
 │
 ├── backend/
-│   ├── index.js                   # Express application entry point & route mounting
-│   ├── db.js                      # PostgreSQL connection pool (pg.Pool)
-│   ├── seed.js                    # Database seed script for roles, subjects, questions
-│   ├── package.json               # Backend dependencies and run scripts
+│   ├── index.js                   # Express app, route mounting, 404 + central error handler
+│   ├── db.js                      # pg.Pool (conditional SSL)
+│   ├── seed.js                    # Dev seed data
+│   ├── middleware/
+│   │   ├── auth.js                # requireAuth → session token → req.user/req.token
+│   │   └── requireAdmin.js        # requireAdmin guard (ADMIN role)
 │   ├── config/
-│   │   └── auth.js                # JWT secret and expiration helpers
-│   ├── middlewares/
-│   │   ├── authMiddleware.js      # JWT verification & active user loader
-│   │   └── roleMiddleware.js      # Role-based access control guard (LEARNER, ADMIN)
-│   ├── routes/
-│   │   ├── auth.js                # /api/auth (register, login, me)
-│   │   ├── profile.js             # /api/profile (get, update, onboarding)
-│   │   ├── learningPath.js        # /api/learning-path (hierarchical path)
-│   │   ├── subjects.js            # /api/subjects (public subject catalog)
-│   │   ├── levels.js              # /api/levels (public level catalog)
-│   │   ├── topics.js              # /api/topics (public topic catalog)
-│   │   ├── concepts.js            # /api/concepts (public concepts & prerequisites)
-│   │   ├── assessments.js         # /api/assessments (assessments, questions, attempts)
-│   │   └── attempts.js            # /api/attempts (attempt retrieval & submit)
-│   └── services/
-│       ├── authService.js         # User registration, password verification, tokens
-│       ├── profileService.js      # Learner profile & atomic onboarding completion
-│       ├── learningPathService.js # Curriculum hierarchy query builder
-│       ├── subjectService.js      # Subject query operations
-│       ├── levelService.js        # Level query operations
-│       ├── topicService.js        # Topic query operations
-│       ├── conceptService.js      # Concept and prerequisite queries
-│       └── assessmentService.js   # Attempt lifecycle, server scoring, evidence creation
+│   │   ├── aiPrompt.js            # Prompt/format for AI analysis
+│   │   ├── aiProvider.js          # OpenRouter client
+│   │   └── masteryThresholds.js   # Mastery/gap thresholds
+│   ├── routes/                    # 16 route files (see §4)
+│   ├── services/                  # 17 services (business logic)
+│   └── utils/
+│       ├── errors.js              # ApiError + sendError + isValidUuid
+│       ├── grading.js             # answer grading helpers
+│       ├── password.js            # bcrypt hash/compare
+│       ├── session.js             # bearer extraction / token hashing
+│       └── aiValidator.js         # validate AI JSON output
 │
 └── frontend/
-    ├── index.html                 # HTML shell with Google Fonts & viewport meta
-    ├── vite.config.js             # Vite configuration with @vitejs/plugin-react
-    ├── package.json               # Frontend dependencies (React, Vite)
+    ├── index.html
+    ├── vite.config.js
     └── src/
-        ├── main.jsx               # React DOM root render
-        ├── App.jsx                # Application router outlet & layout shell
-        ├── index.css              # Light Pastel Glassmorphism Design System tokens & styles
+        ├── main.jsx
+        ├── App.jsx                # Route switch + layout + NotFoundPage fallback
+        ├── index.css              # Design system (tokens + components)
         ├── context/
-        │   ├── AuthContext.jsx    # Session management, tokenStorage, login/logout
-        │   └── RouterContext.jsx  # History API router (useRouter, Link, ProtectedRoute)
+        │   ├── AuthContext.jsx    # login/register/logout, tokenStorage, refreshUser
+        │   └── RouterContext.jsx  # History router: currentPath/search/query/navigate
         ├── services/
-        │   └── api.js             # Centralized API client (auth, profile, assessments)
+        │   └── api.js             # Centralized API client
         ├── components/
-        │   ├── Navbar.jsx         # Responsive floating glass navbar with mobile drawer
-        │   ├── Button.jsx         # Accessible button with loading spinner & variants
-        │   ├── Badge.jsx          # Semantic status badge component
-        │   ├── GlassCard.jsx      # Reusable glassmorphic container surface
-        │   └── FormControls.jsx   # Accessible Input, Select, and FormField wrappers
+        │   ├── Navbar.jsx, Button.jsx, Icons.jsx, PageContainer.jsx, PageHeader.jsx,
+        │   ├── GlassPanel.jsx, StatusBadge.jsx, StatCard.jsx, ProgressBar.jsx,
+        │   ├── EmptyState.jsx, ErrorState.jsx, LoadingState.jsx,
+        │   ├── AssessmentMetaFields.jsx, index.js (barrel export)
         └── pages/
-            ├── HomePage.jsx       # Light Pastel Glassmorphism landing page
-            ├── LoginPage.jsx      # Learner authentication page
-            ├── RegisterPage.jsx   # Learner registration page
-            ├── OnboardingPage.jsx # 3-step personalized learner onboarding
-            ├── LearningPathConfirmPage.jsx # Confirmation before entering dashboard
-            ├── DashboardPage.jsx  # Learner dashboard with curriculum tree
-            ├── LearningPathPage.jsx # Subject curriculum hierarchy view
-            ├── AssessmentListPage.jsx # Diagnostic assessments catalog
-            ├── AssessmentPage.jsx # 20-question test runner (MCQ & Drag-Drop)
-            ├── AssessmentResultPage.jsx # Post-assessment evaluation breakdown
-            └── ProfilePage.jsx    # Learner profile management
+            ├── HomePage.jsx, LoginPage.jsx, RegisterPage.jsx, ProfilePage.jsx,
+            ├── LearningPathPage.jsx, ProgressPage.jsx, AssessmentListPage.jsx,
+            ├── AssessmentPage.jsx, AssessmentResultPage.jsx,
+            ├── AdminAssessmentsPage.jsx, AdminAssessmentEditorPage.jsx,
+            └── NotFoundPage.jsx   # 404
 ```
+
+**Backend services (17):** `aiService`, `assessmentService`, `attemptService`, `authService`,
+`conceptService`, `gapService`, `historyService`, `learningPathService`, `levelService`,
+`masteryService`, `practiceService`, `profileService`, `questionService`,
+`recommendationService`, `sessionService`, `subjectService`, `topicService`.
 
 ---
 
-## 4. Verified Features & API Contracts
+## 4. API Contracts
 
-Every endpoint listed below has been verified against active route and service code.
+All routes are mounted in `backend/index.js`. Private routes require
+`Authorization: Bearer <token>` (session token) via `middleware/auth.js`.
 
-### 4.1 Authentication (`/api/auth`)
-| Method | Path | Auth Required | Description | Request Body | Response Shape |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | No | Registers user & creates `learner_profiles` row | `{ name, email, password }` | `{ status: "ok", data: { user, token } }` (HTTP 201) |
-| `POST` | `/api/auth/login` | No | Authenticates credentials & returns JWT | `{ email, password }` | `{ status: "ok", data: { user, token } }` (HTTP 200) |
-| `GET` | `/api/auth/me` | Bearer Token | Returns current authenticated user record | None | `{ status: "ok", data: { id, email, name, status, roles } }` |
-
-*Error Responses:* `400 Bad Request` (validation failure), `401 Unauthorized` (invalid credentials/token), `409 Conflict` (duplicate email).
-
-### 4.2 Learner Profile & Onboarding (`/api/profile`)
-| Method | Path | Auth Required | Description | Request Body | Response Shape |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/profile` | Bearer Token | Fetches learner profile, user data, preferred subject | None | `{ status: "ok", data: { user, profile } }` |
-| `PATCH` | `/api/profile` | Bearer Token | Updates profile preferences and optionally name | `{ name?, learning_goal?, experience_level?, preferred_subject_id? }` | `{ status: "ok", data: { user, profile } }` |
-| `PATCH` | `/api/profile/onboarding` | Bearer Token | Marks onboarding as complete atomically | None | `{ status: "ok", data: { onboarding_completed: true } }` |
-
-### 4.3 Curriculum & Knowledge Hierarchy
-| Method | Path | Auth Required | Description | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/subjects` | Public | List all active subjects | Returns array of subjects |
-| `GET` | `/api/subjects/:id` | Public | Subject detail with nested levels | Used for public unauthenticated previews |
-| `GET` | `/api/levels` | Public | List all curriculum levels | Sorted by `order_index` |
-| `GET` | `/api/levels/:id` | Public | Level detail by UUID | Returns single level |
-| `GET` | `/api/topics` | Public | List all topics | Filterable by `level_id` |
-| `GET` | `/api/topics/:id` | Public | Topic detail by UUID | Returns single topic |
-| `GET` | `/api/concepts` | Public | List all granular concepts | Filterable by `subject_id` |
-| `GET` | `/api/concepts/:id` | Public | Concept detail by UUID | Returns single concept |
-| `GET` | `/api/concepts/:id/prerequisites`| Public | Concept prerequisite dependencies | Returns prerequisites and dependency weights |
-| `GET` | `/api/learning-path` | Bearer Token | Full hierarchy for user's preferred subject | Assembles Subject $\rightarrow$ Levels $\rightarrow$ Topics $\rightarrow$ Concepts |
-| `GET` | `/api/learning-path/:subjectId` | Bearer Token | Full hierarchy for specified subject | Assembles complete 4-tier tree |
-
-### 4.4 Diagnostic Assessments & Attempts (`/api/assessments` & `/api/attempts`)
-| Method | Path | Auth Required | Description | Security Contract |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/assessments` | Bearer Token | List available assessments | Query filters: `subject_id`, `level_id`, `topic_id` |
-| `GET` | `/api/assessments/:id` | Bearer Token | Get assessment metadata | Returns duration, passing score, question count |
-| `GET` | `/api/assessments/:id/questions` | Bearer Token | Fetch questions for taking test | **CRITICAL: Sanitized server-side**. Correct answers (`correct_answer.correct`) are stripped to prevent cheating. |
-| `POST` | `/api/assessments/:id/attempts` | Bearer Token | Start or resume assessment attempt | Reuses existing `IN_PROGRESS` attempt or creates new one (HTTP 201) |
-| `GET` | `/api/assessments/attempts/:attemptId` | Bearer Token | Fetch attempt summary & results | **Ownership Checked**: Only the attempt's learner can access (403 if mismatch) |
-| `POST` | `/api/assessments/attempts/:attemptId/submit` | Bearer Token | Evaluate answers, score attempt, store evidence | **Server-side scoring only**. Runs in a database transaction (`BEGIN...COMMIT`). Creates `evidence` records. |
-| `GET` | `/api/attempts/:id` | Bearer Token | Alias for attempt retrieval | Identical to `/api/assessments/attempts/:id` |
-| `POST` | `/api/attempts/:id/submit` | Bearer Token | Alias for attempt submission | Identical to `/api/assessments/attempts/:id/submit` |
-
-### 4.5 System Health
-| Method | Path | Auth Required | Description |
+### 4.1 Auth (`/api/auth`)
+| Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | Public | Health check verifying PostgreSQL database connection |
+| POST | `/api/auth/register` | No | Register + create learner profile → `{ data: { user, token } }` (201) |
+| POST | `/api/auth/login` | No | Authenticate → `{ data: { user, token, expiresAt } }` |
+| POST | `/api/auth/logout` | Yes | Revoke current session (`sessions.status = 'REVOKED'`) |
+| GET | `/api/auth/me` | Yes | Current user (`{ data: { user } }`) |
+
+### 4.2 Profile (`/api/profile`) — all require auth
+`GET /` · `PATCH /` · `PATCH /onboarding`
+
+### 4.3 Catalog & Knowledge (public)
+`GET /api/subjects`, `/api/subjects/:id`
+`GET /api/levels`, `/api/levels/:id`
+`GET /api/topics`, `/api/topics/:id`
+`GET /api/concepts`, `/api/concepts/:id`, `/api/concepts/:id/prerequisites`
+`GET /api/learning-path` (auth), `/api/learning-path/:subjectId` (auth)
+
+### 4.4 Assessments & Questions (`/api/assessments`)
+| Method | Path | Auth | Notes |
+| :--- | :--- | :--- | :--- |
+| GET | `/levels/status` | auth | Learner level progression |
+| GET | `/` | auth | List assessments (filters: `subject_id`, `level_id`, `topic_id`) |
+| GET | `/:id` | auth | Assessment metadata |
+| GET | `/:id/questions` | auth | **Sanitized** — `correct_answer.correct` is stripped |
+| POST | `/:id/attempts` | auth | Start/resume attempt (assessmentService) |
+| POST | `/:id/reassess` | auth | Start reassessment |
+| GET | `/attempts/:attemptId` | auth | Attempt summary (ownership checked) |
+| POST | `/attempts/:attemptId/submit` | auth | Score + store evidence + gap/AI analysis (transaction) |
+| POST | `/attempts/:attemptId/analyze-gap` | auth | (Re)run gap analysis |
+| Admin | `/admin/questions/bank` (GET/POST), `/admin/questions/bank/:questionId` (GET/PUT/DELETE), `/admin/questions/bank/:questionId/toggle-active` (PATCH) | ADMIN | Question bank CRUD |
+| Admin | `/admin/full/:id` (GET), `/` (POST), `/:id` (PUT/DELETE), `/:id/questions` (POST), `/:id/questions/reorder` (PUT), `/:id/questions/:questionId` (PUT/DELETE) | ADMIN | Assessment editor |
+
+### 4.5 Attempts (`/api/attempts`) — thin alias layer over `attemptService`
+`POST /` · `GET /` · `GET /:id` · `POST /:id/submit` · `DELETE /:id`
+
+> **Note:** `/api/attempts/*` (attemptService) and `/api/assessments/:id/attempts`
+> + `/api/assessments/attempts/:id/submit` (assessmentService) are **two
+> implementations of the attempt lifecycle**. Both are live and must keep working;
+> prefer the `/api/assessments/*` path for full analysis output.
+
+### 4.6 Diagnostics, Gaps, Mastery, Remediation, History
+- `GET /api/mastery`, `GET /api/mastery/concepts/:conceptId`
+- `GET /api/gaps`, `GET /api/gaps/:conceptId`, `POST /api/gaps/:conceptId/diagnose`
+- `GET /api/diagnostics/:id`, `POST /api/diagnostics/:id/verify/start`
+- `GET /api/recommendations`, `/next` (alias `/next-step`), `/:id/materials`,
+  `POST /:id/start`, `/:id/complete`, `/:id/skip`
+- `GET /api/practices`, plus practice attempt routes
+- `GET /api/history`
+- `GET /api/health` (public) · `POST /api/ai/analyze`, `GET /api/ai/health`
+
+### 4.7 Error & not-found responses
+- Unknown endpoints return **JSON 404**: `{ "status": "error", "message": "Endpoint tidak ditemukan: <METHOD> <path>" }`.
+- A centralized error handler in `index.js` reuses `utils/errors.sendError`, so all
+  errors share the shape `{ status: "error", message }` (never leaks stack traces).
 
 ---
 
 ## 5. Domain Model & Business Rules
 
-### 5.1 Relational Architecture
+### 5.1 Tables (28, in `database/init/01-schema.sql`)
+Identity: `users`, `roles`, `user_roles`, `sessions`.
+Profiles: `learner_profiles`, `admin_profiles`.
+Curriculum: `subjects`, `levels`, `topics`, `materials`, `concepts`, `topic_concepts`,
+`concept_prerequisites`, `learning_paths`.
+Assessment: `assessments`, `questions`, `attempts`, `attempt_questions` (snapshot), `evidence`.
+Diagnostics/remediation: `diagnostics`, `diagnostic_verifications`, `learning_actions`,
+`learner_concept_states`.
+Telemetry: `learning_events`, `audit_logs`, `learner_analytics`, `concept_analytics`,
+`learning_path_analytics`.
 
-```mermaid
-erDiagram
-    users ||--o{ user_roles : has
-    roles ||--o{ user_roles : assigned
-    users ||--o| learner_profiles : owns
-    subjects ||--o{ learner_profiles : preferred_by
-    subjects ||--o{ levels : contains
-    levels ||--o{ topics : contains
-    topics ||--o{ topic_concepts : maps
-    concepts ||--o{ topic_concepts : mapped_to
-    concepts ||--o{ concept_prerequisites : requires
-    subjects ||--o{ assessments : organizes
-    assessments ||--o{ questions : contains
-    users ||--o{ attempts : initiates
-    assessments ||--o{ attempts : evaluated_in
-    attempts ||--o{ evidence : produces
-    questions ||--o{ evidence : answered_for
-    concepts ||--o{ evidence : attributed_to
-    users ||--o{ learner_concept_states : maintains
-    concepts ||--o{ learner_concept_states : status_for
-```
+Key columns added to match code (migrations 006/007, merged into schema):
+- `questions`: `material`, `is_active`, `explanation`, `deleted_at`; `assessment_id` &
+  `order_index` are **nullable** (bank questions).
+- `assessments`: `difficulty`.
+- `attempts`: `is_passed`, `material_scores` (JSONB), `topic_scores` (JSONB),
+  `ai_analysis` (JSONB), `ai_status`.
+- `attempt_questions`: pins the served question set/order per attempt.
 
 ### 5.2 Strict Business Rules
-
-1. **Identity & Ownership:**
-   - The learner's identity is **strictly derived from the verified JWT payload** (`req.user.id`). Never accept `learner_id` or `user_id` from client request bodies or URL parameters.
-   - An attempt can only be read or submitted by the learner who initiated it (`attempt.learner_id === req.user.id`). Unauthorized access returns `403 Forbidden`.
-
-2. **Server-Side Scoring & Zero Key Leakage:**
-   - `GET /api/assessments/:id/questions` MUST sanitize question data. Never return `correct_answer.correct` to learners taking an assessment.
-   - Scoring is executed entirely on the server within `assessmentService.submitAttempt`. Client-calculated scores are completely ignored.
-
-3. **Atomic Evaluation & Evidence Recording:**
-   - Attempt submission uses a PostgreSQL transaction (`BEGIN ... COMMIT`).
-   - For every submitted question answer, an immutable `evidence` record is inserted with:
-     - `attempt_id`: UUID
-     - `question_id`: UUID
-     - `concept_id`: Resolved concept UUID
-     - `answer`: JSONB snapshot of learner choice
-     - `is_correct`: Boolean correctness determined by backend logic
-     - `score`: Numeric points awarded
-     - `response_time_seconds`: Optional response latency
-
-4. **Attempt Status Lifecycle:**
-   - Valid attempt statuses: `IN_PROGRESS`, `COMPLETED`, `ABANDONED`.
-   - Once an attempt has been transitioned to `COMPLETED`, it **cannot be resubmitted** (`400 Bad Request`).
-
-5. **Curriculum Integrity & Truth in UI:**
-   - Concepts cannot be declared `COMPLETED`, `LOCKED`, or `IN_PROGRESS` unless backed by verified data from `learner_concept_states` or `evidence`.
-   - Do not display fabricated metrics (e.g., fake learning streaks, fake weekly commitment hours). If backend data is not yet computed, display honest fallback labels: *"Belum terpetakan"* or *"Evidence Needed"*.
+1. **Identity & ownership:** the learner id is derived from the **verified session token**
+   (`req.user.id`), never from request bodies/params. Attempts are readable/submittable
+   only by their owner (else 403).
+2. **Server-side scoring & zero key leakage:** `GET /api/assessments/:id/questions` must
+   never return `correct_answer.correct`. Scoring happens only on the server.
+3. **Transactions:** multi-table mutations (submit + evidence + status/analysis; register +
+   profile) run inside `BEGIN … COMMIT` with rollback on error and `client.release()` in `finally`.
+4. **Truth in UI:** never display fabricated metrics. Fall back to honest labels such as
+   *"Belum terpetakan"* / *"Evidence Needed"*.
 
 ---
 
-## 6. Frontend Design System — Light Pastel Glassmorphism
+## 6. Frontend Design System
 
-The visual identity of Xora is **Light Pastel Glassmorphism**. It is bright, airy, modern-editorial, and translucent. It is **NOT flat pastel** and **NOT dark mode**.
+Visual identity: **light glassmorphism over a soft slate background with an indigo primary**.
+Tokens live in `frontend/src/index.css` — **always read the file; examples of the real ones:**
 
-### 6.1 Design Tokens (`frontend/src/index.css`)
 ```css
 :root {
-  /* Page Spacing & Grid Tokens */
-  --page-max-width: 1200px;
-  --page-gutter: clamp(16px, 3.5vw, 32px);
-  --section-space: clamp(48px, 6vw, 84px);
-  --content-gap: clamp(24px, 3.5vw, 40px);
-  --card-gap: 24px;
+  --color-bg: #f8fafc;
+  --color-surface: rgba(255, 255, 255, 0.85);
+  --color-surface-solid: #ffffff;
 
-  /* Color Palette — Light Pastel Tech */
-  --color-bg: #FAF9F6;
-  --color-surface: #FFFFFF;
-  --color-lavender: #EAE6FF;
-  --color-blue: #DDF1FF;
-  --color-mint: #DDF5E8;
-  --color-blush: #FFDDE5;
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
 
-  /* Primary Accent & Hover */
-  --color-primary: #5145B5;       /* Indigo solid, high-contrast */
-  --color-primary-hover: #43389A;
+  --color-text-main: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
 
-  /* High-Contrast Typography */
-  --color-text: #292B40;          /* Deep slate, WCAG AAA */
-  --color-text-secondary: #55576B;/* Readable secondary body, WCAG AA (5.8:1) */
-  --color-text-muted: #626478;    /* Muted labels & disclaimers, WCAG AA (4.7:1) */
-
-  /* Borders & Focus */
-  --color-border: #DEDCEA;
-  --color-focus: #5145B5;
-
-  /* Semantic Feedback Accents (High Contrast on Light Surfaces) */
-  --color-success: #166534;       /* Deep green, WCAG AAA */
-  --color-error: #B91C1C;         /* Deep red */
-  --color-warning: #B45309;       /* Deep amber */
-
-  /* Glassmorphism Specs */
-  --backdrop-blur: blur(20px);
+  --color-border: rgba(226, 232, 240, 0.85);
+  --color-success: #059669;
+  --color-error: #dc2626;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
 }
 ```
 
-### 6.2 Glass Surface Treatment
-Glass surfaces must feel translucent, polished, and dimensional:
-- **Surface Alpha:** `rgba(255, 255, 255, 0.78)` to `rgba(255, 255, 255, 0.88)` for text-heavy areas to protect legibility against background ambient mesh gradients.
-- **Backdrop Blur:** `backdrop-filter: blur(20px);` and `-webkit-backdrop-filter: blur(20px);`.
-- **Highlight Border:** `border: 1px solid rgba(255, 255, 255, 0.95);`.
-- **Top Inner Glow:** `box-shadow: inset 0 1px 0 #FFFFFF, 0 12px 36px rgba(81, 69, 181, 0.08);`.
-- **Corner Radii:** `20px` to `28px` for cards and panels; pill `9999px` for navbar and badges.
-
-### 6.3 Accessibility & Contrast Standards (WCAG AA/AAA)
-- **Normal Text:** Must strictly achieve $\ge 4.5:1$ contrast ratio against its rendered background.
-- **Large Text / Headings:** Must achieve $\ge 3:1$ contrast ratio.
-- **Never reduce text contrast** via container opacity (`opacity: 0.x` on parents). Maintain high opacity for text-bearing glass cards.
-- **Keyboard Focus:** All interactive elements (`a`, `button`, `input`) must support visible focus outlines (`:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }`).
-- **Motion Accessibility:** Respect `prefers-reduced-motion` to disable animations for sensitive users.
+Rules: reach for existing component classes (`glass-panel`, `badge`, `page-container`,
+etc.) and shared components instead of ad-hoc inline styles; keep WCAG AA contrast;
+provide visible `:focus-visible` outlines; respect `prefers-reduced-motion`.
 
 ---
 
 ## 7. Frontend UX & Integration Rules
-
-1. **Centralized API Client:**
-   - Always route HTTP calls through `frontend/src/services/api.js`. Never invoke ad-hoc `fetch()` calls inside individual components or pages.
-2. **History Routing Without Reloads:**
-   - Use `useRouter().navigate(to)` or `<Link to="...">` from `RouterContext.jsx`. Never use raw `window.location.href = ...` unless doing an external redirect.
-3. **Protected Routes & Guest Grace:**
-   - Protected views are wrapped in `<ProtectedRoute>` inside `App.jsx`. Unauthenticated users are gracefully redirected to `/login`.
-   - Onboarding status is verified upon landing on `/dashboard`; learners with incomplete onboarding are routed to `/onboarding`.
-4. **State Handling:**
-   - Every asynchronous view must handle:
-     - `isLoading`: Display accessible spinner or skeleton.
-     - `error`: Display descriptive Indonesian/English error with retry button.
-     - `empty`: Friendly state when no records exist.
-     - `success`: Normal data rendering.
-5. **No AI Diagnosis Placeholders:**
-   - Do NOT display "AI Diagnosis Completed" or create simulated diagnostic cards until the backend diagnostic service is formally implemented and populated.
+1. **Centralized API client:** route every HTTP call through `services/api.js`.
+2. **Routing:** use `useRouter().navigate(to)` or `<Link to>`; never `window.location.href`
+   except for external redirects. `currentPath` is **pathname-only**; read query params via
+   `query` (`URLSearchParams`) from `useRouter()`.
+3. **Unknown routes:** fall back to `NotFoundPage` (404) — never silently render HomePage.
+4. **Protected routes:** wrap views in `<ProtectedRoute>` / `<AdminRoute>` in `App.jsx`.
+5. **State handling:** every async view handles `loading`, `error` (with retry), `empty`,
+   and `success`.
 
 ---
 
 ## 8. Backend & API Integration Rules
-
-1. **Strict 3-Tier Layering:**
-   - `Routes` $\rightarrow$ Validate input format, check auth headers, pass to service, return HTTP response.
-   - `Services` $\rightarrow$ Business logic, domain rules, server-side scoring, error creation with `.statusCode`.
-   - `Database` $\rightarrow$ Parameterized SQL queries using `pool.query()` or transactional `client.query()`.
-2. **SQL Injection Prevention:**
-   - Always use parameterized queries (`$1, $2`). Never concatenate user input into SQL strings.
-3. **Database Transactions:**
-   - Any multi-table mutation (e.g., attempt submission + evidence insertion + status update; user creation + learner profile creation) must be enclosed in `BEGIN ... COMMIT` with `ROLLBACK` in the `catch` block and `client.release()` in `finally`.
-4. **Error Handling Standards:**
-   - Operational errors must attach an HTTP status code:
-     ```javascript
-     const error = new Error("Resource not found");
-     error.statusCode = 404;
-     throw error;
-     ```
-   - Routes catch `error.statusCode || 500` and return `{ status: "error", message: error.message }`.
-5. **No Secret Leakage:**
-   - Never serialize password hashes, internal scoring criteria, or sensitive system credentials in API responses.
+1. **Layering:** Route → Service → Pool/DB. Routes validate + return; services hold logic.
+2. **Parameterized SQL only** (`$1, $2`). Never concatenate user input.
+3. **Transactions** for atomic multi-step mutations (see §5.2).
+4. **Errors:** throw `ApiError` (via `utils/errors` helpers) or an error with `.status`/
+   `.statusCode`; routes call `sendError(res, error)`. A centralized handler catches the rest.
+5. **No secret leakage:** never return password hashes/tokens/keys.
 
 ---
 
 ## 9. Coding Standards
-
-### 9.1 File & Function Naming
-- **React Components & Pages:** PascalCase (e.g., `DashboardPage.jsx`, `GlassCard.jsx`).
-- **Contexts:** PascalCase with `Context` suffix (e.g., `AuthContext.jsx`, `RouterContext.jsx`).
-- **Backend Services & Routes:** camelCase (e.g., `assessmentService.js`, `learningPath.js`).
-- **Database Tables & Columns:** lowercase snake_case (e.g., `learner_profiles`, `order_index`, `passing_score`).
-
-### 9.2 Reusability
-- Favor existing components in `frontend/src/components/` (`Button`, `Badge`, `GlassCard`, `FormControls`, `Navbar`) over bespoke inline elements.
-- When creating forms, use `<FormField>`, `<Input>`, and `<Select>` to ensure automatic ARIA label and error state binding.
-
-### 9.3 Dependency Policy
-- **Zero Gratuitous Dependencies:** Do not add npm packages for utilities that can be written in 10 lines of standard JavaScript.
-- Confirm any new dependency with the team before installing.
+- Components/pages/contexts: PascalCase (`AssessmentPage.jsx`, `AuthContext.jsx`).
+- Backend services/routes: camelCase (`assessmentService.js`, `learningPath.js`).
+- DB tables/columns: snake_case (`learner_concept_states`, `order_index`).
+- Prefer shared components (`Button`, `StatusBadge`, `GlassPanel`, `PageContainer`, …) from
+  `frontend/src/components`.
+- **Dependency policy:** no gratuitous npm packages; confirm before adding.
 
 ---
 
 ## 10. Git & Collaboration Safety Rules
-
-1. **Verify Git Context First:**
-   - Before executing any file edits, verify the active branch with `git branch --show-current` and inspect the working tree with `git status --short`.
-2. **Untracked Package Lock Protection:**
-   - `frontend/package-lock.json` is currently an untracked local file. **DO NOT stage, commit, or overwrite this file** unless explicitly instructed by the user.
-3. **Prohibited Git Commands:**
-   - `git reset --hard` (Strictly forbidden — risks destroying user work).
-   - `git push --force` or `-f` (Strictly forbidden).
-   - `git checkout <other-branch>` without explicit user direction.
-   - `git merge` or `git rebase` without explicit user direction.
-4. **Pre-Commit Verification:**
-   - Run `git diff --check` to verify no whitespace errors exist.
-   - Run `npm run build` in `frontend/` to ensure bundle compilation succeeds.
-5. **Credential Safety:**
-   - Never commit `.env`, secret tokens, passwords, or personal credentials.
+1. **Check context first:** `git branch --show-current` + `git status --short`.
+2. **Active branch:** `main` (integrates via pull requests).
+3. **`package-lock.json` (root-less) for `backend/` and `frontend/` is tracked** in git —
+   commit lockfile changes together with `package.json`, don't leave them dangling.
+4. **Prohibited:** `git reset --hard`, `git push --force`/`-f`, switching/merging/rebasing
+   branches without explicit user direction.
+5. **Never commit** `.env`, secrets, or credentials. (`.gitignore` already ignores `.env`.)
+6. **Pre-commit:** `git diff --check` + `npm run build` in `frontend/`.
 
 ---
 
-## 11. Verification Checklist for Future Agents
-
-Before marking any task as complete, every AI agent must execute this checklist:
-
-### Frontend Tasks
-- [ ] `npm run build` executed in `frontend/` with zero compilation errors.
-- [ ] No broken imports or missing React component references.
-- [ ] All clickable links and buttons have valid destinations or working handlers (no `#` anchors).
-- [ ] Responsive layout verified (desktop $\ge 1200\text{px}$, tablet $\approx 768\text{px}$, mobile $\approx 390\text{px}$).
-- [ ] WCAG AA contrast confirmed for all text on light pastel glass surfaces.
-- [ ] Keyboard navigation and visible `:focus-visible` styles preserved.
-
-### Backend Tasks
-- [ ] Input validation applied to all route parameters and request bodies.
-- [ ] Authentication middleware enforced on private endpoints.
-- [ ] Ownership checks verified on all user-owned records (attempts, profile).
-- [ ] Database queries are parameterized (`$1, $2`).
-- [ ] Correct answer keys stripped from question delivery endpoints.
-- [ ] Transactions applied to atomic multi-step mutations.
-
-### General & Safety
-- [ ] `git diff --check` passes with zero errors.
-- [ ] `git status --short` verified; no unintended files modified or staged.
-- [ ] Transparently report what was tested, what passed, and any remaining limitations.
+## 11. Verification Checklist
+**Frontend:** `npm run build` passes; no broken imports; links have real handlers;
+responsive; WCAG AA contrast; focus styles preserved.
+**Backend:** validate inputs; auth enforced on private routes; ownership checks;
+parameterized SQL; answer keys stripped; transactions on atomic mutations.
+**General:** `git diff --check` clean; `git status --short` reviewed; report honestly what
+was tested and what remains.
 
 ---
 
 ## 12. Standard Development Workflow
-
-Future AI agents must follow this 8-step lifecycle:
-1. **Audit & Discover:** Read relevant files, check API contracts, and run `git status --short`.
-2. **Align with Existing Patterns:** Do not reinvent state management, routing, or design systems. Use what exists.
-3. **Plan Smallest Viable Edit:** Formulate a surgical, targeted change that satisfies requirements without collateral impact.
-4. **Implement Code Changes:** Follow naming, layering, and Light Pastel Glassmorphism rules.
-5. **Compile & Test:** Run `npm run build` in `frontend/` and test relevant API endpoints.
-6. **Check Whitespace & Diffs:** Run `git diff --check`.
-7. **Document & Report:** Summarize modified files, verification results, and limitations in clear technical markdown.
-8. **Await User Authorization:** Do not commit or push unless explicitly requested.
+1. Audit & discover (read code, run `git status --short`).
+2. Align with existing patterns.
+3. Plan the smallest viable edit.
+4. Implement.
+5. Compile & test (`npm run build`; hit real endpoints).
+6. `git diff --check`.
+7. Document & report (changes, verification, and upgrade steps for teammates).
+8. **Await user authorization** before commit/push.
 
 ---
 
 ## 13. Current State & Known Limitations
 
-### 13.1 Verified Working Features (Current Snapshot)
-- **Authentication & Sessions:** Full registration, login, and JWT persistence.
-- **Onboarding:** 3-step onboarding flow (`/onboarding`) saving preferences to database.
-- **Homepage:** Light Pastel Glassmorphism redesign complete with responsive floating navbar.
-- **Dashboard:** Hierarchical curriculum view (`Subject → Level → Topic → Concept`) with progress bars and honest data state.
-- **Assessment Engine:** Complete 20-question test runner (`AssessmentPage.jsx`), supporting Multiple Choice and interactive Drag-and-Drop challenges, with server-side transaction scoring and `evidence` record creation.
+### 13.1 Working (verified)
+- **Auth:** register / login / logout / me using **session tokens** (`sessions`).
+- **Catalog & learning path:** subjects, levels, topics, concepts, prerequisites, learning path.
+- **Assessments & attempts:** list/detail, sanitized questions, start/resume attempt,
+  transactional server-side scoring, evidence creation, `attempt_questions` snapshot,
+  per-material/topic scores, `is_passed`, optional AI analysis (`ai_status`).
+- **Diagnostics pipeline:** mastery, gaps, diagnostics verification, recommendations
+  (`learning_actions`), practices, history.
+- **Admin:** assessment editor + question bank CRUD.
+- **Frontend:** all pages build; unknown routes render a 404 page.
 
-### 13.2 Known System Limitations (To Address in Next Phases)
-- **Concept State Aggregation:** While the `learner_concept_states` table exists in PostgreSQL DDL (`01-schema.sql`), there is currently no background worker or trigger that aggregates raw `evidence` rows into computed `mastery_score`, `gap_status`, and `evidence_confidence`.
-- **Diagnostic Engine:** The `diagnostics` and `action_recommendations` tables exist in DDL, but root-cause tracing through `concept_prerequisites` has not yet been built into a dedicated backend service.
-- **Content Breadth:** Currently only the "Web Development" subject and its Level 01–05 curriculum are seeded in `backend/seed.js`.
+### 13.2 Known limitations / not yet implemented
+- **AI features** require `AI_API_KEY`; otherwise `/api/ai/*` → 503 and `ai_status = FAILED`.
+  There is **no** `OnboardingPage`/`DashboardPage` (those were removed from the docs).
+- **Two attempt-lifecycle implementations** coexist (`attemptService` vs
+  `assessmentService`) — unify later for maintainability.
+- **`docker-compose` fresh install** is untested in CI; the config is validated with
+  `docker compose config`.
 
 ---
 
 ## 14. Next Development Principles
-
-When continuing development on Xora:
-1. **Build the Concept State Aggregator First:** Before attempting to build an AI diagnostic recommendation engine, create a deterministic backend service that aggregates learner `evidence` rows into updated `learner_concept_states`.
-2. **Trace Root-Causes Graphically:** Leverage the existing `concept_prerequisites` table to trace learner errors backward from failed advanced concepts to missing prerequisite fundamentals.
-3. **Never Guess:** Ensure every diagnostic conclusion presented to the learner is accompanied by the specific evidence items that justify it.
+1. Unify the attempt lifecycle (single service, keep `/api/assessments/attempts/*` contract).
+2. Harden input validation (e.g., reject malformed UUIDs on path/query params).
+3. Keep `AGENT.md`, `README.md`, and the schema in lockstep — verify against code before editing.
+4. Every diagnostic conclusion shown to the learner must cite the evidence that justifies it.
