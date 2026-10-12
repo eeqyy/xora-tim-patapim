@@ -29,8 +29,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/recommendations/next
-router.get("/next", async (req, res) => {
+// GET /api/recommendations/next and /api/recommendations/next-step
+const handleGetNext = async (req, res) => {
   try {
     const data = await recommendationService.getNextStep(req.user.id);
     res.json({ status: "ok", data });
@@ -38,7 +38,9 @@ router.get("/next", async (req, res) => {
     console.error("GET /api/recommendations/next ERROR:", error);
     sendError(res, error);
   }
-});
+};
+router.get("/next", handleGetNext);
+router.get("/next-step", handleGetNext);
 
 // POST /api/recommendations/:id/start
 router.post("/:id/start", async (req, res) => {

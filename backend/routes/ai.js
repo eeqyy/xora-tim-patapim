@@ -18,4 +18,16 @@ router.post("/analyze", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/ai/health — Safe AI health check reporting provider status without secrets
+router.get("/health", async (req, res) => {
+  try {
+    const aiProvider = require("../config/aiProvider");
+    const data = await aiProvider.healthCheck();
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("GET /api/ai/health ERROR:", error);
+    sendError(res, error);
+  }
+});
+
 module.exports = router;

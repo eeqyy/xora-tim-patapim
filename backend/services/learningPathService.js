@@ -183,6 +183,61 @@ const learningPathService = {
         stateByConcept.set(row.concept_id, row);
       }
     }
+
+    // 3) Diagnostik aktif untuk konsep-konsep di path ini
+    const diagByConcept = new Map();
+    if (conceptIds.length > 0) {
+      const diagRes = await pool.query(
+        `SELECT id, concept_id, candidate_root_cause_id, diagnostic_status, verification_result
+           FROM diagnostics
+          WHERE learner_id = $1 AND concept_id = ANY($2::uuid[])
+          ORDER BY created_at DESC`,
+        [learnerId, conceptIds]
+      );
+      for (const row of diagRes.rows) {
+        if (!diagByConcept.has(row.concept_id)) {
+          diagByConcept.set(row.concept_id, row);
+        }
+      }
+    }
+
+    // 4) Learning Action aktif (RECOMMENDED / IN_PROGRESS) untuk konsep-konsep ini
+    const actionByConcept = new Map();
+    if (conceptIds.length > 0) {
+      const actRes = await pool.query(
+        `SELECT id, concept_id, diagnostic_id, action_type, reason, priority, status
+           FROM learning_actions
+          WHERE learner_id = $1
+            AND concept_id = ANY($2::uuid[])
+            AND status IN ('RECOMMENDED', 'IN_PROGRESS')
+          ORDER BY priority ASC, created_at ASC`,
+        [learnerId, conceptIds]
+      );
+      for (const row of actRes.rows) {
+        if (!actionByConcept.has(row.concept_id)) {
+          actionByConcept.set(row.concept_id, row);
+        }
+      }
+    }
+
+    // 5) Pemetaan assessment untuk konsep (guna kebutuhan direct runner / reassessment)
+    const asmtByConcept = new Map();
+    if (conceptIds.length > 0) {
+      const asmtRes = await pool.query(
+        `SELECT q.concept_id, q.assessment_id, a.title AS assessment_title, a.type AS assessment_type
+           FROM questions q
+           JOIN assessments a ON a.id = q.assessment_id
+          WHERE q.concept_id = ANY($1::uuid[])
+          GROUP BY q.concept_id, q.assessment_id, a.title, a.type`,
+        [conceptIds]
+      );
+      for (const row of asmtRes.rows) {
+        if (!asmtByConcept.has(row.concept_id)) {
+          asmtByConcept.set(row.concept_id, row);
+        }
+      }
+    }
+
     // Group prerequisite per konsep asal
     const prereqsByConcept = new Map();
     for (const row of prereqRes.rows) {
@@ -206,19 +261,51 @@ const learningPathService = {
               id: r.prerequisite_concept_id,
               name: r.prerequisite_name,
               mastery_score: mastery,
-              gap_status: state ? state.gap_status : "INSUFFICIENT_EVIDENCE",
+              gap_status: state ? state.gap_status : null,
               satisfied,
             };
           });
 
           const selfState = stateByConcept.get(concept.id) || null;
           const selfMastery = selfState && selfState.mastery_score != null ? Number(selfState.mastery_score) : null;
+          const evidenceCount = selfState ? Number(selfState.evidence_count) : 0;
+          const isAssessed = selfState !== null && evidenceCount > 0;
+          const isMastered = selfMastery !== null && selfMastery >= MASTERY_CONFIG.masteredThreshold;
+
+          // Semantik learning_status berdasarkan data terverifikasi
+          let learningStatus = "NOT_ASSESSED";
+          if (isAssessed) {
+            if (isMastered) {
+              learningStatus = "MASTERED";
+            } else if (selfState.gap_status === "IN_PRACTICE") {
+              learningStatus = "IN_PRACTICE";
+            } else if (selfState.gap_status === "CONFIRMED") {
+              learningStatus = "CONFIRMED_GAP";
+            } else if (["POSSIBLE_GAP", "VERIFICATION", "HYPOTHESIS"].includes(selfState.gap_status)) {
+              learningStatus = "POSSIBLE_GAP";
+            } else if (selfState.gap_status === "REJECTED") {
+              learningStatus = "REJECTED";
+            } else if (selfState.gap_status === "NO_GAP") {
+              learningStatus = "NO_GAP";
+            } else {
+              learningStatus = selfState.gap_status;
+            }
+          }
 
           concept.mastery_score = selfMastery;
-          concept.gap_status = selfState ? selfState.gap_status : "INSUFFICIENT_EVIDENCE";
-          concept.is_mastered = selfMastery !== null && selfMastery >= MASTERY_CONFIG.masteredThreshold;
-          concept.evidence_count = selfState ? Number(selfState.evidence_count) : 0;
-          concept.evidence_confidence = selfState?.evidence_confidence != null ? Number(selfState.evidence_confidence) : 0;
+          concept.gap_status = selfState ? selfState.gap_status : null;
+          concept.is_assessed = isAssessed;
+          concept.is_mastered = isMastered;
+          concept.evidence_count = evidenceCount;
+          concept.evidence_confidence = selfState?.evidence_confidence != null ? Number(selfState.evidence_confidence) : null;
+          concept.learning_status = learningStatus;
+          concept.active_diagnostic = diagByConcept.get(concept.id) || null;
+          concept.active_action = actionByConcept.get(concept.id) || null;
+
+          const asmtInfo = asmtByConcept.get(concept.id) || null;
+          concept.assessment_id = asmtInfo?.assessment_id || null;
+          concept.assessment_title = asmtInfo?.assessment_title || null;
+
           concept.prerequisites = prerequisites;
           concept.is_locked = prerequisites.some((p) => !p.satisfied);
         }

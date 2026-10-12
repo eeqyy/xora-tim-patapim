@@ -78,7 +78,7 @@ const practiceService = {
     const attempt = await this._delegate(() =>
       assessmentService.createAttempt(learnerId, assessmentId)
     );
-    const questions = await assessmentService.getQuestionsByAssessmentId(assessmentId);
+    const questions = await assessmentService.getQuestionsByAssessmentId(assessmentId, false, attempt.id);
     const concepts = await this._conceptsForAssessment(assessmentId);
 
     let linkedAction = null;

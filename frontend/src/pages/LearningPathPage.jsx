@@ -1,17 +1,45 @@
 // ============================================================
-// XORA — Learning Path Page
+// XORA — Interactive Learning Path Page (Jalur Belajar)
+// Premium Light Glassmorphism · Minimal · Reusable
 // frontend/src/pages/LearningPathPage.jsx
 // ============================================================
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { subjectsApi, learningPathApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
+import {
+  PageContainer,
+  PageHeader,
+  GlassPanel,
+  StatusBadge,
+  PrimaryButton,
+  OutlineButton,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+} from "../components";
+import {
+  IconArrowRight,
+  IconRefresh,
+  IconChart,
+  IconLock,
+} from "../components/Icons";
+
+const FILTER_OPTIONS = [
+  { key: "ALL", label: "Semua Materi" },
+  { key: "READY", label: "Siap Dipelajari" },
+  { key: "NEEDS_PRACTICE", label: "Perlu Penguatan" },
+  { key: "MASTERED", label: "Sudah Dikuasai" },
+  { key: "LOCKED", label: "Menunggu Prasyarat" },
+];
 
 export default function LearningPathPage() {
   const { navigate } = useRouter();
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const [learningPath, setLearningPath] = useState(null);
+  const [selectedConcept, setSelectedConcept] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [isLoadingPath, setIsLoadingPath] = useState(false);
@@ -46,11 +74,12 @@ export default function LearningPathPage() {
     if (!subjectId) return;
     setIsLoadingPath(true);
     setError(null);
+    setSelectedConcept(null);
     try {
       const res = await learningPathApi.getPath(subjectId);
       setLearningPath(res?.data || null);
     } catch (err) {
-      setError(err.message || "Gagal memuat struktur alur belajar.");
+      setError(err.message || "Gagal memuat alur belajar.");
       setLearningPath(null);
     } finally {
       setIsLoadingPath(false);
@@ -63,49 +92,334 @@ export default function LearningPathPage() {
     }
   }, [selectedSubjectId, fetchPath]);
 
+  // Filter helper predicate
+  const matchesFilter = useCallback((concept) => {
+    if (statusFilter === "ALL") return true;
+    if (statusFilter === "READY") return !concept.is_locked && !concept.is_mastered;
+    if (statusFilter === "NEEDS_PRACTICE") {
+      return ["CONFIRMED_GAP", "POSSIBLE_GAP", "IN_PRACTICE"].includes(concept.learning_status);
+    }
+    if (statusFilter === "MASTERED") return concept.is_mastered === true;
+    if (statusFilter === "LOCKED") return concept.is_locked === true;
+    return true;
+  }, [statusFilter]);
+
+  // Filter counts across the entire subject
+  const filterCounts = useMemo(() => {
+    if (!learningPath?.levels) {
+      return { all: 0, ready: 0, needsPractice: 0, mastered: 0, locked: 0 };
+    }
+    let all = 0;
+    let ready = 0;
+    let needsPractice = 0;
+    let mastered = 0;
+    let locked = 0;
+
+    for (const lvl of learningPath.levels) {
+      for (const topic of lvl.topics || []) {
+        for (const c of topic.concepts || []) {
+          all++;
+          if (c.is_mastered) mastered++;
+          if (c.is_locked) locked++;
+          if (!c.is_locked && !c.is_mastered) ready++;
+          if (["CONFIRMED_GAP", "POSSIBLE_GAP", "IN_PRACTICE"].includes(c.learning_status)) {
+            needsPractice++;
+          }
+        }
+      }
+    }
+
+    return { all, ready, needsPractice, mastered, locked };
+  }, [learningPath]);
+
+  // Total matching concepts under active filter
+  const totalMatchingConcepts = useMemo(() => {
+    if (!learningPath?.levels) return 0;
+    let count = 0;
+    for (const lvl of learningPath.levels) {
+      for (const topic of lvl.topics || []) {
+        for (const c of topic.concepts || []) {
+          if (matchesFilter(c)) count++;
+        }
+      }
+    }
+    return count;
+  }, [learningPath, matchesFilter]);
+
   const handleSelectSubject = (id) => {
     if (id !== selectedSubjectId) {
       setSelectedSubjectId(id);
     }
   };
 
-  const getDifficultyBadge = (difficulty) => {
-    switch (difficulty) {
-      case "EASY":
-        return <span className="badge badge-difficulty badge-easy">Mudah (Easy)</span>;
-      case "MEDIUM":
-        return <span className="badge badge-difficulty badge-medium">Menengah (Medium)</span>;
-      case "HARD":
-        return <span className="badge badge-difficulty badge-hard">Sulit (Hard)</span>;
-      default:
-        return <span className="badge badge-role">{difficulty}</span>;
+  // Find concept by id for prerequisite click jumps
+  const findConceptById = (conceptId) => {
+    if (!learningPath?.levels) return null;
+    for (const lvl of learningPath.levels) {
+      for (const topic of lvl.topics || []) {
+        for (const c of topic.concepts || []) {
+          if (c.id === conceptId) return { ...c, topicName: topic.name, levelName: lvl.name };
+        }
+      }
     }
+    return null;
+  };
+
+  const handlePrerequisiteClick = (prereqId) => {
+    const found = findConceptById(prereqId);
+    if (found) {
+      setSelectedConcept(found);
+      setTimeout(() => {
+        const el = document.getElementById("concept-inspector");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }, 50);
+    }
+  };
+
+  const handleSelectConcept = (concept, topicName, levelName) => {
+    setSelectedConcept({
+      ...concept,
+      topicName,
+      levelName,
+    });
+    setTimeout(() => {
+      const el = document.getElementById("concept-inspector");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }, 50);
+  };
+
+  // Friendly status formatter for concept inspector
+  const getConceptStatusInfo = (concept) => {
+    if (!concept) return { title: "-", desc: "-", badgeStatus: "NOT_ASSESSED" };
+    if (concept.is_locked) {
+      return {
+        title: "Terkunci",
+        desc: "Prasyarat belum lengkap",
+        badgeStatus: "LOCKED",
+      };
+    }
+    if (concept.is_mastered) {
+      return {
+        title: "Sudah Dikuasai",
+        desc: "Kompetensi tercapai (≥70%)",
+        badgeStatus: "MASTERED",
+      };
+    }
+    if (concept.learning_status === "IN_PRACTICE") {
+      return {
+        title: "Sedang Dilatih",
+        desc: "Sesi latihan aktif",
+        badgeStatus: "IN_PRACTICE",
+      };
+    }
+    if (concept.learning_status === "CONFIRMED_GAP") {
+      return {
+        title: "Perlu Penguatan",
+        desc: "Kesenjangan pemahaman terkonfirmasi",
+        badgeStatus: "CONFIRMED_GAP",
+      };
+    }
+    if (concept.learning_status === "POSSIBLE_GAP") {
+      return {
+        title: "Perlu Verifikasi",
+        desc: "Akar kendala memerlukan verifikasi",
+        badgeStatus: "POSSIBLE_GAP",
+      };
+    }
+    if (!concept.is_assessed) {
+      return {
+        title: "Belum Dinilai",
+        desc: "Siap mengikuti asesmen awal",
+        badgeStatus: "NOT_ASSESSED",
+      };
+    }
+    return {
+      title: "Siap Dipelajari",
+      desc: "Prasyarat terpenuhi, siap dievaluasi",
+      badgeStatus: "NOT_ASSESSED",
+    };
+  };
+
+  // Action CTA generator for selected concept
+  const renderConceptAction = (concept) => {
+    if (!concept) return null;
+
+    if (concept.is_locked) {
+      const unsatisfied = (concept.prerequisites || []).filter((p) => !p.satisfied);
+      return (
+        <div className="map-action-box map-action-box-locked">
+          <div>
+            <p className="map-action-title">Materi Masih Terkunci</p>
+            <p className="map-action-desc">
+              Selesaikan materi prasyarat terlebih dahulu untuk membuka materi ini.
+            </p>
+          </div>
+          {unsatisfied.length > 0 && (
+            <OutlineButton
+              size="sm"
+              onClick={() => handlePrerequisiteClick(unsatisfied[0].id)}
+              iconRight={<IconArrowRight size={14} />}
+            >
+              Fokus ke: {unsatisfied[0].name}
+            </OutlineButton>
+          )}
+        </div>
+      );
+    }
+
+    if (concept.active_action) {
+      const act = concept.active_action;
+      return (
+        <div className="map-action-box map-action-box-active">
+          <div>
+            <p className="map-action-title">Latihan Remediasi Aktif:</p>
+            <p className="map-action-desc">
+              {act.action_type === "PREREQUISITE_PRACTICE"
+                ? "Latihan penguatan konsep prasyarat direkomendasikan untuk memperkuat pondasi."
+                : "Latihan terarah (Targeted Practice) tersedia untuk konsep ini."}
+            </p>
+          </div>
+          <PrimaryButton
+            size="sm"
+            onClick={() => navigate(`/practice/${act.id}`)}
+            iconRight={<IconArrowRight size={14} />}
+          >
+            Lanjutkan Latihan
+          </PrimaryButton>
+        </div>
+      );
+    }
+
+    if (concept.learning_status === "POSSIBLE_GAP" && concept.active_diagnostic) {
+      return (
+        <div className="map-action-box map-action-box-verify">
+          <div>
+            <p className="map-action-title">Verifikasi Diagnostik Diperlukan:</p>
+            <p className="map-action-desc">
+              Terdapat hipotesis akar kendala belajar yang perlu dibuktikan melalui verifikasi singkat.
+            </p>
+          </div>
+          <PrimaryButton
+            size="sm"
+            onClick={() => navigate(`/verification/${concept.active_diagnostic.id}`)}
+            iconRight={<IconArrowRight size={14} />}
+          >
+            Mulai Verifikasi
+          </PrimaryButton>
+        </div>
+      );
+    }
+
+    if (concept.learning_status === "IN_PRACTICE" && concept.assessment_id) {
+      return (
+        <div className="map-action-box map-action-box-reassess">
+          <div>
+            <p className="map-action-title">Siap untuk Uji Ulang (Re-assessment):</p>
+            <p className="map-action-desc">
+              Ukur peningkatan penguasaan materi setelah menyelesaikan sesi latihan terarah.
+            </p>
+          </div>
+          <PrimaryButton
+            size="sm"
+            onClick={() => navigate(`/reassess/${concept.assessment_id}`)}
+            iconRight={<IconArrowRight size={14} />}
+          >
+            Mulai Uji Ulang
+          </PrimaryButton>
+        </div>
+      );
+    }
+
+    if (concept.assessment_id) {
+      return (
+        <div className="map-action-box">
+          <div>
+            <p className="map-action-title">Asesmen Tersedia:</p>
+            <p className="map-action-desc">
+              {concept.is_assessed
+                ? "Evaluasi ulang pemahaman Anda terhadap konsep materi ini."
+                : "Ikuti asesmen diagnostik untuk membangun profil penguasaan konsep awal."}
+            </p>
+          </div>
+          <PrimaryButton
+            size="sm"
+            onClick={() => navigate(`/assessments/${concept.assessment_id}`)}
+            iconRight={<IconArrowRight size={14} />}
+          >
+            {concept.is_assessed ? "Uji Ulang Konsep" : "Mulai Asesmen"}
+          </PrimaryButton>
+        </div>
+      );
+    }
+
+    return (
+      <div className="map-action-box">
+        <div>
+          <p className="map-action-title">Asesmen Pembelajaran</p>
+          <p className="map-action-desc">
+            Buka daftar asesmen untuk menguji pemahaman konsep pada mata pelajaran ini.
+          </p>
+        </div>
+        <OutlineButton
+          size="sm"
+          onClick={() => navigate("/assessments")}
+          iconRight={<IconArrowRight size={14} />}
+        >
+          Lihat Daftar Asesmen
+        </OutlineButton>
+      </div>
+    );
   };
 
   if (isLoadingSubjects) {
     return (
-      <div className="learning-path-container">
-        <div className="card loading-card">
-          <p>Memuat kurikulum alur belajar...</p>
-        </div>
-      </div>
+      <PageContainer maxWidth="normal">
+        <LoadingState message="Memuat kurikulum alur belajar..." />
+      </PageContainer>
     );
   }
 
+  const selectedStatusInfo = selectedConcept ? getConceptStatusInfo(selectedConcept) : null;
+  const currentFilterLabel = FILTER_OPTIONS.find((f) => f.key === statusFilter)?.label || "Semua Materi";
+
   return (
-    <div className="learning-path-container">
-      {/* Page Header */}
-      <div className="card path-header-card">
-        <h1 className="path-page-title">Alur Pembelajaran (Learning Path)</h1>
-        <p className="path-page-desc">
-          Eksplorasi struktur kurikulum bertingkat dari Level, Topik, hingga Konsep kompetensi.
-        </p>
+    <PageContainer maxWidth="normal">
+      {/* 1. Header & Subject Selector */}
+      <GlassPanel variant="elevated" className="path-header-card">
+        <PageHeader
+          badge="Struktur Pembelajaran"
+          title="Jalur Belajar"
+          description="Pahami susunan topik, relasi prasyarat antar-materi, dan tentukan materi yang siap dipelajari berikutnya."
+          actions={
+            <>
+              <OutlineButton
+                size="sm"
+                onClick={() => (selectedSubjectId ? fetchPath(selectedSubjectId) : fetchSubjects())}
+                icon={<IconRefresh size={14} />}
+              >
+                Segarkan
+              </OutlineButton>
+              <PrimaryButton
+                size="sm"
+                onClick={() => navigate("/progress")}
+                iconRight={<IconChart size={14} />}
+              >
+                Lihat Riwayat &amp; Progres
+              </PrimaryButton>
+            </>
+          }
+        />
 
         {/* Subjects Selector */}
         {subjects.length === 0 ? (
-          <div className="empty-box" style={{ marginTop: "1rem" }}>
-            <p>Belum ada mata pelajaran yang tersedia di database.</p>
-          </div>
+          <EmptyState
+            title="Belum Ada Mata Pelajaran"
+            description="Belum ada data mata pelajaran yang tersedia di database."
+          />
         ) : (
           <div className="subject-tabs-container">
             <span className="subject-tabs-label">Pilih Mata Pelajaran:</span>
@@ -125,150 +439,341 @@ export default function LearningPathPage() {
             </div>
           </div>
         )}
-      </div>
+      </GlassPanel>
 
       {/* Error Alert */}
       {error && (
-        <div className="alert alert-error">
-          <p>{error}</p>
-          <button
-            onClick={() => (selectedSubjectId ? fetchPath(selectedSubjectId) : fetchSubjects())}
-            className="btn btn-sm btn-outline"
-            style={{ marginTop: "0.5rem" }}
-          >
-            Coba Lagi
-          </button>
-        </div>
+        <ErrorState
+          title="Gagal Memuat Alur Belajar"
+          message={error}
+          onRetry={() => (selectedSubjectId ? fetchPath(selectedSubjectId) : fetchSubjects())}
+        />
       )}
 
       {/* Path Loading */}
       {isLoadingPath && (
-        <div className="card loading-card">
-          <p>Memuat detail alur belajar untuk subject terpilih...</p>
-        </div>
+        <LoadingState message="Memuat detail peta penguasaan belajar..." />
       )}
 
-      {/* Path Content */}
+      {/* 2. Path Content */}
       {!isLoadingPath && learningPath && (
         <div className="learning-path-content">
-          {/* Selected Subject Overview */}
-          <div className="card selected-subject-card">
-            <div className="subject-meta-row">
-              <div>
-                <h2 className="selected-subject-title">{learningPath.subject?.name}</h2>
-                {learningPath.subject?.description && (
-                  <p className="selected-subject-desc">{learningPath.subject.description}</p>
-                )}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                <span className="badge badge-success">
-                  {learningPath.subject?.status || "PUBLISHED"}
-                </span>
+          {/* Filter Bar */}
+          <div className="map-filter-bar">
+            <div className="filter-bar-header">
+              <span className="filter-label">Filter Materi Berdasarkan Kesiapan:</span>
+              {statusFilter !== "ALL" && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-primary"
-                  onClick={() => navigate("/assessments")}
+                  className="filter-reset-link"
+                  onClick={() => setStatusFilter("ALL")}
                 >
-                  Buka Asesmen →
+                  Reset Filter (Tampilkan Semua)
                 </button>
-              </div>
+              )}
+            </div>
+            <div className="filter-chips">
+              {FILTER_OPTIONS.map((opt) => {
+                const count =
+                  opt.key === "ALL"
+                    ? filterCounts.all
+                    : opt.key === "READY"
+                    ? filterCounts.ready
+                    : opt.key === "NEEDS_PRACTICE"
+                    ? filterCounts.needsPractice
+                    : opt.key === "MASTERED"
+                    ? filterCounts.mastered
+                    : filterCounts.locked;
+
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    className={`filter-chip ${statusFilter === opt.key ? "filter-chip-active" : ""}`}
+                    onClick={() => setStatusFilter(opt.key)}
+                  >
+                    {opt.label} ({count})
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Levels & Hierarchy */}
+          {/* Interactive Concept Detail Panel (when concept selected) */}
+          {selectedConcept && (
+            <GlassPanel variant="elevated" className="concept-detail-drawer" id="concept-inspector">
+              <div className="detail-drawer-header">
+                <div>
+                  <div className="detail-drawer-breadcrumbs">
+                    <span>{selectedConcept.levelName || "Level"}</span> ›{" "}
+                    <span>{selectedConcept.topicName || "Topik"}</span>
+                  </div>
+                  <h3 className="detail-drawer-title">{selectedConcept.name}</h3>
+                </div>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  <StatusBadge
+                    status={selectedStatusInfo.badgeStatus}
+                    label={selectedStatusInfo.title}
+                    dot
+                  />
+                  <OutlineButton
+                    size="sm"
+                    onClick={() => setSelectedConcept(null)}
+                    aria-label="Tutup detail konsep"
+                  >
+                    Tutup
+                  </OutlineButton>
+                </div>
+              </div>
+
+              {selectedConcept.description && (
+                <p className="detail-drawer-desc">{selectedConcept.description}</p>
+              )}
+
+              {/* Metrics Grid */}
+              <div className="detail-metrics-grid">
+                <div className="metric-box">
+                  <span className="metric-lbl">Tingkat Penguasaan</span>
+                  <span className="metric-val">
+                    {selectedConcept.mastery_score !== null
+                      ? `${selectedConcept.mastery_score}%`
+                      : "Belum Dinilai"}
+                  </span>
+                  {selectedConcept.mastery_score !== null && (
+                    <div className="progress-bar-track progress-bar-sm" style={{ marginTop: "0.4rem" }}>
+                      <div
+                        className="progress-bar-fill"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, selectedConcept.mastery_score))}%`,
+                          backgroundColor:
+                            selectedConcept.mastery_score >= 70
+                              ? "var(--color-success)"
+                              : selectedConcept.mastery_score >= 40
+                              ? "var(--color-warning)"
+                              : "var(--color-error)",
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="metric-box">
+                  <span className="metric-lbl">Bukti Asesmen Terkumpul</span>
+                  <span className="metric-val">
+                    {selectedConcept.evidence_count > 0
+                      ? `${selectedConcept.evidence_count} bukti`
+                      : "0 bukti"}
+                  </span>
+                  <span className="metric-sub">
+                    {selectedConcept.evidence_confidence !== null
+                      ? `Tingkat keyakinan: ${selectedConcept.evidence_confidence}%`
+                      : "Belum ada keyakinan bukti"}
+                  </span>
+                </div>
+
+                <div className="metric-box">
+                  <span className="metric-lbl">Status Pembelajaran</span>
+                  <span className="metric-val">{selectedStatusInfo.title}</span>
+                  <span className="metric-sub">{selectedStatusInfo.desc}</span>
+                </div>
+              </div>
+
+              {/* Prerequisites Chain */}
+              <div className="detail-prereq-section">
+                <h4 className="detail-prereq-title">Relasi Prasyarat:</h4>
+                {(!selectedConcept.prerequisites || selectedConcept.prerequisites.length === 0) ? (
+                  <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+                    Materi pondasi dasar — tidak membutuhkan materi prasyarat sebelumnya.
+                  </p>
+                ) : (
+                  <div className="prereq-items-grid">
+                    {selectedConcept.prerequisites.map((p) => (
+                      <div
+                        key={p.id}
+                        className={`prereq-item-card ${
+                          p.satisfied ? "prereq-satisfied" : "prereq-unsatisfied"
+                        }`}
+                        onClick={() => handlePrerequisiteClick(p.id)}
+                        role="button"
+                        tabIndex={0}
+                        title="Klik untuk melihat materi prasyarat ini"
+                      >
+                        <div className="prereq-header-row">
+                          <span className="prereq-name">{p.name}</span>
+                          <StatusBadge
+                            variant={p.satisfied ? "success" : "error"}
+                            label={p.satisfied ? "Terpenuhi" : "Belum Terpenuhi"}
+                          />
+                        </div>
+                        <div className="prereq-score-row">
+                          <span>
+                            Penguasaan:{" "}
+                            <strong>
+                              {p.mastery_score !== null ? `${p.mastery_score}%` : "Belum Dinilai"}
+                            </strong>
+                          </span>
+                          <span style={{ color: "var(--color-text-muted)" }}>Target: ≥70%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Contextual Action CTA */}
+              {renderConceptAction(selectedConcept)}
+            </GlassPanel>
+          )}
+
+          {/* 3. Levels & Topics Hierarchy */}
           {!learningPath.levels || learningPath.levels.length === 0 ? (
-            <div className="card empty-card">
-              <p>Belum ada level pembelajaran pada mata pelajaran ini.</p>
-            </div>
+            <EmptyState
+              title="Belum Ada Level Pembelajaran"
+              description="Belum ada tingkat materi yang terdaftar pada mata pelajaran ini."
+            />
+          ) : totalMatchingConcepts === 0 ? (
+            <EmptyState
+              title="Tidak Ada Materi yang Cocok"
+              description={`Tidak ditemukan materi untuk filter "${currentFilterLabel}". Silakan pilih kategori filter lain atau tampilkan semua materi.`}
+              action={
+                <PrimaryButton onClick={() => setStatusFilter("ALL")}>
+                  Tampilkan Semua Materi
+                </PrimaryButton>
+              }
+            />
           ) : (
             <div className="levels-list">
-              {learningPath.levels.map((level, lvlIdx) => (
-                <div key={level.id} className="card level-card">
-                  {/* Level Header */}
-                  <div className="level-header">
-                    <div className="level-order-pill">Level {level.order_index ?? lvlIdx + 1}</div>
-                    <div className="level-title-block">
-                      <h3 className="level-name">{level.name}</h3>
-                      {level.description && (
-                        <p className="level-desc">{level.description}</p>
+              {learningPath.levels.map((level, lvlIdx) => {
+                const levelMatchingCount = (level.topics || []).reduce(
+                  (acc, t) => acc + (t.concepts || []).filter(matchesFilter).length,
+                  0
+                );
+
+                if (levelMatchingCount === 0 && statusFilter !== "ALL") {
+                  return null; // Don't render empty level cards when user filtered out its content
+                }
+
+                return (
+                  <GlassPanel key={level.id} variant="default" className="level-card">
+                    {/* Level Header */}
+                    <div className="level-header">
+                      <div className="level-order-pill">Tingkat {level.order_index ?? lvlIdx + 1}</div>
+                      <div className="level-title-block">
+                        <h3 className="level-name">{level.name}</h3>
+                        {level.description && (
+                          <p className="level-desc">{level.description}</p>
+                        )}
+                      </div>
+                      <div>
+                        <StatusBadge status={level.difficulty} />
+                      </div>
+                    </div>
+
+                    {/* Topics under Level */}
+                    <div className="topics-section">
+                      <h4 className="topics-heading">Daftar Topik &amp; Konsep Materi</h4>
+
+                      {!level.topics || level.topics.length === 0 ? (
+                        <p style={{ fontSize: "0.9rem", color: "var(--color-text-muted)" }}>
+                          Belum ada topik pada tingkat ini.
+                        </p>
+                      ) : (
+                        <div className="topics-grid">
+                          {level.topics.map((topic, topIdx) => {
+                            const matchingConcepts = (topic.concepts || []).filter(matchesFilter);
+
+                            if (matchingConcepts.length === 0 && statusFilter !== "ALL") {
+                              return null; // Don't render empty topic cards when filtered out
+                            }
+
+                            return (
+                              <div key={topic.id} className="topic-card">
+                                <div className="topic-header">
+                                  <span className="topic-number">{topIdx + 1}.</span>
+                                  <div style={{ flex: 1 }}>
+                                    <h5 className="topic-name">{topic.name}</h5>
+                                    {topic.description && (
+                                      <p className="topic-desc">{topic.description}</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Concepts under Topic */}
+                                <div className="concepts-section">
+                                  <div className="concepts-header-row">
+                                    <span className="concepts-label">Konsep Kompetensi</span>
+                                    <span className="concepts-count-sub">
+                                      {matchingConcepts.length} dari {(topic.concepts || []).length} materi
+                                    </span>
+                                  </div>
+
+                                  {(!topic.concepts || topic.concepts.length === 0) ? (
+                                    <p style={{ fontSize: "0.825rem", color: "var(--color-text-muted)" }}>
+                                      Belum ada materi terhubung.
+                                    </p>
+                                  ) : matchingConcepts.length === 0 ? (
+                                    <p style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", fontStyle: "italic" }}>
+                                      Tidak ada materi yang sesuai dengan filter saat ini.
+                                    </p>
+                                  ) : (
+                                    <div className="concept-nodes-grid">
+                                      {matchingConcepts.map((concept) => {
+                                        const isSelected = selectedConcept?.id === concept.id;
+                                        const locked = concept.is_locked === true;
+                                        const statusClass = `node-status-${(concept.learning_status || "not_assessed").toLowerCase()}`;
+
+                                        return (
+                                          <button
+                                            key={concept.id}
+                                            type="button"
+                                            onClick={() =>
+                                              handleSelectConcept(concept, topic.name, level.name)
+                                            }
+                                            className={`concept-node-card ${statusClass} ${
+                                              locked ? "node-locked" : ""
+                                            } ${isSelected ? "node-selected" : ""}`}
+                                            title={`Klik untuk melihat detail: ${concept.name}`}
+                                          >
+                                            <div className="node-top-row">
+                                              <span className="node-status-dot" />
+                                              <span className="node-name">{concept.name}</span>
+                                              {locked && <IconLock size={12} className="node-lock-icon" />}
+                                            </div>
+
+                                            <div className="node-meta-row">
+                                              <span className="node-mastery">
+                                                {concept.mastery_score !== null
+                                                  ? `${concept.mastery_score}%`
+                                                  : "Belum dinilai"}
+                                              </span>
+                                              {concept.prerequisites && concept.prerequisites.length > 0 && (
+                                                <span
+                                                  className="node-prereq-badge"
+                                                  title={`${concept.prerequisites.length} prasyarat`}
+                                                >
+                                                  Prasyarat: {concept.prerequisites.length}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
-                    <div>{getDifficultyBadge(level.difficulty)}</div>
-                  </div>
-
-                  {/* Topics under Level */}
-                  <div className="topics-section">
-                    <h4 className="topics-heading">Daftar Topik:</h4>
-
-                    {!level.topics || level.topics.length === 0 ? (
-                      <p className="text-muted" style={{ fontSize: "0.9rem" }}>
-                        Belum ada topik pada level ini.
-                      </p>
-                    ) : (
-                      <div className="topics-grid">
-                        {level.topics.map((topic, topIdx) => (
-                          <div key={topic.id} className="topic-card">
-                            <div className="topic-header">
-                              <span className="topic-number">
-                                {topIdx + 1}.
-                              </span>
-                              <div style={{ flex: 1 }}>
-                                <h5 className="topic-name">{topic.name}</h5>
-                                {topic.description && (
-                                  <p className="topic-desc">{topic.description}</p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Concepts under Topic */}
-                            <div className="concepts-section">
-                              <span className="concepts-label">Konsep Kompetensi:</span>
-                              {!topic.concepts || topic.concepts.length === 0 ? (
-                                <p className="text-muted" style={{ fontSize: "0.825rem" }}>
-                                  Belum ada konsep terhubung.
-                                </p>
-                              ) : (
-                                <div className="concepts-tags">
-                                  {topic.concepts.map((concept) => {
-                                    const locked = concept.is_locked === true;
-                                    const prereqTitle =
-                                      concept.prerequisites && concept.prerequisites.length > 0
-                                        ? "Prasyarat: " +
-                                          concept.prerequisites
-                                            .map(
-                                              (p) =>
-                                                `${p.name} — mastery ${p.mastery_score ?? 0}/70 ${
-                                                  p.satisfied ? "✓" : "✗"
-                                                }`
-                                            )
-                                            .join("; ")
-                                        : concept.description || "";
-                                    return (
-                                      <span
-                                        key={concept.id}
-                                        className={`concept-tag${locked ? " concept-tag-locked" : ""}`}
-                                        title={prereqTitle}
-                                      >
-                                        {locked && <span className="concept-lock">🔒</span>}
-                                        <span className="concept-dot"></span>
-                                        {concept.name}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  </GlassPanel>
+                );
+              })}
             </div>
           )}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

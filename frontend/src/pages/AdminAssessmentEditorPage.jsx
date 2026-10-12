@@ -49,6 +49,7 @@ const EMPTY_Q = {
   conceptId: "",
   type: "MULTIPLE_CHOICE",
   difficulty: "MEDIUM",
+  material: "HTML",
   points: "5",
   questionText: "",
   optionsText: "",
@@ -86,6 +87,7 @@ function toQuestionForm(q) {
     conceptId: q.conceptId || "",
     type: q.type,
     difficulty: q.difficulty || "MEDIUM",
+    material: q.material || "HTML",
     points: String(q.points ?? 5),
     questionText: q.questionText || "",
     optionsText: "",
@@ -403,6 +405,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
     const payload = {
       conceptId: questionForm.conceptId,
       difficulty: questionForm.difficulty,
+      material: questionForm.material || "HTML",
       type: questionForm.type,
       questionText: questionForm.questionText.trim(),
       points: Number(questionForm.points),
@@ -625,6 +628,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                         </th>
                         <th scope="col">Pertanyaan</th>
                         <th scope="col">Tipe</th>
+                        <th scope="col">Materi</th>
                         <th scope="col">Konsep</th>
                         <th scope="col">Kesulitan</th>
                         <th scope="col" className="admin-col-num">
@@ -644,6 +648,11 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                           </th>
                           <td>
                             <span className="badge badge-role">{Q_TYPE_LABELS[question.type] || question.type}</span>
+                          </td>
+                          <td>
+                            <span className="badge badge-difficulty badge-easy" style={{ textTransform: "uppercase" }}>
+                              {question.material || "HTML"}
+                            </span>
                           </td>
                           <td className="admin-cell-muted">{question.conceptName || "—"}</td>
                           <td>
@@ -766,6 +775,19 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                     </div>
 
                     <div className="form-group">
+                      <label htmlFor="question-material">Materi Utama *</label>
+                      <select
+                        id="question-material"
+                        value={questionForm.material || "HTML"}
+                        onChange={(e) => handleQuestionChange({ material: e.target.value })}
+                      >
+                        <option value="HTML">HTML</option>
+                        <option value="CSS">CSS</option>
+                        <option value="JAVASCRIPT">JavaScript</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
                       <label htmlFor="question-type">Tipe soal *</label>
                       <select
                         id="question-type"
@@ -777,6 +799,16 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                         <option value="DRAG_DROP">Seret &amp; letakkan</option>
                         <option value="CODE">Kode</option>
                       </select>
+                      {questionForm.type === "ESSAY" && (
+                        <p className="field-hint" style={{ color: "#d97706", marginTop: "0.35rem" }}>
+                          ℹ️ Soal Esai tersimpan aman di bank soal dan otomatis dikecualikan dari asesmen learner sampai penilaian otomatis esai aktif.
+                        </p>
+                      )}
+                      {questionForm.type === "DRAG_DROP" && (
+                        <p className="field-hint" style={{ color: "var(--color-primary)", marginTop: "0.35rem" }}>
+                          ℹ️ Struktur Drag &amp; Drop memetakan item ke target yang tervalidasi.
+                        </p>
+                      )}
                     </div>
 
                     <div className="form-group">

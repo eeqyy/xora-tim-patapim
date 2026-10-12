@@ -92,13 +92,35 @@ const attemptService = {
       );
     }
 
-    const questionResult = await pool.query(
-      `SELECT id, type, question_text, correct_answer, points, order_index
-         FROM questions
-        WHERE assessment_id = $1
-        ORDER BY order_index ASC`,
-      [assessmentId]
+    let questionsRows = [];
+    const snapResult = await pool.query(
+      `SELECT q.id, q.type, q.question_text, q.correct_answer, q.points, aq.order_index
+         FROM attempt_questions aq
+         JOIN questions q ON q.id = aq.question_id
+        WHERE aq.attempt_id = $1
+        ORDER BY aq.order_index ASC`,
+      [attemptId]
     );
+
+    if (snapResult.rows.length > 0) {
+      questionsRows = snapResult.rows;
+    } else {
+      const questionResult = await pool.query(
+        `SELECT id, type, question_text, correct_answer, points, order_index
+           FROM questions
+          WHERE assessment_id = $1
+          ORDER BY order_index ASC`,
+        [assessmentId]
+      );
+      questionsRows = questionResult.rows;
+
+      for (const q of questionsRows) {
+        await pool.query(
+          "INSERT INTO attempt_questions (attempt_id, question_id, order_index) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+          [attemptId, q.id, q.order_index]
+        );
+      }
+    }
 
     return {
       attemptId,
@@ -111,7 +133,7 @@ const attemptService = {
         passingScore: assessment.passing_score,
       },
       // correct_answer sengaja TIDAK ikut dikirim (lihat toPublicQuestion).
-      questions: questionResult.rows.map(assessmentService.toPublicQuestion),
+      questions: questionsRows.map(assessmentService.toPublicQuestion),
     };
   },
 
@@ -150,16 +172,30 @@ const attemptService = {
     const assessment = assessmentResult.rows[0];
     if (!assessment) throw notFound("Assessment no longer exists");
 
-    const questionResult = await pool.query(
+    let questionResult = await pool.query(
       `SELECT q.id, q.type, q.question_text, q.correct_answer, q.points,
-              q.order_index, q.concept_id, q.difficulty,
+              aq.order_index, q.concept_id, q.difficulty,
               c.name AS concept_name
-         FROM questions q
+         FROM attempt_questions aq
+         JOIN questions q ON q.id = aq.question_id
          LEFT JOIN concepts c ON c.id = q.concept_id
-        WHERE q.assessment_id = $1
-        ORDER BY q.order_index ASC`,
-      [attempt.assessment_id]
+        WHERE aq.attempt_id = $1
+        ORDER BY aq.order_index ASC`,
+      [attemptId]
     );
+
+    if (questionResult.rows.length === 0) {
+      questionResult = await pool.query(
+        `SELECT q.id, q.type, q.question_text, q.correct_answer, q.points,
+                q.order_index, q.concept_id, q.difficulty,
+                c.name AS concept_name
+           FROM questions q
+           LEFT JOIN concepts c ON c.id = q.concept_id
+          WHERE q.assessment_id = $1
+          ORDER BY q.order_index ASC`,
+        [attempt.assessment_id]
+      );
+    }
     const questions = questionResult.rows;
     if (questions.length === 0) {
       throw badRequest("This assessment has no questions");

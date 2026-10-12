@@ -57,8 +57,16 @@ export default function Navbar() {
                   Kelola
                 </Link>
               )}
-              {/* /profile hanya untuk learner: admin tidak punya
+              {/* /profile dan /progress hanya untuk learner: admin tidak punya
                   learner_profiles sehingga endpoint-nya 404. */}
+              {!isAdmin && (
+                <Link
+                  to="/progress"
+                  className={`nav-link ${currentPath === "/progress" || currentPath === "/history" ? "nav-link-active" : ""}`}
+                >
+                  Progres Belajar
+                </Link>
+              )}
               {!isAdmin && (
                 <Link
                   to="/profile"

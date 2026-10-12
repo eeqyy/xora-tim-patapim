@@ -1,12 +1,24 @@
 // ============================================================
 // XORA — Learner Profile Page
+// Premium Light Glassmorphism · Minimal · Reusable
 // frontend/src/pages/ProfilePage.jsx
 // ============================================================
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Link } from "../context/RouterContext";
+import { useRouter } from "../context/RouterContext";
 import { profileApi, subjectsApi } from "../services/api";
+import {
+  PageContainer,
+  GlassPanel,
+  StatusBadge,
+  PrimaryButton,
+  OutlineButton,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+} from "../components";
+import { IconCheck, IconRefresh } from "../components/Icons";
 
 const EXPERIENCE_OPTIONS = [
   { value: "BEGINNER", label: "Beginner / Pemula" },
@@ -16,13 +28,12 @@ const EXPERIENCE_OPTIONS = [
 
 export default function ProfilePage() {
   const { user: authUser, refreshUser } = useAuth();
+  const { navigate } = useRouter();
 
   const [profileData, setProfileData] = useState(null);
   const [subjectsList, setSubjectsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
-  // 404 dari GET /api/profile = user memang belum punya learner_profiles
-  // (mis. akun admin). Tampilkan empty-state, bukan pesan error mentah.
   const [profileMissing, setProfileMissing] = useState(false);
 
   // Edit Mode State
@@ -102,30 +113,31 @@ export default function ProfilePage() {
     setSuccessMessage(null);
 
     if (!editForm.name.trim()) {
-      setEditError("Nama lengkap tidak boleh kosong.");
+      setEditError("Nama pengguna wajib diisi.");
       return;
     }
 
     setIsSaving(true);
-
     try {
-      const payload = {
+      const res = await profileApi.updateProfile({
         name: editForm.name.trim(),
-        learning_goal: editForm.learning_goal.trim() ? editForm.learning_goal.trim() : null,
-        experience_level: editForm.experience_level.trim() ? editForm.experience_level.trim() : null,
-        preferred_subject_id: editForm.preferred_subject_id ? editForm.preferred_subject_id : null,
-      };
+        learning_goal: editForm.learning_goal.trim() || null,
+        experience_level: editForm.experience_level,
+        preferred_subject_id: editForm.preferred_subject_id || null,
+      });
 
-      const res = await profileApi.updateProfile(payload);
       if (res?.data) {
         setProfileData(res.data);
       }
-      await refreshUser();
       setIsEditing(false);
-      setSuccessMessage("Profil berhasil diperbarui!");
+      setSuccessMessage("Profil berhasil diperbarui.");
       setTimeout(() => setSuccessMessage(null), 4000);
+
+      if (refreshUser) {
+        await refreshUser();
+      }
     } catch (err) {
-      setEditError(err.message || "Gagal memperbarui profil.");
+      setEditError(err.message || "Gagal menyimpan perubahan profil.");
     } finally {
       setIsSaving(false);
     }
@@ -133,9 +145,7 @@ export default function ProfilePage() {
 
   const handleCompleteOnboarding = async () => {
     setIsOnboardingUpdating(true);
-    setSuccessMessage(null);
     setFetchError(null);
-
     try {
       await profileApi.completeOnboarding();
       setProfileData((prev) => {
@@ -148,7 +158,7 @@ export default function ProfilePage() {
           },
         };
       });
-      setSuccessMessage("Selamat! Tahap onboarding telah berhasil diselesaikan.");
+      setSuccessMessage("Tahap onboarding telah berhasil diselesaikan.");
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       setFetchError(err.message || "Gagal menyelesaikan tahap onboarding.");
@@ -159,52 +169,50 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="profile-container">
-        <div className="card loading-card">
-          <p>Memuat profil pembelajar...</p>
-        </div>
-      </div>
+      <PageContainer maxWidth="normal">
+        <LoadingState message="Memuat profil pembelajar..." />
+      </PageContainer>
     );
   }
 
   if (profileMissing) {
-    const isAdmin =
-      Array.isArray(authUser?.roles) && authUser.roles.includes("ADMIN");
+    const isAdmin = Array.isArray(authUser?.roles) && authUser.roles.includes("ADMIN");
 
     return (
-      <div className="profile-container">
-        <div className="card empty-card">
-          <p>Profil pembelajar belum tersedia untuk akun ini.</p>
-          <p className="text-muted" style={{ marginTop: "0.5rem" }}>
-            {isAdmin
-              ? "Akun admin tidak memiliki data profil pembelajar."
-              : "Lengkapi data pembelajaran Anda terlebih dahulu."}
-          </p>
-          <div className="admin-form-actions" style={{ justifyContent: "center" }}>
-            {isAdmin && (
-              <Link to="/admin/assessments" className="btn btn-primary">
-                Buka Halaman Kelola
-              </Link>
-            )}
-            <button onClick={loadProfile} className="btn btn-outline">
-              Muat Ulang
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageContainer maxWidth="normal">
+        <EmptyState
+          title="Profil Pembelajar Belum Tersedia"
+          description={
+            isAdmin
+              ? "Akun administrator tidak memiliki catatan profil pembelajar individual."
+              : "Lengkapi data pembelajaran Anda terlebih dahulu."
+          }
+          action={
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
+              {isAdmin && (
+                <PrimaryButton onClick={() => navigate("/admin/assessments")}>
+                  Buka Halaman Kelola
+                </PrimaryButton>
+              )}
+              <OutlineButton onClick={loadProfile} icon={<IconRefresh size={14} />}>
+                Muat Ulang
+              </OutlineButton>
+            </div>
+          }
+        />
+      </PageContainer>
     );
   }
 
   if (fetchError) {
     return (
-      <div className="profile-container">
-        <div className="card">
-          <div className="alert alert-error">{fetchError}</div>
-          <button onClick={loadProfile} className="btn btn-primary" style={{ marginTop: "1rem" }}>
-            Coba Lagi
-          </button>
-        </div>
-      </div>
+      <PageContainer maxWidth="normal">
+        <ErrorState
+          title="Gagal Memuat Profil"
+          message={fetchError}
+          onRetry={loadProfile}
+        />
+      </PageContainer>
     );
   }
 
@@ -212,43 +220,48 @@ export default function ProfilePage() {
   const profile = profileData?.profile || {};
 
   return (
-    <div className="profile-container">
-      {successMessage && <div className="alert alert-success">{successMessage}</div>}
+    <PageContainer maxWidth="normal">
+      {successMessage && (
+        <div className="alert alert-success" style={{ marginBottom: "1.25rem" }}>
+          <IconCheck size={16} />
+          <span>{successMessage}</span>
+        </div>
+      )}
 
       {/* Main Profile Header Card */}
-      <div className="card profile-header-card">
+      <GlassPanel variant="elevated" className="profile-header-card" style={{ marginBottom: "1.5rem" }}>
         <div className="profile-avatar-row">
           <div className="profile-avatar">
             {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
           </div>
-          <div className="profile-title-block">
-            <h2 className="profile-name">{user?.name}</h2>
+          <div>
+            <h1 className="profile-name">{user?.name}</h1>
             <p className="profile-email">{user?.email}</p>
             <div className="badge-row">
-              <span className={`badge badge-status ${user?.status === "ACTIVE" ? "badge-active" : "badge-inactive"}`}>
-                {user?.status}
-              </span>
               {Array.isArray(user?.roles) &&
                 user.roles.map((r) => (
-                  <span key={r} className="badge badge-role">
-                    {r}
-                  </span>
+                  <StatusBadge key={r} status={r} />
                 ))}
+              <StatusBadge
+                variant={user?.is_active ? "success" : "error"}
+                label={user?.is_active ? "Aktif" : "Nonaktif"}
+                dot
+              />
             </div>
           </div>
         </div>
 
         {!isEditing && (
-          <button onClick={handleStartEdit} className="btn btn-outline" style={{ marginTop: "1rem" }}>
+          <OutlineButton onClick={handleStartEdit}>
             Edit Profil
-          </button>
+          </OutlineButton>
         )}
-      </div>
+      </GlassPanel>
 
-      {/* Edit Form Card */}
+      {/* Profile Edit Form Card */}
       {isEditing && (
-        <div className="card edit-card">
-          <h3 className="section-title">Edit Profil Pembelajar</h3>
+        <GlassPanel variant="default" style={{ marginBottom: "1.5rem" }}>
+          <h2 className="section-title">Edit Profil Pembelajar</h2>
 
           {editError && <div className="alert alert-error">{editError}</div>}
 
@@ -267,12 +280,12 @@ export default function ProfilePage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="edit-learning-goal">Tujuan Belajar (Learning Goal)</label>
+              <label htmlFor="edit-goal">Tujuan Belajar (Learning Goal)</label>
               <textarea
-                id="edit-learning-goal"
+                id="edit-goal"
                 name="learning_goal"
-                rows="3"
-                placeholder="Contoh: Menguasai arsitektur backend & database PostgreSQL"
+                rows={3}
+                placeholder="Misal: Memahami logika pemrograman dasar & struktur data..."
                 value={editForm.learning_goal}
                 onChange={handleEditChange}
                 disabled={isSaving}
@@ -280,9 +293,9 @@ export default function ProfilePage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="edit-experience-level">Tingkat Pengalaman</label>
+              <label htmlFor="edit-experience">Tingkat Pengalaman (Experience Level)</label>
               <select
-                id="edit-experience-level"
+                id="edit-experience"
                 name="experience_level"
                 value={editForm.experience_level}
                 onChange={handleEditChange}
@@ -297,7 +310,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="edit-preferred-subject">Mata Pelajaran / Subject Pilihan</label>
+              <label htmlFor="edit-preferred-subject">Mata Pelajaran Pilihan</label>
               <select
                 id="edit-preferred-subject"
                 name="preferred_subject_id"
@@ -315,53 +328,51 @@ export default function ProfilePage() {
             </div>
 
             <div className="btn-group">
-              <button type="submit" className="btn btn-primary" disabled={isSaving}>
-                {isSaving ? "Menyimpan Perubahan..." : "Simpan Profil"}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                className="btn btn-secondary"
-                disabled={isSaving}
-              >
+              <PrimaryButton type="submit" disabled={isSaving} loading={isSaving}>
+                Simpan Profil
+              </PrimaryButton>
+              <OutlineButton type="button" onClick={handleCancelEdit} disabled={isSaving}>
                 Batal
-              </button>
+              </OutlineButton>
             </div>
           </form>
-        </div>
+        </GlassPanel>
       )}
 
       {/* Learner Profile Details */}
-      <div className="card profile-details-card">
-        <h3 className="section-title">Detail Pembelajar</h3>
+      <GlassPanel variant="default" className="profile-details-card">
+        <h2 className="section-title">Detail Pembelajar</h2>
 
         <div className="detail-grid">
           <div className="detail-item">
             <span className="detail-label">Tujuan Belajar</span>
             <span className="detail-value">
-              {profile.learning_goal || <em className="text-muted">Belum ditentukan</em>}
+              {profile.learning_goal || <em style={{ color: "var(--color-text-dim)" }}>Belum ditentukan</em>}
             </span>
           </div>
 
           <div className="detail-item">
             <span className="detail-label">Tingkat Pengalaman</span>
             <span className="detail-value">
-              {profile.experience_level || <em className="text-muted">Belum ditentukan</em>}
+              {profile.experience_level || <em style={{ color: "var(--color-text-dim)" }}>Belum ditentukan</em>}
             </span>
           </div>
 
           <div className="detail-item">
-            <span className="detail-label">Subject Pilihan</span>
+            <span className="detail-label">Mata Pelajaran Pilihan</span>
             <span className="detail-value">
               {profile.preferred_subject ? (
                 <span>
                   <strong>{profile.preferred_subject.name}</strong>
                   {profile.preferred_subject.description && (
-                    <span className="subject-desc"> ({profile.preferred_subject.description})</span>
+                    <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
+                      {" "}
+                      ({profile.preferred_subject.description})
+                    </span>
                   )}
                 </span>
               ) : (
-                <em className="text-muted">Belum memilih subject</em>
+                <em style={{ color: "var(--color-text-dim)" }}>Belum memilih subject</em>
               )}
             </span>
           </div>
@@ -369,34 +380,36 @@ export default function ProfilePage() {
           <div className="detail-item">
             <span className="detail-label">Status Onboarding</span>
             <span className="detail-value">
-              {profile.onboarding_completed ? (
-                <span className="badge badge-success">Selesai (Completed)</span>
-              ) : (
-                <span className="badge badge-warning">Belum Selesai</span>
-              )}
+              <StatusBadge
+                variant={profile.onboarding_completed ? "success" : "warning"}
+                label={profile.onboarding_completed ? "Selesai" : "Belum Selesai"}
+                dot
+              />
             </span>
           </div>
         </div>
 
         {/* Onboarding Completion Action */}
         {!profile.onboarding_completed && (
-          <div className="onboarding-action-box">
+          <div className="onboarding-action-box" style={{ marginTop: "1.5rem" }}>
             <div>
-              <h4 style={{ margin: "0 0 0.25rem 0" }}>Selesaikan Onboarding</h4>
-              <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280" }}>
+              <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1rem", color: "var(--color-text-main)" }}>
+                Selesaikan Orientasi (Onboarding)
+              </h3>
+              <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
                 Tandai bahwa Anda telah menyelesaikan orientasi profil belajar Xora.
               </p>
             </div>
-            <button
+            <PrimaryButton
               onClick={handleCompleteOnboarding}
-              className="btn btn-success"
               disabled={isOnboardingUpdating}
+              loading={isOnboardingUpdating}
             >
-              {isOnboardingUpdating ? "Menyelesaikan..." : "Selesaikan Onboarding"}
-            </button>
+              Selesaikan Onboarding
+            </PrimaryButton>
           </div>
         )}
-      </div>
-    </div>
+      </GlassPanel>
+    </PageContainer>
   );
 }

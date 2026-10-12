@@ -285,16 +285,46 @@ const recommendationService = {
   },
 
   async _findAssessmentForConcept(conceptId) {
+    // 1. Prioritaskan practice assessment untuk topik yang menaungi konsep ini
+    const topicRes = await pool.query(
+      `SELECT a.id
+         FROM assessments a
+         JOIN topic_concepts tc ON tc.topic_id = a.topic_id
+        WHERE tc.concept_id = $1 AND a.type = 'PRACTICE'
+        ORDER BY a.created_at ASC
+        LIMIT 1`,
+      [conceptId]
+    );
+    if (topicRes.rows.length > 0) return topicRes.rows[0].id;
+
+    // 2. Assessment yang memuat soal langsung dari konsep ini
     const res = await pool.query(
       `SELECT q.assessment_id AS id, COUNT(*)::int AS n
          FROM questions q
-        WHERE q.concept_id = $1
+        WHERE q.concept_id = $1 AND q.assessment_id IS NOT NULL
         GROUP BY q.assessment_id
         ORDER BY COUNT(*) DESC, q.assessment_id ASC
         LIMIT 1`,
       [conceptId]
     );
-    return res.rows[0]?.id || null;
+    if (res.rows.length > 0) return res.rows[0].id;
+
+    // 3. Fallback: practice assessment sesuai materi konsep
+    const matRes = await pool.query(
+      `SELECT a.id
+         FROM assessments a
+         JOIN concepts c ON c.id = $1
+        WHERE a.type = 'PRACTICE'
+          AND (
+            (c.material = 'HTML' AND a.title ILIKE '%HTML%') OR
+            (c.material = 'CSS' AND a.title ILIKE '%CSS%') OR
+            (c.material = 'JAVASCRIPT' AND a.title ILIKE '%JavaScript%')
+          )
+        ORDER BY a.created_at ASC
+        LIMIT 1`,
+      [conceptId]
+    );
+    return matRes.rows[0]?.id || null;
   },
 
   async _findOrCreateAttempt(learnerId, assessmentId) {
@@ -306,13 +336,11 @@ const recommendationService = {
     );
     if (existing.rows[0]) return existing.rows[0];
 
-    const created = await pool.query(
-      `INSERT INTO attempts (learner_id, assessment_id, status, started_at)
-       VALUES ($1, $2, 'IN_PROGRESS', NOW())
-       RETURNING id`,
-      [learnerId, assessmentId]
-    );
-    return created.rows[0];
+    // Gunakan assessmentService (lazy require untuk menghindari circular dependency)
+    // agar attempt_questions snapshot 20 soal tersimpan rapi
+    const assessmentService = require("./assessmentService");
+    const created = await assessmentService.createAttempt(learnerId, assessmentId, false, true);
+    return created;
   },
 
   async _attemptPayload(attemptId) {
@@ -327,11 +355,25 @@ const recommendationService = {
     const attempt = attRes.rows[0];
     if (!attempt) return null;
 
-    const qRes = await pool.query(
-      `SELECT id, type, question_text, correct_answer, points, order_index
-         FROM questions WHERE assessment_id = $1 ORDER BY order_index ASC`,
-      [attempt.assessment_id]
+    // Prioritaskan snapshot resmi attempt_questions
+    const snapRes = await pool.query(
+      `SELECT q.id, q.type, q.question_text, q.correct_answer, q.points, aq.order_index
+         FROM attempt_questions aq
+         JOIN questions q ON q.id = aq.question_id
+        WHERE aq.attempt_id = $1
+        ORDER BY aq.order_index ASC`,
+      [attempt.id]
     );
+
+    let questionsRows = snapRes.rows;
+    if (questionsRows.length === 0) {
+      const qRes = await pool.query(
+        `SELECT id, type, question_text, correct_answer, points, order_index
+           FROM questions WHERE assessment_id = $1 ORDER BY order_index ASC`,
+        [attempt.assessment_id]
+      );
+      questionsRows = qRes.rows;
+    }
 
     return {
       attempt: {
@@ -347,7 +389,7 @@ const recommendationService = {
         duration_minutes: attempt.duration_minutes,
         passing_score: attempt.passing_score,
       },
-      questions: qRes.rows.map(toPublicQuestion),
+      questions: questionsRows.map(toPublicQuestion),
     };
   },
 

@@ -287,7 +287,7 @@ const gapService = {
     const assessRes = await pool.query(
       `SELECT q.assessment_id AS id, COUNT(*)::int AS question_count
          FROM questions q
-        WHERE q.concept_id = $1
+        WHERE q.concept_id = $1 AND q.assessment_id IS NOT NULL
         GROUP BY q.assessment_id
         ORDER BY COUNT(*) DESC, q.assessment_id ASC
         LIMIT 1`,
