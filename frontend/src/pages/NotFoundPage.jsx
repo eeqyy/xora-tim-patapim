@@ -25,7 +25,7 @@ export default function NotFoundPage() {
             fontWeight: 800,
             lineHeight: 1,
             margin: "0 0 0.5rem 0",
-            color: "var(--color-brand, #4f46e5)",
+            color: "var(--color-brand, var(--color-primary))",
           }}
         >
           404

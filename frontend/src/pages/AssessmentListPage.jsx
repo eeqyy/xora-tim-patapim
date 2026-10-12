@@ -519,7 +519,7 @@ export default function AssessmentListPage() {
                           style={{
                             fontSize: "0.8rem",
                             color: "var(--color-text-muted)",
-                            backgroundColor: "rgba(241, 245, 249, 0.7)",
+                            backgroundColor: "var(--color-bg-subtle)",
                             padding: "0.6rem 0.8rem",
                             borderRadius: "var(--radius-sm)",
                             marginBottom: "1rem",
@@ -597,7 +597,7 @@ export default function AssessmentListPage() {
                         borderRadius: "9999px",
                         border: "1px solid",
                         borderColor: isActive ? "var(--color-primary)" : "var(--color-border)",
-                        backgroundColor: isActive ? "var(--color-primary)" : "rgba(255, 255, 255, 0.7)",
+                        backgroundColor: isActive ? "var(--color-primary)" : "var(--color-surface-solid)",
                         color: isActive ? "#ffffff" : "var(--color-text-main)",
                         cursor: "pointer",
                         transition: "all 0.15s ease",

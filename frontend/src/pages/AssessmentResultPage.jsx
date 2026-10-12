@@ -401,7 +401,7 @@ export default function AssessmentResultPage({ attemptId }) {
                         ({data.correct || 0} benar, {data.incorrect || 0} salah{data.unanswered ? `, ${data.unanswered} kosong` : ""})
                       </span>
                     </div>
-                    <div style={{ width: "100%", height: "6px", background: "rgba(0,0,0,0.06)", borderRadius: "3px", overflow: "hidden", marginBottom: "0.5rem" }}>
+                    <div style={{ width: "100%", height: "6px", background: "var(--color-bg-subtle)", borderRadius: "3px", overflow: "hidden", marginBottom: "0.5rem" }}>
                       <div
                         style={{
                           width: `${Math.min(100, Math.max(0, score))}%`,
@@ -462,8 +462,8 @@ export default function AssessmentResultPage({ attemptId }) {
                   <div
                     key={idx}
                     style={{
-                      background: "rgba(255, 255, 255, 0.7)",
-                      border: "1px solid var(--color-border-subtle, #e2e8f0)",
+                      background: "var(--color-surface-solid)",
+                      border: "1px solid var(--color-border)",
                       borderRadius: "var(--radius-sm)",
                       padding: "0.9rem 1rem",
                       display: "flex",
@@ -496,8 +496,8 @@ export default function AssessmentResultPage({ attemptId }) {
               marginTop: "2rem",
               padding: "1.5rem",
               borderRadius: "var(--radius-md)",
-              border: "1px solid rgba(239, 68, 68, 0.25)",
-              background: "rgba(254, 242, 242, 0.6)",
+              border: "1px solid var(--color-error-border)",
+              background: "var(--color-error-bg)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1rem" }}>
@@ -524,7 +524,7 @@ export default function AssessmentResultPage({ attemptId }) {
                 style={{
                   padding: "1rem 1.25rem",
                   borderRadius: "var(--radius-sm)",
-                  background: "rgba(255, 255, 255, 0.95)",
+                  background: "var(--color-surface-solid)",
                   border: "1px solid var(--color-primary-border)",
                   display: "flex",
                   alignItems: "center",
@@ -566,8 +566,8 @@ export default function AssessmentResultPage({ attemptId }) {
               borderRadius: "var(--radius-md)",
               border: `1px solid ${aiStatus === "COMPLETED" && !isFallback ? "var(--color-primary-border)" : "var(--color-warning-border)"}`,
               background: aiStatus === "COMPLETED" && !isFallback
-                ? "rgba(240, 249, 255, 0.5)"
-                : "rgba(255, 251, 235, 0.5)",
+                ? "var(--color-primary-light)"
+                : "var(--color-warning-bg)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1rem" }}>
@@ -604,7 +604,7 @@ export default function AssessmentResultPage({ attemptId }) {
                   gap: "0.5rem",
                   padding: "0.65rem 0.85rem",
                   borderRadius: "var(--radius-sm)",
-                  background: "rgba(217, 119, 6, 0.07)",
+                  background: "var(--color-warning-bg)",
                   border: "1px solid var(--color-warning-border)",
                   marginBottom: "0.85rem",
                   fontSize: "0.825rem",
@@ -647,7 +647,7 @@ export default function AssessmentResultPage({ attemptId }) {
                   <span
                     key={idx}
                     style={{
-                      background: "rgba(16, 185, 129, 0.1)",
+                      background: "var(--color-success-bg)",
                       color: "var(--color-success)",
                       padding: "0.25rem 0.65rem",
                       borderRadius: "999px",
@@ -988,7 +988,7 @@ export default function AssessmentResultPage({ attemptId }) {
                     marginTop: "1.25rem",
                     padding: "1rem 1.25rem",
                     borderRadius: "var(--radius-sm)",
-                    background: "rgba(255, 255, 255, 0.9)",
+                    background: "var(--color-surface-solid)",
                     border: "1px solid var(--color-primary-border)",
                     display: "flex",
                     justifyContent: "space-between",

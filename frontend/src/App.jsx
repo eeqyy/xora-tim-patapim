@@ -5,8 +5,10 @@
 
 import React from "react";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { RouterProvider, useRouter, ProtectedRoute, AdminRoute } from "./context/RouterContext";
 import Navbar from "./components/Navbar";
+import BottomNav from "./components/BottomNav";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -17,6 +19,10 @@ import AssessmentPage from "./pages/AssessmentPage";
 import AssessmentResultPage from "./pages/AssessmentResultPage";
 import AdminAssessmentsPage from "./pages/AdminAssessmentsPage";
 import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
+import AdminHomePage from "./pages/AdminHomePage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminSystemPage from "./pages/AdminSystemPage";
+import DashboardPage from "./pages/DashboardPage";
 import ProgressPage from "./pages/ProgressPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -35,6 +41,12 @@ function AppContent() {
     pageContent = (
       <ProtectedRoute>
         <ProfilePage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/dashboard") {
+    pageContent = (
+      <ProtectedRoute>
+        <DashboardPage />
       </ProtectedRoute>
     );
   } else if (currentPath === "/progress" || currentPath === "/history") {
@@ -97,6 +109,24 @@ function AppContent() {
         <AssessmentPage assessmentId={assessmentId} />
       </ProtectedRoute>
     );
+  } else if (currentPath === "/admin" || currentPath === "/admin/") {
+    pageContent = (
+      <AdminRoute>
+        <AdminHomePage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/users") {
+    pageContent = (
+      <AdminRoute>
+        <AdminUsersPage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/system") {
+    pageContent = (
+      <AdminRoute>
+        <AdminSystemPage />
+      </AdminRoute>
+    );
   } else if (currentPath === "/admin/assessments") {
     pageContent = (
       <AdminRoute>
@@ -118,16 +148,19 @@ function AppContent() {
     <div className="app-layout">
       <Navbar />
       <main className="main-content">{pageContent}</main>
+      <BottomNav />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <RouterProvider>
-        <AppContent />
-      </RouterProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RouterProvider>
+          <AppContent />
+        </RouterProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

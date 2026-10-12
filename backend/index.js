@@ -22,6 +22,7 @@ const recommendationRoutes = require("./routes/recommendations");
 const practiceRoutes = require("./routes/practices");
 const historyRoutes = require("./routes/history");
 const aiRoutes = require("./routes/ai");
+const adminRoutes = require("./routes/admin");
 const { notFound, sendError } = require("./utils/errors");
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -73,6 +74,7 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/practices", practiceRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 404 — endpoint API yang tidak dikenal (bukan HTML default Express).
 app.use((req, res) =>

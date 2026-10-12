@@ -7,12 +7,29 @@ const express = require("express");
 const router = express.Router();
 const assessmentService = require("../services/assessmentService");
 const questionService = require("../services/questionService");
+const auditService = require("../services/auditService");
 const { requireAuth } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/requireAdmin");
 const { sendError } = require("../utils/errors");
 
 // Semua route assessment mewajibkan autentikasi learner
 router.use(requireAuth);
+
+// Catat aksi admin ke audit_logs. Bersifat "best effort": kegagalan mencatat
+// audit tidak boleh menggagalkan aksi utama (auditService.log sudah menelan error).
+function logAdminAction(req, { action, entityType, entityId, oldValue, newValue }) {
+  if (!entityId) return;
+  auditService.log({
+    actorId: req.user?.id,
+    actorType: "ADMIN",
+    action,
+    entityType,
+    entityId,
+    oldValue: oldValue || null,
+    newValue: newValue || null,
+    ipAddress: req.ip || null,
+  });
+}
 
 // ============================================================
 // Admin CRUD — wajib role ADMIN. Ditulis sebelum route `/:id`
@@ -51,6 +68,12 @@ router.get("/admin/questions/bank", requireAdmin, async (req, res) => {
 router.post("/admin/questions/bank", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.createBankQuestion(req.body || {});
+    logAdminAction(req, {
+      action: "CREATE",
+      entityType: "question",
+      entityId: data?.id,
+      newValue: { type: data?.type, questionText: data?.questionText },
+    });
     res.status(201).json({ status: "ok", data });
   } catch (error) {
     console.error("POST /api/assessments/admin/questions/bank ERROR:", error);
@@ -73,6 +96,11 @@ router.get("/admin/questions/bank/:questionId", requireAdmin, async (req, res) =
 router.put("/admin/questions/bank/:questionId", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.updateBankQuestion(req.params.questionId, req.body || {});
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "question",
+      entityId: req.params.questionId,
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("PUT /api/assessments/admin/questions/bank/:questionId ERROR:", error);
@@ -84,6 +112,11 @@ router.put("/admin/questions/bank/:questionId", requireAdmin, async (req, res) =
 router.delete("/admin/questions/bank/:questionId", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.deleteBankQuestion(req.params.questionId);
+    logAdminAction(req, {
+      action: "DELETE",
+      entityType: "question",
+      entityId: req.params.questionId,
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("DELETE /api/assessments/admin/questions/bank/:questionId ERROR:", error);
@@ -95,6 +128,12 @@ router.delete("/admin/questions/bank/:questionId", requireAdmin, async (req, res
 router.patch("/admin/questions/bank/:questionId/toggle-active", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.toggleBankQuestionActive(req.params.questionId);
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "question",
+      entityId: req.params.questionId,
+      newValue: { is_active: data?.is_active },
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("PATCH /api/assessments/admin/questions/bank/:questionId/toggle-active ERROR:", error);
@@ -117,6 +156,12 @@ router.get("/admin/full/:id", requireAdmin, async (req, res) => {
 router.post("/", requireAdmin, async (req, res) => {
   try {
     const data = await assessmentService.create(req.body || {});
+    logAdminAction(req, {
+      action: "CREATE",
+      entityType: "assessment",
+      entityId: data?.id,
+      newValue: { title: data?.title, type: data?.type },
+    });
     res.status(201).json({ status: "ok", data });
   } catch (error) {
     console.error("POST /api/assessments ERROR:", error);
@@ -128,6 +173,12 @@ router.post("/", requireAdmin, async (req, res) => {
 router.put("/:id", requireAdmin, async (req, res) => {
   try {
     const data = await assessmentService.update(req.params.id, req.body || {});
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "assessment",
+      entityId: req.params.id,
+      newValue: { title: data?.title, type: data?.type },
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("PUT /api/assessments/:id ERROR:", error);
@@ -139,6 +190,11 @@ router.put("/:id", requireAdmin, async (req, res) => {
 router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const data = await assessmentService.remove(req.params.id);
+    logAdminAction(req, {
+      action: "DELETE",
+      entityType: "assessment",
+      entityId: req.params.id,
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("DELETE /api/assessments/:id ERROR:", error);
@@ -150,6 +206,12 @@ router.delete("/:id", requireAdmin, async (req, res) => {
 router.post("/:id/questions", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.create(req.params.id, req.body || {});
+    logAdminAction(req, {
+      action: "CREATE",
+      entityType: "question",
+      entityId: data?.id,
+      newValue: { assessment_id: req.params.id, type: data?.type },
+    });
     res.status(201).json({ status: "ok", data });
   } catch (error) {
     console.error("POST /api/assessments/:id/questions ERROR:", error);
@@ -162,6 +224,12 @@ router.post("/:id/questions", requireAdmin, async (req, res) => {
 router.put("/:id/questions/reorder", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.reorder(req.params.id, (req.body || {}).orderedIds);
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "assessment",
+      entityId: req.params.id,
+      newValue: { reordered: true },
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("PUT /api/assessments/:id/questions/reorder ERROR:", error);
@@ -173,6 +241,11 @@ router.put("/:id/questions/reorder", requireAdmin, async (req, res) => {
 router.put("/:id/questions/:questionId", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.update(req.params.questionId, req.body || {});
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "question",
+      entityId: req.params.questionId,
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("PUT /api/assessments/:id/questions/:questionId ERROR:", error);
@@ -184,6 +257,11 @@ router.put("/:id/questions/:questionId", requireAdmin, async (req, res) => {
 router.delete("/:id/questions/:questionId", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.remove(req.params.questionId);
+    logAdminAction(req, {
+      action: "DELETE",
+      entityType: "question",
+      entityId: req.params.questionId,
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("DELETE /api/assessments/:id/questions/:questionId ERROR:", error);

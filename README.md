@@ -40,8 +40,8 @@ dipakai untuk mendeteksi *gap* dan merekomendasikan remediasi yang tepat sasaran
  │   ├── db.js                 # Pool PostgreSQL (SSL kondisional via DATABASE_SSL)
  │   ├── seed.js               # Seed data dev (npm run seed)
  │   ├── middleware/           # auth.js, requireAdmin.js (session token)
- │   ├── routes/               # 16 file route (/api/*)
- │   ├── services/             # 17 file service (business logic)
+ │   ├── routes/               # 17 file route (/api/*), termasuk admin.js
+ │   ├── services/             # 20 file service (business logic)
  │   ├── config/               # aiPrompt.js, aiProvider.js, masteryThresholds.js
  │   └── utils/                # errors.js, grading.js, password.js, session.js, aiValidator.js
  │
@@ -54,7 +54,7 @@ dipakai untuk mendeteksi *gap* dan merekomendasikan remediasi yang tepat sasaran
          ├── context/              # AuthContext.jsx, RouterContext.jsx
          ├── services/api.js       # API client terpusat
          ├── components/           # Button, Icons, Navbar, GlassPanel, StatusBadge, dll.
-         └── pages/                # 12 halaman (termasuk NotFoundPage 404)
+         └── pages/                # 15 halaman (termasuk NotFoundPage 404 + area admin)
 ```
 
 ---
@@ -127,10 +127,13 @@ npm run dev         # http://localhost:5001
 # 3) Frontend (terminal terpisah)
 cd frontend
 npm install
+cp .env.example .env   # opsional: pastikan VITE_API_URL = http://localhost:5001
 npm run dev         # http://localhost:5173
 ```
 
 > Port backend memakai **5001** karena `5000` sering dipakai macOS ControlCenter (AirPlay).
+> Jika `frontend/.env` tidak ada, frontend memakai default `http://localhost:5001` — jadi
+> pastikan `PORT` backend tidak diubah, atau samakan lewat `VITE_API_URL`.
 
 ### Akun seed
 
@@ -152,6 +155,22 @@ Token disimpan sebagai hash di tabel `sessions` dengan masa berlaku `expires_at`
 
 ---
 
+## 🛠️ Peran Admin
+
+Login sebagai `admin@xora.dev`, lalu buka **`/admin`**. Tiga kemampuan utama:
+
+1. **Kelola soal & asesmen** (`/admin/assessments`) — buat/ubah/hapus asesmen dan soal di bank soal.
+2. **Kelola pengguna** (`/admin/users`) — lihat akun, ubah status (aktif/nonaktif/suspend),
+   atur role (`LEARNER`/`ADMIN`), dan reset password.
+3. **Pantau sistem & data** (`/admin/system`) — status database, statistik data, aktivitas
+   terbaru, dan ringkasan analytics.
+
+> Perubahan status/role, reset password, serta perubahan asesmen/soal dicatat ke tabel
+> `audit_logs` dan tampil di halaman **Kesehatan Sistem**. Admin **tidak bisa** mengubah
+> status/role akunnya sendiri (mencegah akun terkunci).
+
+---
+
 ## 🔌 Endpoint Penting
 
 | Kelompok | Endpoint |
@@ -164,10 +183,13 @@ Token disimpan sebagai hash di tabel `sessions` dengan masa berlaku `expires_at`
 | Attempt | `POST /api/attempts`, `GET /api/attempts`, `GET /api/attempts/:id`, `POST /api/attempts/:id/submit`, `DELETE /api/attempts/:id` |
 | Diagnostik | `GET /api/mastery`, `/api/gaps`, `/api/diagnostics/:id`, `POST /api/diagnostics/:id/verify/start` |
 | Remediasi | `GET /api/recommendations`, `/next`, `POST /:id/start|complete|skip`, `GET /:id/materials`, `GET /api/practices`, `GET /api/history` |
-| Admin | `/api/assessments/admin/questions/bank` (CRUD soal), `/api/assessments/admin/full/:id` (harus role `ADMIN`) |
+| Admin — asesmen | `/api/assessments/admin/questions/bank` (CRUD soal), `/api/assessments/admin/full/:id` |
+| Admin — pengguna | `GET /api/admin/users`, `GET /:id`, `PATCH /:id/status`, `PUT /:id/roles`, `POST /:id/reset-password` |
+| Admin — sistem | `GET /api/admin/system/health`, `/stats`, `/activity`, `/analytics` |
 | AI (opsional) | `POST /api/ai/analyze`, `GET /api/ai/health` |
 
-Detail lengkap: lihat `AGENT.md` §4.
+> Semua endpoint `/api/admin/*` butuh role `ADMIN`. Detail lengkap: lihat `AGENT.md` §4.
+> Halaman admin: `/admin` (landing), `/admin/assessments`, `/admin/users`, `/admin/system`.
 
 ---
 

@@ -800,7 +800,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                         <option value="CODE">Kode</option>
                       </select>
                       {questionForm.type === "ESSAY" && (
-                        <p className="field-hint" style={{ color: "#d97706", marginTop: "0.35rem" }}>
+                        <p className="field-hint" style={{ color: "var(--color-warning-text)", marginTop: "0.35rem" }}>
                           ℹ️ Soal Esai tersimpan aman di bank soal dan otomatis dikecualikan dari asesmen learner sampai penilaian otomatis esai aktif.
                         </p>
                       )}

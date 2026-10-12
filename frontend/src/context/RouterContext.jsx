@@ -91,7 +91,7 @@ export function ProtectedRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#6b7280" }}>
+      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--color-text-muted)" }}>
         <p>Memeriksa autentikasi...</p>
       </div>
     );
@@ -123,7 +123,7 @@ export function AdminRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#6b7280" }}>
+      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--color-text-muted)" }}>
         <p>Memeriksa autentikasi...</p>
       </div>
     );

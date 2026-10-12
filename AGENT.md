@@ -109,8 +109,8 @@ xora-project/
 │   │   ├── aiPrompt.js            # Prompt/format for AI analysis
 │   │   ├── aiProvider.js          # OpenRouter client
 │   │   └── masteryThresholds.js   # Mastery/gap thresholds
-│   ├── routes/                    # 16 route files (see §4)
-│   ├── services/                  # 17 services (business logic)
+│   ├── routes/                    # 17 route files (see §4), incl. admin.js
+│   ├── services/                  # 20 services (business logic)
 │   └── utils/
 │       ├── errors.js              # ApiError + sendError + isValidUuid
 │       ├── grading.js             # answer grading helpers
@@ -188,7 +188,27 @@ All routes are mounted in `backend/index.js`. Private routes require
 | Admin | `/admin/questions/bank` (GET/POST), `/admin/questions/bank/:questionId` (GET/PUT/DELETE), `/admin/questions/bank/:questionId/toggle-active` (PATCH) | ADMIN | Question bank CRUD |
 | Admin | `/admin/full/:id` (GET), `/` (POST), `/:id` (PUT/DELETE), `/:id/questions` (POST), `/:id/questions/reorder` (PUT), `/:id/questions/:questionId` (PUT/DELETE) | ADMIN | Assessment editor |
 
-### 4.5 Attempts (`/api/attempts`) — thin alias layer over `attemptService`
+### 4.5 Admin (`/api/admin`) — ADMIN only
+All routes require `requireAuth` + `requireAdmin` (`routes/admin.js`). Write actions are
+recorded in `audit_logs` via `auditService`.
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| GET | `/users` | List users (filters: `search`, `role`, `status`, `limit`, `offset`) |
+| GET | `/users/:id` | User detail (+ learner/admin profile, active sessions) |
+| PATCH | `/users/:id/status` | Set status `ACTIVE`/`INACTIVE`/`SUSPENDED` (revokes sessions when not ACTIVE) |
+| PUT | `/users/:id/roles` | Replace roles (`LEARNER`/`ADMIN`) |
+| POST | `/users/:id/reset-password` | Set a new password + revoke that user's sessions |
+| GET | `/system/health` | DB status + latency, uptime, Node version |
+| GET | `/system/stats` | Counts (users, content, attempts, sessions, events, audits) |
+| GET | `/system/activity` | Recent `learning_events` + `audit_logs` (`limit`, `offset`) |
+| GET | `/system/analytics` | Aggregated analytics + top gap concepts |
+
+> An admin **cannot change their own status/role** (403) to prevent lockout. `password_hash`
+> is never returned. Assessment/question admin mutations (`/api/assessments/admin/*`) also
+> write to `audit_logs`.
+
+### 4.6 Attempts (`/api/attempts`) — thin alias layer over `attemptService`
 `POST /` · `GET /` · `GET /:id` · `POST /:id/submit` · `DELETE /:id`
 
 > **Note:** `/api/attempts/*` (attemptService) and `/api/assessments/:id/attempts`
@@ -196,7 +216,7 @@ All routes are mounted in `backend/index.js`. Private routes require
 > implementations of the attempt lifecycle**. Both are live and must keep working;
 > prefer the `/api/assessments/*` path for full analysis output.
 
-### 4.6 Diagnostics, Gaps, Mastery, Remediation, History
+### 4.7 Diagnostics, Gaps, Mastery, Remediation, History
 - `GET /api/mastery`, `GET /api/mastery/concepts/:conceptId`
 - `GET /api/gaps`, `GET /api/gaps/:conceptId`, `POST /api/gaps/:conceptId/diagnose`
 - `GET /api/diagnostics/:id`, `POST /api/diagnostics/:id/verify/start`
@@ -206,7 +226,7 @@ All routes are mounted in `backend/index.js`. Private routes require
 - `GET /api/history`
 - `GET /api/health` (public) · `POST /api/ai/analyze`, `GET /api/ai/health`
 
-### 4.7 Error & not-found responses
+### 4.8 Error & not-found responses
 - Unknown endpoints return **JSON 404**: `{ "status": "error", "message": "Endpoint tidak ditemukan: <METHOD> <path>" }`.
 - A centralized error handler in `index.js` reuses `utils/errors.sendError`, so all
   errors share the shape `{ status: "error", message }` (never leaks stack traces).
@@ -355,8 +375,11 @@ was tested and what remains.
   per-material/topic scores, `is_passed`, optional AI analysis (`ai_status`).
 - **Diagnostics pipeline:** mastery, gaps, diagnostics verification, recommendations
   (`learning_actions`), practices, history.
-- **Admin:** assessment editor + question bank CRUD.
-- **Frontend:** all pages build; unknown routes render a 404 page.
+- **Admin:** assessment editor + question bank CRUD; **user management** (status/role/reset
+  password); **system monitoring** (health, stats, recent activity, analytics). Admin actions
+  are written to `audit_logs`.
+- **Frontend:** all pages build; unknown routes render a 404 page; admin area has a landing
+  page (`/admin`) plus `/admin/assessments`, `/admin/users`, `/admin/system`.
 
 ### 13.2 Known limitations / not yet implemented
 - **AI features** require `AI_API_KEY`; otherwise `/api/ai/*` → 503 and `ai_status = FAILED`.

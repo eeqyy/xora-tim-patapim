@@ -3,7 +3,7 @@
 // frontend/src/services/api.js
 // ============================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const TOKEN_KEY = "xora_auth_token";
 
@@ -172,6 +172,13 @@ export const subjectsApi = {
     apiRequest("/api/subjects", {
       method: "GET",
     }),
+};
+
+// Daftar konsep (menyertakan subject_id) — dipakai untuk memetakan
+// konsep ke "kelas" (subject) saat memfilter dashboard.
+export const conceptsApi = {
+  getAll: (token) => apiRequest("/api/concepts", { method: "GET", token }),
+  getById: (id, token) => apiRequest(`/api/concepts/${id}`, { method: "GET", token }),
 };
 
 export const learningPathApi = {
@@ -461,4 +468,71 @@ export const systemApi = {
     apiRequest("/api/health", {
       method: "GET",
     }),
+};
+
+/**
+ * Admin — kelola akun pengguna. Butuh role ADMIN.
+ * Semua endpoint di bawah prefix /api/admin (lihat backend/routes/admin.js).
+ */
+export const adminUsersApi = {
+  list: (params = {}, token) => {
+    const query = new URLSearchParams();
+    if (params.search) query.append("search", params.search);
+    if (params.role) query.append("role", params.role);
+    if (params.status) query.append("status", params.status);
+    if (params.limit) query.append("limit", params.limit);
+    if (params.offset) query.append("offset", params.offset);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/admin/users${qs}`, { method: "GET", token });
+  },
+
+  getById: (id, token) =>
+    apiRequest(`/api/admin/users/${id}`, { method: "GET", token }),
+
+  updateStatus: (id, status, token) =>
+    apiRequest(`/api/admin/users/${id}/status`, {
+      method: "PATCH",
+      body: { status },
+      token,
+    }),
+
+  updateRoles: (id, roles, token) =>
+    apiRequest(`/api/admin/users/${id}/roles`, {
+      method: "PUT",
+      body: { roles },
+      token,
+    }),
+
+  resetPassword: (id, newPassword, token) =>
+    apiRequest(`/api/admin/users/${id}/reset-password`, {
+      method: "POST",
+      body: { newPassword },
+      token,
+    }),
+
+  // Ringkasan analitik learner (read-only) untuk dashboard admin.
+  getAnalytics: (id, token) =>
+    apiRequest(`/api/admin/users/${id}/analytics`, { method: "GET", token }),
+};
+
+/**
+ * Admin — pantau kesehatan sistem & data. Butuh role ADMIN.
+ */
+export const adminSystemApi = {
+  getHealth: (token) =>
+    apiRequest("/api/admin/system/health", { method: "GET", token }),
+
+  getStats: (token) =>
+    apiRequest("/api/admin/system/stats", { method: "GET", token }),
+
+  getActivity: (params = {}, token) => {
+    const query = new URLSearchParams();
+    if (params.limit) query.append("limit", params.limit);
+    if (params.offset) query.append("offset", params.offset);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/admin/system/activity${qs}`, { method: "GET", token });
+  },
+
+  getAnalytics: (token) =>
+    apiRequest("/api/admin/system/analytics", { method: "GET", token }),
 };

@@ -774,7 +774,7 @@ export default function AssessmentPage({
           <code
             key={idx}
             style={{
-              backgroundColor: "rgba(15, 23, 42, 0.08)",
+              backgroundColor: "var(--color-bg-subtle)",
               padding: "0.15rem 0.35rem",
               borderRadius: "4px",
               fontFamily: "var(--font-mono, monospace)",

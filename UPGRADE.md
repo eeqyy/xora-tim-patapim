@@ -22,6 +22,15 @@ Pilih sesuai cara kalian menjalankan database:
 
 Kalau belum punya `.env`, jalankan `cp .env.example .env` lalu isi datanya.
 
+Untuk **frontend lokal (tanpa Docker)**, samakan URL backend-nya:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Isinya `VITE_API_URL=http://localhost:5001` (default frontend juga sudah 5001). Docker tidak
+perlu langkah ini karena `VITE_API_URL` di-set otomatis oleh `docker-compose.yml`.
+
 ## 3. Update database
 
 Pilih **salah satu**:

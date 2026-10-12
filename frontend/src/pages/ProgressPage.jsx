@@ -235,7 +235,7 @@ export default function ProgressPage() {
                       alignItems: "center",
                       flexWrap: "wrap",
                       gap: "0.75rem",
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      backgroundColor: "var(--color-surface-solid)",
                     }}
                   >
                     <div style={{ flex: 1, minWidth: "220px" }}>
@@ -345,7 +345,7 @@ export default function ProgressPage() {
                   </div>
 
                   {/* History List of All Attempts */}
-                  <div style={{ backgroundColor: "rgba(248, 250, 252, 0.9)", padding: "1rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)" }}>
+                  <div style={{ backgroundColor: "var(--color-bg-subtle)", padding: "1rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)" }}>
                     <h4 style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: "0.5rem", fontWeight: 700 }}>
                       Riwayat Seluruh Percobaan
                     </h4>
@@ -557,7 +557,7 @@ export default function ProgressPage() {
                       justifyContent: "space-between",
                       alignItems: "center",
                       padding: "0.85rem 1.15rem",
-                      backgroundColor: "rgba(248, 250, 252, 0.9)",
+                      backgroundColor: "var(--color-bg-subtle)",
                       border: "1px solid var(--color-border)",
                       borderRadius: "var(--radius-sm)",
                       flexWrap: "wrap",
