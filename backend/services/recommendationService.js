@@ -309,22 +309,34 @@ const recommendationService = {
     );
     if (res.rows.length > 0) return res.rows[0].id;
 
-    // 3. Fallback: practice assessment sesuai materi konsep
+    // 3. Fallback: practice assessment sesuai materi konsep (dicari lewat tabel questions)
     const matRes = await pool.query(
       `SELECT a.id
          FROM assessments a
-         JOIN concepts c ON c.id = $1
+         JOIN questions q ON q.concept_id = $1 AND q.material IS NOT NULL
         WHERE a.type = 'PRACTICE'
           AND (
-            (c.material = 'HTML' AND a.title ILIKE '%HTML%') OR
-            (c.material = 'CSS' AND a.title ILIKE '%CSS%') OR
-            (c.material = 'JAVASCRIPT' AND a.title ILIKE '%JavaScript%')
+            (q.material = 'HTML' AND a.title ILIKE '%HTML%') OR
+            (q.material = 'CSS' AND a.title ILIKE '%CSS%') OR
+            (q.material = 'JAVASCRIPT' AND a.title ILIKE '%JavaScript%')
           )
         ORDER BY a.created_at ASC
         LIMIT 1`,
       [conceptId]
     );
-    return matRes.rows[0]?.id || null;
+    if (matRes.rows.length > 0) return matRes.rows[0].id;
+
+    // 4. Fallback akhir: practice assessment dari subjek yang sama
+    const fallbackRes = await pool.query(
+      `SELECT a.id
+         FROM assessments a
+         JOIN concepts c ON c.id = $1
+        WHERE a.subject_id = c.subject_id AND a.type = 'PRACTICE'
+        ORDER BY a.created_at ASC
+        LIMIT 1`,
+      [conceptId]
+    );
+    return fallbackRes.rows[0]?.id || null;
   },
 
   async _findOrCreateAttempt(learnerId, assessmentId) {

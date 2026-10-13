@@ -283,22 +283,80 @@ const gapService = {
       return this._verificationPayload(diag, pending.rows[0]);
     }
 
-    // Pilih asesmen yang memuat soal konsep kandidat (paling banyak soalnya).
-    const assessRes = await pool.query(
-      `SELECT q.assessment_id AS id, COUNT(*)::int AS question_count
-         FROM questions q
-        WHERE q.concept_id = $1 AND q.assessment_id IS NOT NULL
-        GROUP BY q.assessment_id
-        ORDER BY COUNT(*) DESC, q.assessment_id ASC
+    // Pilih asesmen untuk verifikasi kandidat root cause:
+    // 1. Cek asesmen PRACTICE yang terkait via topic_concepts
+    let assessmentId = null;
+    const topicRes = await pool.query(
+      `SELECT a.id
+         FROM assessments a
+         JOIN topic_concepts tc ON tc.topic_id = a.topic_id
+        WHERE tc.concept_id = $1 AND a.type = 'PRACTICE'
+        ORDER BY a.created_at ASC
         LIMIT 1`,
       [diag.candidate_root_cause_id]
     );
-    if (assessRes.rows.length === 0) {
+    if (topicRes.rows.length > 0) {
+      assessmentId = topicRes.rows[0].id;
+    }
+
+    // 2. Jika belum ada, cari asesmen yang memuat soal langsung dari konsep ini
+    if (!assessmentId) {
+      const assessRes = await pool.query(
+        `SELECT q.assessment_id AS id, COUNT(*)::int AS question_count
+           FROM questions q
+          WHERE q.concept_id = $1 AND q.assessment_id IS NOT NULL
+          GROUP BY q.assessment_id
+          ORDER BY COUNT(*) DESC, q.assessment_id ASC
+          LIMIT 1`,
+        [diag.candidate_root_cause_id]
+      );
+      if (assessRes.rows.length > 0) {
+        assessmentId = assessRes.rows[0].id;
+      }
+    }
+
+    // 3. Fallback: Cari asesmen PRACTICE yang sesuai materi soal konsep ini
+    if (!assessmentId) {
+      const matRes = await pool.query(
+        `SELECT a.id
+           FROM assessments a
+           JOIN questions q ON q.concept_id = $1 AND q.material IS NOT NULL
+          WHERE a.type = 'PRACTICE'
+            AND (
+              (q.material = 'HTML' AND a.title ILIKE '%HTML%') OR
+              (q.material = 'CSS' AND a.title ILIKE '%CSS%') OR
+              (q.material = 'JAVASCRIPT' AND a.title ILIKE '%JavaScript%')
+            )
+          ORDER BY a.created_at ASC
+          LIMIT 1`,
+        [diag.candidate_root_cause_id]
+      );
+      if (matRes.rows.length > 0) {
+        assessmentId = matRes.rows[0].id;
+      }
+    }
+
+    // 4. Fallback akhir: asesmen PRACTICE dari subjek yang sama
+    if (!assessmentId) {
+      const fallbackRes = await pool.query(
+        `SELECT a.id
+           FROM assessments a
+           JOIN concepts c ON c.id = $1
+          WHERE a.subject_id = c.subject_id AND a.type = 'PRACTICE'
+          ORDER BY a.created_at ASC
+          LIMIT 1`,
+        [diag.candidate_root_cause_id]
+      );
+      if (fallbackRes.rows.length > 0) {
+        assessmentId = fallbackRes.rows[0].id;
+      }
+    }
+
+    if (!assessmentId) {
       throw conflict(
         "Belum ada asesmen yang memuat konsep root cause untuk verifikasi. Kumpulkan lebih banyak bukti."
       );
     }
-    const assessmentId = assessRes.rows[0].id;
 
     const attempt = await this._findOrCreateAttempt(learnerId, assessmentId);
 
@@ -465,6 +523,16 @@ const gapService = {
 
     const ver = verRes.rows[0];
     if (ver.learner_id !== learnerId) return null;
+
+    // Pastikan attempt verifikasi benar-benar sudah selesai (COMPLETED)
+    // agar tidak terjadi false positive / evaluasi prematur saat attempt masih berjalan.
+    const attCheck = await pool.query(
+      `SELECT status, score FROM attempts WHERE id = $1`,
+      [attemptId]
+    );
+    if (!attCheck.rows[0] || attCheck.rows[0].status !== "COMPLETED") {
+      return null;
+    }
 
     // Skor evidence untuk konsep kandidat di attempt ini.
     const scoreRes = await pool.query(
@@ -686,13 +754,9 @@ const gapService = {
     );
     if (existing.rows.length > 0) return existing.rows[0];
 
-    const created = await pool.query(
-      `INSERT INTO attempts (learner_id, assessment_id, status, started_at)
-       VALUES ($1, $2, 'IN_PROGRESS', NOW())
-       RETURNING id, learner_id, assessment_id, status, started_at, completed_at, score`,
-      [learnerId, assessmentId]
-    );
-    return created.rows[0];
+    const assessmentService = require("./assessmentService");
+    const created = await assessmentService.createAttempt(learnerId, assessmentId, false, true);
+    return created;
   },
 
   // Buat action bila belum ada action sejenis yang masih berjalan (idempotent).

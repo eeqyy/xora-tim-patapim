@@ -1013,6 +1013,21 @@ const assessmentService = {
     let attempt;
     if (existingAttempt.rows.length > 0) {
       attempt = existingAttempt.rows[0];
+      // Pastikan event start tercatat dengan isReassessment agar penutupan event konsisten
+      await pool.query(
+        `INSERT INTO learning_events (learner_id, event_type, entity_type, entity_id, metadata)
+         VALUES ($1, 'ASSESSMENT_STARTED', 'attempt', $2, $3)`,
+        [
+          learnerId,
+          attempt.id,
+          JSON.stringify({
+            assessmentId,
+            title: assessment.title,
+            type: assessment.type,
+            isReassessment: true,
+          }),
+        ]
+      ).catch(() => {});
     } else {
       attempt = await this.createAttempt(learnerId, assessmentId, true, true);
       try {
@@ -2070,8 +2085,17 @@ const attemptRes = await pool.query(`
         console.error("RECOMMENDATION COMPLETE FAILED (evidence tetap tersimpan):", recError);
       }
 
-      // Re-assessment event log
-      if (attempt.assessment_type === "REASSESSMENT") {
+      // Re-assessment event log: catat jika tipe asesmen REASSESSMENT atau attempt diinisiasi via reassess()
+      let isReassessAttempt = attempt.assessment_type === "REASSESSMENT";
+      if (!isReassessAttempt) {
+        const checkEvt = await pool.query(
+          "SELECT 1 FROM learning_events WHERE learner_id = $1 AND entity_id = $2 AND metadata->>'isReassessment' = 'true' LIMIT 1",
+          [learnerId, attemptId]
+        );
+        if (checkEvt.rows.length > 0) isReassessAttempt = true;
+      }
+
+      if (isReassessAttempt) {
         try {
           await pool.query(
             `INSERT INTO learning_events (learner_id, event_type, entity_type, entity_id, metadata)
