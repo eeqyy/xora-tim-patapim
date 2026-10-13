@@ -330,7 +330,7 @@ export default function AssessmentResultPage({ attemptId }) {
           <span
             className={cx(
               "text-4xl font-extrabold leading-none tracking-tight md:text-6xl",
-              isPassed ? INK : "text-brand"
+              isPassed ? INK : "text-accent"
             )}
           >
             {scoreNum}%
@@ -375,7 +375,7 @@ export default function AssessmentResultPage({ attemptId }) {
       {/* SECTION 01: Performa Berbasis Materi Utama (HTML, CSS, JavaScript) */}
       {result.material_scores && Object.keys(result.material_scores).length > 0 && (
         <>
-          <SectionHeader index="01" title="Performa Berbasis Materi Utama" meta="Cakupan Materi Evaluasi" />
+          <SectionHeader index="1" title="Performa Berbasis Materi Utama" meta="Cakupan Materi Evaluasi" />
           <SectionLede>
             Distribusi pemahaman pada materi HTML, CSS, dan JavaScript dari attempt ini.
           </SectionLede>
@@ -436,7 +436,7 @@ export default function AssessmentResultPage({ attemptId }) {
       {Array.isArray(result.topic_scores) && result.topic_scores.length > 0 && (
         <>
           <SectionHeader
-            index="02"
+            index="2"
             title="Distribusi Pemahaman per Topik"
             meta={`${result.topic_scores.length} Topik`}
           />
@@ -485,12 +485,12 @@ export default function AssessmentResultPage({ attemptId }) {
       {result.primary_gap && (
         <>
           <SectionHeader
-            index="03"
+            index="3"
             title={`Research Gap Teridentifikasi: ${result.primary_gap.material}`}
           />
           <GlassPanel variant="elevated" className="mt-8 p-5 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-brand">
+              <span className="text-accent">
                 <IconAlertTriangle size={20} />
               </span>
               <StatusBadge
@@ -508,7 +508,7 @@ export default function AssessmentResultPage({ attemptId }) {
             {result.remedial_recommendation && (
               <div className={cx("mt-4 flex flex-wrap items-center justify-between gap-4 border-t pt-4", HAIRLINE)}>
                 <div className="min-w-0">
-                  <span className="tabular-nums text-[10px] font-bold uppercase tracking-widest text-brand md:text-[11px]">
+                  <span className="tabular-nums text-[10px] font-bold uppercase tracking-widest text-accent md:text-[11px]">
                     Rekomendasi Remedial Terarah
                   </span>
                   <strong className={cx("mt-1 block text-[14px]", INK)}>
@@ -533,7 +533,7 @@ export default function AssessmentResultPage({ attemptId }) {
       {/* SECTION 04: AI Research Insights */}
       {result.ai_analysis && (
         <>
-          <SectionHeader index="04" title="Analisis Gap &amp; Insight Pembelajaran" meta={aiLabel} />
+          <SectionHeader index="4" title="Analisis Gap &amp; Insight Pembelajaran" meta={aiLabel} />
           <GlassPanel variant="subtle" className="mt-8 p-5 md:p-6">
             <div className="flex flex-wrap items-center justify-end gap-3">
               <StatusBadge variant={aiBadgeVariant} label={aiLabel} />
@@ -552,7 +552,7 @@ export default function AssessmentResultPage({ attemptId }) {
 
             {(isFallback || aiStatus === "FAILED") && (
               <Alert tone="info" className="mt-3">
-                <span className="shrink-0 text-brand"><IconAlertTriangle size={15} /></span>
+                <span className="shrink-0 text-accent"><IconAlertTriangle size={15} /></span>
                 <span>
                   {result.ai_analysis?.notice ||
                     "Analisis dihasilkan oleh engine deterministik berbasis data tersimpan. Layanan AI kualitatif sedang tidak tersedia."}
@@ -562,7 +562,7 @@ export default function AssessmentResultPage({ attemptId }) {
 
             {aiRetryMessage && (
               <Alert tone="info" className="mt-3">
-                <span className="shrink-0 text-brand"><IconInfo size={16} /></span>
+                <span className="shrink-0 text-accent"><IconInfo size={16} /></span>
                 <span>{aiRetryMessage}</span>
               </Alert>
             )}
@@ -601,7 +601,7 @@ export default function AssessmentResultPage({ attemptId }) {
       {result.comparison?.is_comparable && (
         <>
           <SectionHeader
-            index="05"
+            index="5"
             title="Evaluasi Komparatif Re-Assessment"
             meta={
               result.comparison.score_difference > 0
@@ -633,7 +633,7 @@ export default function AssessmentResultPage({ attemptId }) {
               <span
                 className={cx(
                   "mt-2 block text-4xl font-extrabold leading-none tracking-tight",
-                  result.comparison.score_difference >= 0 ? INK : "text-brand"
+                  result.comparison.score_difference >= 0 ? INK : "text-accent"
                 )}
               >
                 {result.comparison.score_difference > 0 ? `+${result.comparison.score_difference}%` : `${result.comparison.score_difference}%`}
@@ -652,7 +652,7 @@ export default function AssessmentResultPage({ attemptId }) {
 
       {/* SECTION 06: Concept-Level Breakdown */}
       <SectionHeader
-        index="06"
+        index="6"
         title="Performa Berbasis Konsep"
         meta={`${concepts.length} Konsep Diuji`}
       />
@@ -734,7 +734,7 @@ export default function AssessmentResultPage({ attemptId }) {
 
       {/* SECTION 07: Diagnostic & Root-Cause Hypotheses */}
       <SectionHeader
-        index="07"
+        index="7"
         title="Analisis Diagnostik &amp; Akar Masalah"
       />
       <SectionLede>
@@ -743,7 +743,7 @@ export default function AssessmentResultPage({ attemptId }) {
 
       {diagnostics.length === 0 ? (
         <GlassPanel variant="subtle" className="mt-8 flex items-start gap-3 p-5 md:p-6">
-          <span className="shrink-0 text-brand"><IconCheck size={20} /></span>
+          <span className="shrink-0 text-accent"><IconCheck size={20} /></span>
           <div className="min-w-0">
             <h3 className={cx("text-sm font-bold", INK)}>Tidak Terdeteksi Kesenjangan Pemahaman Signifikan</h3>
             <p className={cx("mt-1 text-[13px] leading-relaxed", MUTED)}>
@@ -827,7 +827,7 @@ export default function AssessmentResultPage({ attemptId }) {
       {nextAction && (
         <>
           <SectionHeader
-            index="08"
+            index="8"
             title="Rekomendasi Tindakan Belajar (Next Best Action)"
             meta={`Prioritas #${nextAction.priority || 1}`}
           />

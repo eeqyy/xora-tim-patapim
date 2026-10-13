@@ -126,7 +126,7 @@ export default function AdminSystemPage() {
 
       {health && (
         <>
-          <SectionHeader id="system-status" index="01" title="Status Sistem" />
+          <SectionHeader id="system-status" index="1" title="Status Sistem" />
           <Grid cols={3} className="mt-8">
             <GridCell className="flex flex-col justify-between gap-2">
               <MicroMeta>Database</MicroMeta>
@@ -161,7 +161,7 @@ export default function AdminSystemPage() {
 
       {stats && (
         <>
-          <SectionHeader id="user-stats" index="02" title="Statistik Pengguna" />
+          <SectionHeader id="user-stats" index="2" title="Statistik Pengguna" />
           <Grid cols={3} className="mt-8">
             <StatCard label="Total Pengguna" value={stats.total_users} />
             <StatCard label="Aktif" value={stats.active_users} variant="success" />
@@ -171,7 +171,7 @@ export default function AdminSystemPage() {
             <StatCard label="Sesi Aktif" value={stats.active_sessions} variant="info" />
           </Grid>
 
-          <SectionHeader id="content-stats" index="03" title="Statistik Konten & Aktivitas" />
+          <SectionHeader id="content-stats" index="3" title="Statistik Konten & Aktivitas" />
           <Grid cols={3} className="mt-8">
             <StatCard
               label="Subjek"
@@ -200,7 +200,7 @@ export default function AdminSystemPage() {
 
       {analytics && (
         <>
-          <SectionHeader id="analytics" index="04" title="Ringkasan Analytics" />
+          <SectionHeader id="analytics" index="4" title="Ringkasan Analytics" />
           <Grid cols={3} className="mt-8">
             <StatCard label="Learner Terlacak" value={summary.learners_tracked ?? 0} />
             <StatCard
@@ -221,7 +221,7 @@ export default function AdminSystemPage() {
             />
           </Grid>
 
-          <SectionHeader id="top-gaps" index="05" title="Konsep dengan Gap Terbanyak" />
+          <SectionHeader id="top-gaps" index="5" title="Konsep dengan Gap Terbanyak" />
           {topGaps.length === 0 ? (
             <EmptyState
               title="Belum Ada Data Analytics"
@@ -264,9 +264,9 @@ export default function AdminSystemPage() {
         </>
       )}
 
-      <SectionHeader id="activity" index="06" title="Aktivitas Terbaru" />
+      <SectionHeader id="activity" index="6" title="Aktivitas Terbaru" />
 
-      <SectionHeader id="learning-events" index="07" title="Event Belajar (learning_events)" />
+      <SectionHeader id="learning-events" index="7" title="Event Belajar (learning_events)" />
       {activity.events.length === 0 ? (
         <EmptyState
           title="Belum Ada Event Belajar"
@@ -305,7 +305,7 @@ export default function AdminSystemPage() {
         </div>
       )}
 
-      <SectionHeader id="audit-log" index="08" title="Audit Log (aksi penting)" />
+      <SectionHeader id="audit-log" index="8" title="Audit Log (aksi penting)" />
       {activity.audits.length === 0 ? (
         <EmptyState title="Belum Ada Catatan Audit" description="Belum ada catatan audit." />
       ) : (

@@ -3,7 +3,7 @@
 // frontend/src/components/Button.jsx
 // ------------------------------------------------------------
 // Sudut pil (rounded-full), tanpa shadow. Semua ukuran >=44px
-// agar ramah target sentuh. Warna murni mono + aksen cobalt.
+// agar ramah target sentuh. Warna mono + aksen azure.
 // ============================================================
 
 import React from "react";
@@ -12,11 +12,11 @@ import { cx } from "./ui";
 const VARIANT_CLASSES = {
   primary: "bg-brand text-white hover:bg-brand-hover",
   secondary:
-    "border border-hairline text-ink hover:border-brand hover:text-brand dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-brand",
+    "border border-hairline text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
   outline:
-    "border border-hairline text-ink hover:border-brand hover:text-brand dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-brand",
-  danger: "border border-brand text-brand hover:bg-brand hover:text-white",
-  ghost: "text-brand hover:underline px-0",
+    "border border-hairline text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
+  danger: "border border-error text-error-strong hover:bg-error hover:text-white",
+  ghost: "text-accent hover:underline px-0",
 };
 
 const SIZE_CLASSES = {

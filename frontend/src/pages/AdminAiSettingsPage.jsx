@@ -311,7 +311,7 @@ export default function AdminAiSettingsPage() {
       {!isLoading && (
         <>
           {/* ---- 01 Status ---- */}
-          <SectionHeader id="ai-status" index="01" title="Status AI" />
+          <SectionHeader id="ai-status" index="1" title="Status AI" />
           <GlassPanel variant="subtle" className="mt-8 p-5 md:p-6">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
               <div className="flex flex-col gap-1.5">
@@ -367,7 +367,7 @@ export default function AdminAiSettingsPage() {
           </GlassPanel>
 
           {/* ---- 02 Provider tersimpan ---- */}
-          <SectionHeader id="ai-providers" index="02" title="API Key Tersimpan" />
+          <SectionHeader id="ai-providers" index="2" title="API Key Tersimpan" />
           {providers.length === 0 ? (
             <EmptyState
               title="Belum Ada API Key"
@@ -462,7 +462,7 @@ export default function AdminAiSettingsPage() {
           {/* ---- 03 Tambah / Ubah ---- */}
           <SectionHeader
             id="ai-form"
-            index="03"
+            index="3"
             title={editing ? `Ubah Provider — ${form.label}` : "Tambah Provider"}
           />
 
@@ -555,7 +555,12 @@ export default function AdminAiSettingsPage() {
 
               {modelsError && <Alert tone="error">{modelsError}</Alert>}
 
-              <div className="flex flex-col gap-3 border-t pt-5 md:flex-row md:items-center md:justify-between">
+              <div
+                className={cx(
+                  "flex flex-col gap-3 border-t pt-5 md:flex-row md:items-center md:justify-between",
+                  HAIRLINE
+                )}
+              >
                 <label className="flex min-h-[44px] items-center gap-3 text-[13px] font-semibold text-ink dark:text-ink-dark">
                   <input
                     type="checkbox"

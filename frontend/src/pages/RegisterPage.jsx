@@ -193,7 +193,7 @@ export default function RegisterPage() {
           <span>Sudah memiliki akun?</span>
           <Link
             to="/login"
-            className="inline-flex min-h-[44px] items-center font-bold text-brand underline underline-offset-2 hover:text-brand-hover"
+            className="inline-flex min-h-[44px] items-center font-bold text-accent underline underline-offset-2 hover:text-accent-hover"
           >
             Masuk di sini
           </Link>

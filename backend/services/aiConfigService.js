@@ -249,8 +249,8 @@ async function remove(id) {
   return res.rows[0];
 }
 
-async function activate(id) {
-  return update(id, { is_active: true });
+async function activate(id, actorId) {
+  return update(id, { is_active: true }, actorId);
 }
 
 /* ------------------------------------------------------------

@@ -18,7 +18,8 @@ export default function StatCard({
   style,
   ...props
 }) {
-  const valueAccent = variant === "error" || variant === "warning";
+  const valueAccent =
+    variant === "error" || variant === "warning" || variant === "success";
 
   return (
     <div
@@ -34,7 +35,13 @@ export default function StatCard({
       <span
         className={cx(
           "text-4xl font-semibold leading-none tracking-[-0.02em] tabular-nums md:text-5xl",
-          valueAccent ? "text-brand" : INK
+          valueAccent
+            ? variant === "warning"
+              ? "text-warning-strong"
+              : variant === "success"
+                ? "text-positive-strong"
+                : "text-error-strong"
+            : INK
         )}
       >
         {value}

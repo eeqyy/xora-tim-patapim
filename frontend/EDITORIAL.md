@@ -17,14 +17,23 @@ Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index
 - **Satu font**: Manrope (default via `--font-sans`). Angka memakai
   `tabular-nums` (sans). `font-mono` HANYA untuk blok kode (`<pre>`/`<code>`)
   dan input jawaban kode.
-- **Aksen `#1E3FFD`** (`bg-brand` / `text-brand`, hover `bg-brand-hover`) untuk
-  CTA, tautan, tab aktif, indikator tingkat keparahan, dan penanda error.
-  Varian lembut: `bg-brand-soft text-brand`. Tidak untuk dekorasi.
+- **Palet (two-tone hangat)**: `brand` = *azure vivid* untuk CTA & pil terisi
+  (`bg-brand`, hover `bg-brand-hover`); `accent` = *azure pekat* untuk
+  teks/tautan/tab aktif/nomor section (`text-accent`, hover `text-accent-hover`);
+  `warning` = *sandy_brown* + `warning-ink` untuk status "perlu perhatian";
+  `positive` = *olive hangat* (`bg-positive` + teks putih) untuk status
+  positif/berhasil;
+  `error` = *brick_red* (`bg-error`, `text-error-strong`) khusus error/destruktif;
+  `highlight` = *vanilla_custard* (wash sorotan, mis. `GlassPanel variant="highlight"`).
+  Varian lembut: `bg-brand-soft`, `bg-positive-soft`; permukaan netral memakai
+  krem hangat. Isi `brand` hanya untuk latar terisi + teks putih — untuk
+  teks/tautan selalu `text-accent`.
 - **Target sentuh ≥ 44–48px** untuk semua kontrol interaktif (sengaja lebih
   besar dari chip 38px template agar nyaman di mobile).
 - **Dual-mode**: tema gelap dikendalikan atribut `[data-theme="dark"]` pada
-  `<html>`; aksen brand tidak berubah, hanya token permukaan/teks yang
-  bertukar.
+  `<html>`; `brand` (azure) tetap, `accent`/`brand-soft`/`warning-strong`/
+  `error-strong`/`positive-strong`/`highlight` diterangkan otomatis di gelap,
+  permukaan/teks/garis bertukar.
 
 ## Token kelas
 | Peran | Terang | Gelap |
@@ -35,8 +44,13 @@ Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index
 | Teks redup | `text-muted` | `dark:text-muted-dark` |
 | Garis (baris/item) | `border-hairline` | `dark:border-hairline-dark` |
 | Garis section | `border-rule` | `dark:border-rule-dark` |
-| Aksen | `bg-brand` / `text-brand` | idem |
+| Brand (isi) | `bg-brand` / `bg-brand-hover` | idem (azure) |
+| Aksen (teks) | `text-accent` / `text-accent-hover` | override tema (lebih terang) |
 | Aksen lembut | `bg-brand-soft` | override tema |
+| Peringatan | `bg-warning text-warning-ink` | idem |
+| Positif | `bg-positive` + teks putih | idem |
+| Sorotan | `text-highlight` / `bg-highlight` | override tema (lebih gelap) |
+| Error | `bg-error` / `text-error-strong` | override tema (lebih terang) |
 
 Metadata mikro (badge/tag/timestamp/label) memakai `<MicroMeta>`:
 sans, uppercase, `tracking` lebar, `tabular-nums`.
@@ -52,7 +66,9 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
   section `RULE` (lebih tegas dari `HAIRLINE` baris/item). Jangan tambah margin
   atas lagi. `sticky` (default `true`) membuat judul section menempel di bawah
   Navbar sebagai bar ringkas (padding lebih kecil + satu baris) di semua halaman;
-  set `sticky={false}` bila tidak diinginkan.
+  offset memakai CSS var `--header-h` yang di-set `Navbar` (tinggi header nyata,
+  termasuk ContextPicker), fallback `68px`. Set `sticky={false}` bila tidak
+  diinginkan.
 - `Grid` — `{ cols }` (1, 2, 3, 4, 6), `grid gap-x-8 gap-y-10`. Tambahkan
   `className="mt-8"` bila langsung setelah `SectionHeader`.
 - `GridCell` — `min-w-0 border-t pt-5` (sudah bergaris atas). JANGAN tambah
@@ -78,6 +94,31 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
   `SURFACE`,
   `CELL`, `INK`, `MUTED`.
 
+## Ikon
+- **Sumber**: set **Core Line** (Streamline, free tier) — bentuk asli viewBox
+  `0 0 14 14`, stroke `currentColor`, ujung rounded. Semua ikon diekspor dari
+  `src/components/Icons.jsx`; **jangan** menulis `<svg>` inline di halaman.
+  Atribusi: Streamline (streamlinehq.com), lisensi free tier.
+- **Ukuran**: wrapper menambah padding (`viewBox="-0.8 -0.8 15.6 15.6"`) dan
+  `strokeWidth="1.3"` supaya glyph terisi ~92% kotak — menyamai ukuran & bobot
+  garis ikon lama, sehingga tidak menabrak teks di sebelahnya. `size` tetap
+  mengatur sisi kotak (layout), bukan besar glyph.
+- **Warna**: ikon memakai `currentColor`, jadi cukup set kelas teks pada
+  induknya (`text-accent`, `text-muted`, `text-positive-strong`, dll.) —
+  otomatis mengikuti tema terang/gelap.
+- **API**: `<IconNama size={18} />` (default `18`); `className`/`style`
+  diteruskan seperti sebelumnya.
+- **Interaksi**: default ikon **tidak bergerak** — `index.css` (blok "Interaksi
+  ikon") hanya menyediakan transisi halus. Gerak diberikan lewat kelas yang
+  menyatu di komponen, hanya pada affordance bermakna arah/aksi:
+  `icon-go-right` / `icon-go-left` (panah & chevron, geser 2px),
+  `icon-rotate-180` (refresh, glyph bulat), `icon-rotate-90` (matahari / toggle
+  tema), `icon-zoom` (bulan, cog, pencarian — membesar 1.08). Ikon nav aktif
+  (`aria-current="page"`) membesar 1.05. Semua dimatikan saat
+  `prefers-reduced-motion`.
+- **Padanan makna**: `IconClipboard` = Asesmen, `IconSettings` = Sistem,
+  `IconBandage` = Remediasi, `IconDiagnose` = event diagnostik.
+
 ## Kerangka halaman standar
 ```jsx
 <PageContainer>
@@ -85,14 +126,14 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
   <Alert tone="error">...</Alert>
   <LoadingState /> | <ErrorState onRetry={...} /> | <EmptyState ... />
 
-  <SectionHeader index="01" title="Ringkasan" meta="…" />
+  <SectionHeader index="1" title="Ringkasan" meta="…" />
   <Grid cols={3} className="mt-8">
     <StatCard label="…" value="…" />
     <StatCard label="…" value="…" />
     <StatCard label="…" value="…" />
   </Grid>
 
-  <SectionHeader index="02" title="Daftar" />
+  <SectionHeader index="2" title="Daftar" />
   <GlassPanel className={cx("flex items-center justify-between gap-4 border-t pt-5", HAIRLINE)}>
     ...
   </GlassPanel>

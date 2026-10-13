@@ -18,7 +18,7 @@ export default function ErrorState({
 }) {
   return (
     <div className={cx("flex flex-col items-start gap-3 py-10", className)} style={style}>
-      <span className="text-brand">
+      <span className="text-error-strong">
         <IconAlertTriangle size={28} />
       </span>
       <h3 className={cx("text-lg font-bold tracking-tight md:text-xl", INK)}>

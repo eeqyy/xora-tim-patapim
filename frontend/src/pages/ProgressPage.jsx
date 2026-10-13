@@ -50,7 +50,7 @@ import {
   IconTrendingUp,
   IconClock,
   IconTarget,
-  IconSparkles,
+  IconDiagnose,
 } from "../components/Icons";
 
 /* Pengelompokan konsep per status (urutan prioritas tampil). */
@@ -109,7 +109,7 @@ export default function ProgressPage() {
   const getEventIconComponent = (eventType) => {
     if (eventType.includes("ASSESSMENT")) return <IconBook size={18} />;
     if (eventType.includes("PRACTICE")) return <IconTarget size={18} />;
-    if (eventType.includes("DIAGNOSTIC")) return <IconSparkles size={18} />;
+    if (eventType.includes("DIAGNOSTIC")) return <IconDiagnose size={18} />;
     if (eventType.includes("REASSESSMENT")) return <IconRefresh size={18} />;
     if (eventType.includes("RECOMMENDATION")) return <IconCompass size={18} />;
     return <IconClock size={18} />;
@@ -150,7 +150,7 @@ export default function ProgressPage() {
 
   const tabBase =
     "inline-flex min-h-[44px] items-center rounded-full px-4 py-2.5 text-[13px] font-semibold transition-colors";
-  const tabActive = "bg-brand-soft text-brand";
+  const tabActive = "bg-brand-soft text-accent";
   const tabInactive =
     "text-muted hover:bg-cell hover:text-ink dark:text-muted-dark dark:hover:bg-cell-dark dark:hover:text-ink-dark";
 
@@ -230,7 +230,7 @@ export default function ProgressPage() {
         <>
           <SectionHeader
             id="summary"
-            index="01"
+            index="1"
             title="Ringkasan Progres Belajar"
             meta={`${overview.total_concepts || 0} KONSEP`}
           />
@@ -244,7 +244,7 @@ export default function ProgressPage() {
           </Grid>
 
           {/* Average Mastery Rate */}
-          <SectionHeader id="mastery" index="02" title="Tingkat Penguasaan" />
+          <SectionHeader id="mastery" index="2" title="Tingkat Penguasaan" />
           <GlassPanel variant="subtle" className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
             <div className="min-w-0">
               <h3 className={cx("text-[15px] font-extrabold tracking-tight", INK)}>
@@ -258,7 +258,7 @@ export default function ProgressPage() {
               <span
                 className={cx(
                   "tabular-nums text-3xl font-extrabold tracking-tight",
-                  overview.average_mastery !== null ? "text-brand" : MUTED
+                  overview.average_mastery !== null ? "text-accent" : MUTED
                 )}
               >
                 {overview.average_mastery !== null ? `${overview.average_mastery}%` : "Belum Dinilai"}
@@ -272,7 +272,7 @@ export default function ProgressPage() {
           {/* Concepts Breakdown */}
           <SectionHeader
             id="concepts"
-            index="03"
+            index="3"
             title="Rincian Penguasaan Seluruh Konsep"
             meta={`${conceptList.length} KONSEP`}
           />
@@ -307,7 +307,7 @@ export default function ProgressPage() {
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <MicroMeta className="mt-0.5 shrink-0">
-                        {String(idx + 1).padStart(2, "0")}
+                        {idx + 1}
                       </MicroMeta>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -346,7 +346,7 @@ export default function ProgressPage() {
       {/* TAB 2: PERTUMBUHAN SKOR & EVALUASI (MASTERY GROWTH) */}
       {activeTab === "growth" && (
         <>
-          <SectionHeader id="growth" index="01" title="Perbandingan Pertumbuhan Skor" />
+          <SectionHeader id="growth" index="1" title="Perbandingan Pertumbuhan Skor" />
           {growth.has_comparisons ? (
             <>
               <Alert tone="success">
@@ -407,7 +407,7 @@ export default function ProgressPage() {
                       <span
                         className={cx(
                           "tabular-nums text-2xl font-extrabold tracking-tight",
-                          comp.improved ? INK : "text-brand"
+                          comp.improved ? INK : "text-accent"
                         )}
                       >
                         {comp.score_difference > 0 ? `+${comp.score_difference}%` : `${comp.score_difference}%`}
@@ -467,7 +467,7 @@ export default function ProgressPage() {
       {/* TAB 3: LINIMASA RIWAYAT BELAJAR (TIMELINE HISTORY) */}
       {activeTab === "timeline" && (
         <>
-          <SectionHeader id="timeline" index="01" title="Linimasa Aktivitas" />
+          <SectionHeader id="timeline" index="1" title="Linimasa Aktivitas" />
           <GlassPanel className="mb-8 flex flex-col gap-3 md:flex-row md:items-center">
             <MicroMeta>Filter Aktivitas</MicroMeta>
             <div className="flex flex-wrap gap-2">
@@ -524,7 +524,7 @@ export default function ProgressPage() {
               >
                 <span
                   className={cx(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-brand",
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-accent",
                     HAIRLINE
                   )}
                 >
@@ -551,7 +551,7 @@ export default function ProgressPage() {
                     <div
                       className={cx(
                         "tabular-nums text-[13px] font-bold",
-                        item.score >= 70 ? INK : "text-brand"
+                        item.score >= 70 ? INK : "text-accent"
                       )}
                     >
                       Skor: {item.score}%
@@ -570,7 +570,7 @@ export default function ProgressPage() {
       {/* TAB 4: LANGKAH BERIKUTNYA (ACTIONABLE INSIGHTS) */}
       {activeTab === "insights" && (
         <>
-          <SectionHeader id="insights" index="01" title="Langkah Rekomendasi" />
+          <SectionHeader id="insights" index="1" title="Langkah Rekomendasi" />
           {insights.next_best_action ? (
             <GlassPanel variant="elevated" className="p-5 md:p-6">
               <StatusBadge variant="success" label="Rekomendasi Prioritas Utama" />
@@ -612,7 +612,7 @@ export default function ProgressPage() {
           {/* Active Secondary Recommendations */}
           {insights.active_recommendations?.length > 0 && (
             <>
-              <SectionHeader id="recommendations" index="02" title="Rekomendasi Aktivitas Tambahan" />
+              <SectionHeader id="recommendations" index="2" title="Rekomendasi Aktivitas Tambahan" />
               {insights.active_recommendations.map((rec) => (
                 <GlassPanel
                   key={rec.id}

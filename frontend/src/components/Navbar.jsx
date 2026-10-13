@@ -29,7 +29,7 @@ const navLinkClass = (active) =>
   cx(
     "flex min-h-[44px] items-center gap-1 rounded-full px-4 text-[13px] font-semibold transition-colors",
     active
-      ? "bg-brand-soft text-brand"
+      ? "bg-brand-soft text-accent"
       : "text-muted hover:bg-cell hover:text-ink dark:text-muted-dark dark:hover:bg-cell-dark dark:hover:text-ink-dark"
   );
 
@@ -37,7 +37,7 @@ const drawerLinkClass = (active) =>
   cx(
     "mx-3 my-1 flex min-h-[52px] items-center rounded-2xl px-4 text-sm font-semibold transition-colors",
     active
-      ? "bg-brand-soft text-brand"
+      ? "bg-brand-soft text-accent"
       : "text-ink hover:bg-cell dark:text-ink-dark dark:hover:bg-cell-dark"
   );
 
@@ -56,6 +56,31 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const drawerRef = React.useRef(null);
   const hamburgerRef = React.useRef(null);
+  const headerRef = React.useRef(null);
+
+  // Publikasikan tinggi <header> aktual sebagai CSS var `--header-h`.
+  // SectionHeader (sticky) & BottomNav membacanya agar offset scroll
+  // selalu pas — termasuk saat ContextPicker menambah satu baris di
+  // /dashboard. ResizeObserver hanya menulis var (tidak memicu layout
+  // yang mengubah tinggi header).
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return undefined;
+    const apply = () => {
+      const h = el.getBoundingClientRect().height;
+      if (h > 0) {
+        document.documentElement.style.setProperty("--header-h", `${Math.round(h)}px`);
+      }
+    };
+    apply();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", apply);
+      return () => window.removeEventListener("resize", apply);
+    }
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Tutup dropdown & drawer setiap kali berpindah halaman.
   useEffect(() => {
@@ -121,6 +146,7 @@ export default function Navbar() {
 
   return (
     <header
+      ref={headerRef}
       className={cx(
         "sticky top-0 z-50 border-b bg-canvas/90 backdrop-blur-sm",
         "border-hairline dark:bg-canvas-dark/90 dark:border-hairline-dark"
@@ -132,7 +158,18 @@ export default function Navbar() {
           to="/"
           className="mr-1 flex min-h-[44px] shrink-0 items-center gap-2.5 text-[17px] font-extrabold tracking-[-0.02em] text-ink dark:text-ink-dark"
         >
-          <span className="h-2.5 w-2.5 rounded-full bg-brand" aria-hidden="true" />
+          <img
+            src="/logo-mark.png"
+            alt=""
+            aria-hidden="true"
+            className="logo-mark h-7 w-7 shrink-0 object-contain dark:hidden"
+          />
+          <img
+            src="/logo-mark-light.png"
+            alt=""
+            aria-hidden="true"
+            className="logo-mark hidden h-7 w-7 shrink-0 object-contain dark:block"
+          />
           Xolearn
         </Link>
 
@@ -194,7 +231,7 @@ export default function Navbar() {
                           className={cx(
                             "block rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors",
                             item.match(currentPath)
-                              ? "bg-brand-soft text-brand"
+                              ? "bg-brand-soft text-accent"
                               : "text-ink hover:bg-cell dark:text-ink-dark dark:hover:bg-cell-dark"
                           )}
                         >
@@ -241,8 +278,8 @@ export default function Navbar() {
               onClick={handleLogout}
               className={cx(
                 "inline-flex min-h-[44px] items-center rounded-full border px-4 text-[13px] font-semibold transition-colors",
-                "border-hairline text-ink hover:border-brand hover:text-brand",
-                "dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-brand"
+                "border-hairline text-ink hover:border-brand hover:text-accent",
+                "dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent"
               )}
             >
               Keluar
@@ -319,7 +356,7 @@ export default function Navbar() {
         <>
           <div
             className={cx(
-              "fixed inset-0 z-[55] bg-[#080B11]/60 transition-opacity md:hidden",
+              "fixed inset-0 z-[55] bg-canvas-dark/60 transition-opacity md:hidden",
               menuOpen ? "opacity-100" : "pointer-events-none opacity-0"
             )}
             onClick={closeMenu}
@@ -338,11 +375,25 @@ export default function Navbar() {
             aria-label="Navigasi"
           >
         <div className="flex min-h-[68px] shrink-0 items-center justify-between px-5">
-          <MicroMeta>MENU · XOLEARN</MicroMeta>
+          <div className="flex items-center gap-2">
+            <img
+              src="/logo-mark.png"
+              alt=""
+              aria-hidden="true"
+              className="logo-mark h-6 w-6 shrink-0 object-contain dark:hidden"
+            />
+            <img
+              src="/logo-mark-light.png"
+              alt=""
+              aria-hidden="true"
+              className="logo-mark hidden h-6 w-6 shrink-0 object-contain dark:block"
+            />
+            <MicroMeta>MENU · XOLEARN</MicroMeta>
+          </div>
           <button
             type="button"
             onClick={closeMenu}
-            className="-mr-2 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-brand"
+            className="-mr-2 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-accent"
           >
             Tutup
           </button>

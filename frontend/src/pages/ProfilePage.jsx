@@ -230,7 +230,7 @@ export default function ProfilePage() {
 
   const user = profileData?.user || authUser;
   const profile = profileData?.profile || {};
-  const detailIndex = isEditing ? "02" : "01";
+  const detailIndex = isEditing ? "2" : "1";
 
   return (
     <PageContainer maxWidth="normal">
@@ -274,7 +274,7 @@ export default function ProfilePage() {
       {/* Profile Edit Form */}
       {isEditing && (
         <>
-          <SectionHeader index="01" title="Edit Profil Pembelajar" />
+          <SectionHeader index="1" title="Edit Profil Pembelajar" />
           {editError && <Alert tone="error">{editError}</Alert>}
           <GlassPanel variant="subtle" className="p-5 md:p-6">
             <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">

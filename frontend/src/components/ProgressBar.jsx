@@ -3,7 +3,7 @@
 // frontend/src/components/ProgressBar.jsx
 // ------------------------------------------------------------
 // Batang pil (rounded-full), tanpa shadow. Label mikro,
-// isian aksen cobalt.
+// isian mengikuti variant (aksen azure untuk primary).
 // ============================================================
 
 import React from "react";
@@ -13,6 +13,14 @@ const HEIGHT = {
   sm: "h-1.5",
   md: "h-2",
   lg: "h-3",
+};
+
+const FILL_CLASS = {
+  primary: "bg-brand",
+  success: "bg-positive",
+  warning: "bg-warning",
+  error: "bg-error",
+  neutral: "bg-ink dark:bg-ink-dark",
 };
 
 export default function ProgressBar({
@@ -30,7 +38,7 @@ export default function ProgressBar({
     Math.max(0, Math.round((Number(value || 0) / Number(max || 100)) * 100))
   );
 
-  const fillClass = variant === "primary" ? "bg-brand" : "bg-ink dark:bg-ink-dark";
+  const fillClass = FILL_CLASS[variant] || FILL_CLASS.primary;
 
   return (
     <div className={cx("w-full", className)} style={style}>

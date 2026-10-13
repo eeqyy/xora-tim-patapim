@@ -74,7 +74,7 @@ export default function AdminHomePage() {
               {item.title}
             </h2>
             <p className={cx("text-[13px] leading-relaxed", MUTED)}>{item.description}</p>
-            <span className="mt-auto pt-2 text-[12px] font-semibold tracking-[0.02em] text-brand">
+            <span className="mt-auto pt-2 text-[12px] font-semibold tracking-[0.02em] text-accent">
               {item.cta}
             </span>
           </GlassPanel>

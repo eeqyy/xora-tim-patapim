@@ -286,7 +286,7 @@ export default function AssessmentListPage() {
       />
 
       {/* 01 — Alur Tingkat Pembelajaran */}
-      <SectionHeader id="levels" index="01" title="Alur Tingkat Pembelajaran" />
+      <SectionHeader id="levels" index="1" title="Alur Tingkat Pembelajaran" />
       <Grid cols={3} aria-label="Alur Tingkat Pembelajaran">
         {/* Stage 1: Easy */}
         <GridCell className="flex flex-col gap-2">
@@ -377,7 +377,7 @@ export default function AssessmentListPage() {
       {/* 02 — Asesmen Tingkat Kemahiran */}
       {!isLoading && !error && (
         <>
-          <SectionHeader id="core" index="02" title="Asesmen Tingkat Kemahiran" />
+          <SectionHeader id="core" index="2" title="Asesmen Tingkat Kemahiran" />
           <GlassPanel>
             <p className={cx("text-[13px] leading-relaxed", MUTED)}>
               Instrumen asesmen inti yang memetakan pemahaman konsep HTML, CSS, dan JavaScript secara bertahap.
@@ -439,7 +439,7 @@ export default function AssessmentListPage() {
                         <span
                           className={cx(
                             "tabular-nums text-[13px] font-bold",
-                            item.learner_status.is_passed ? INK : "text-brand"
+                            item.learner_status.is_passed ? INK : "text-accent"
                           )}
                         >
                           {Math.round(item.learner_status.best_score)}%
@@ -477,9 +477,9 @@ export default function AssessmentListPage() {
           {/* 03 — Asesmen Penguatan Terarah (Only shown if recommended) */}
           {recommendedRemedials.length > 0 && (
             <>
-              <SectionHeader id="remedial" index="03" title="Asesmen Penguatan Terarah" />
+              <SectionHeader id="remedial" index="3" title="Asesmen Penguatan Terarah" />
               <GlassPanel className="flex items-start gap-3">
-                <span className="shrink-0 text-brand">
+                <span className="shrink-0 text-accent">
                   <IconTarget size={20} />
                 </span>
                 <p className={cx("text-[13px] leading-relaxed", MUTED)}>
@@ -544,7 +544,7 @@ export default function AssessmentListPage() {
                             <span
                               className={cx(
                                 "tabular-nums text-[13px] font-bold",
-                                rem.learner_status.is_passed ? INK : "text-brand"
+                                rem.learner_status.is_passed ? INK : "text-accent"
                               )}
                             >
                               {Math.round(rem.learner_status.best_score)}%
@@ -565,7 +565,7 @@ export default function AssessmentListPage() {
           )}
 
           {/* 04 — Bank Latihan Per Topik */}
-          <SectionHeader id="bank" index="04" title="Bank Latihan Per Topik" />
+          <SectionHeader id="bank" index="4" title="Bank Latihan Per Topik" />
           <GlassPanel className="flex flex-col gap-4">
             <p className={cx("text-[13px] leading-relaxed", MUTED)}>
               Latihan terarah 20 soal adaptif dengan potongan kode untuk mengasah penguasaan setiap topik spesifik.
@@ -655,7 +655,7 @@ export default function AssessmentListPage() {
                           <span
                             className={cx(
                               "tabular-nums text-[13px] font-bold",
-                              practice.learner_status.is_passed ? INK : "text-brand"
+                              practice.learner_status.is_passed ? INK : "text-accent"
                             )}
                           >
                             {Math.round(practice.learner_status.best_score)}%
