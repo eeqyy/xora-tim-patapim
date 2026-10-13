@@ -7,6 +7,7 @@ const express = require("express");
 const router = express.Router();
 const assessmentService = require("../services/assessmentService");
 const questionService = require("../services/questionService");
+const auditService = require("../services/auditService");
 const { requireAuth } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/requireAdmin");
 const { sendError } = require("../utils/errors");
@@ -14,10 +15,131 @@ const { sendError } = require("../utils/errors");
 // Semua route assessment mewajibkan autentikasi learner
 router.use(requireAuth);
 
+// Catat aksi admin ke audit_logs. Bersifat "best effort": kegagalan mencatat
+// audit tidak boleh menggagalkan aksi utama (auditService.log sudah menelan error).
+function logAdminAction(req, { action, entityType, entityId, oldValue, newValue }) {
+  if (!entityId) return;
+  auditService.log({
+    actorId: req.user?.id,
+    actorType: "ADMIN",
+    action,
+    entityType,
+    entityId,
+    oldValue: oldValue || null,
+    newValue: newValue || null,
+    ipAddress: req.ip || null,
+  });
+}
+
 // ============================================================
 // Admin CRUD — wajib role ADMIN. Ditulis sebelum route `/:id`
 // supaya literal "admin" tidak tertangkap sebagai uuid.
 // ============================================================
+// Level Status & Progress (Learner)
+// ============================================================
+
+// GET /api/assessments/levels/status — status progres level Easy -> Medium -> Hard
+router.get("/levels/status", async (req, res) => {
+  try {
+    const data = await assessmentService.getLevelProgressionStatus(req.user.id);
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("GET /api/assessments/levels/status ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// ============================================================
+// Question Bank Admin CRUD — wajib role ADMIN
+// ============================================================
+
+// GET /api/assessments/admin/questions/bank — daftar soal bank
+router.get("/admin/questions/bank", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.listBankQuestions(req.query);
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("GET /api/assessments/admin/questions/bank ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// POST /api/assessments/admin/questions/bank — buat soal baru di bank
+router.post("/admin/questions/bank", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.createBankQuestion(req.body || {});
+    logAdminAction(req, {
+      action: "CREATE",
+      entityType: "question",
+      entityId: data?.id,
+      newValue: { type: data?.type, questionText: data?.questionText },
+    });
+    res.status(201).json({ status: "ok", data });
+  } catch (error) {
+    console.error("POST /api/assessments/admin/questions/bank ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// GET /api/assessments/admin/questions/bank/:questionId — detail soal bank
+router.get("/admin/questions/bank/:questionId", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.getBankQuestionById(req.params.questionId);
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("GET /api/assessments/admin/questions/bank/:questionId ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// PUT /api/assessments/admin/questions/bank/:questionId — ubah soal bank
+router.put("/admin/questions/bank/:questionId", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.updateBankQuestion(req.params.questionId, req.body || {});
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "question",
+      entityId: req.params.questionId,
+    });
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("PUT /api/assessments/admin/questions/bank/:questionId ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// DELETE /api/assessments/admin/questions/bank/:questionId — hapus/soft delete soal bank
+router.delete("/admin/questions/bank/:questionId", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.deleteBankQuestion(req.params.questionId);
+    logAdminAction(req, {
+      action: "DELETE",
+      entityType: "question",
+      entityId: req.params.questionId,
+    });
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("DELETE /api/assessments/admin/questions/bank/:questionId ERROR:", error);
+    sendError(res, error);
+  }
+});
+
+// PATCH /api/assessments/admin/questions/bank/:questionId/toggle-active — toggle status aktif
+router.patch("/admin/questions/bank/:questionId/toggle-active", requireAdmin, async (req, res) => {
+  try {
+    const data = await questionService.toggleBankQuestionActive(req.params.questionId);
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "question",
+      entityId: req.params.questionId,
+      newValue: { is_active: data?.is_active },
+    });
+    res.json({ status: "ok", data });
+  } catch (error) {
+    console.error("PATCH /api/assessments/admin/questions/bank/:questionId/toggle-active ERROR:", error);
+    sendError(res, error);
+  }
+});
 
 // GET /api/assessments/admin/full/:id — detail + soal lengkap (ada kunci)
 router.get("/admin/full/:id", requireAdmin, async (req, res) => {
@@ -34,6 +156,12 @@ router.get("/admin/full/:id", requireAdmin, async (req, res) => {
 router.post("/", requireAdmin, async (req, res) => {
   try {
     const data = await assessmentService.create(req.body || {});
+    logAdminAction(req, {
+      action: "CREATE",
+      entityType: "assessment",
+      entityId: data?.id,
+      newValue: { title: data?.title, type: data?.type },
+    });
     res.status(201).json({ status: "ok", data });
   } catch (error) {
     console.error("POST /api/assessments ERROR:", error);
@@ -45,6 +173,12 @@ router.post("/", requireAdmin, async (req, res) => {
 router.put("/:id", requireAdmin, async (req, res) => {
   try {
     const data = await assessmentService.update(req.params.id, req.body || {});
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "assessment",
+      entityId: req.params.id,
+      newValue: { title: data?.title, type: data?.type },
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("PUT /api/assessments/:id ERROR:", error);
@@ -56,6 +190,11 @@ router.put("/:id", requireAdmin, async (req, res) => {
 router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const data = await assessmentService.remove(req.params.id);
+    logAdminAction(req, {
+      action: "DELETE",
+      entityType: "assessment",
+      entityId: req.params.id,
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("DELETE /api/assessments/:id ERROR:", error);
@@ -67,6 +206,12 @@ router.delete("/:id", requireAdmin, async (req, res) => {
 router.post("/:id/questions", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.create(req.params.id, req.body || {});
+    logAdminAction(req, {
+      action: "CREATE",
+      entityType: "question",
+      entityId: data?.id,
+      newValue: { assessment_id: req.params.id, type: data?.type },
+    });
     res.status(201).json({ status: "ok", data });
   } catch (error) {
     console.error("POST /api/assessments/:id/questions ERROR:", error);
@@ -79,6 +224,12 @@ router.post("/:id/questions", requireAdmin, async (req, res) => {
 router.put("/:id/questions/reorder", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.reorder(req.params.id, (req.body || {}).orderedIds);
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "assessment",
+      entityId: req.params.id,
+      newValue: { reordered: true },
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("PUT /api/assessments/:id/questions/reorder ERROR:", error);
@@ -90,6 +241,11 @@ router.put("/:id/questions/reorder", requireAdmin, async (req, res) => {
 router.put("/:id/questions/:questionId", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.update(req.params.questionId, req.body || {});
+    logAdminAction(req, {
+      action: "UPDATE",
+      entityType: "question",
+      entityId: req.params.questionId,
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("PUT /api/assessments/:id/questions/:questionId ERROR:", error);
@@ -101,6 +257,11 @@ router.put("/:id/questions/:questionId", requireAdmin, async (req, res) => {
 router.delete("/:id/questions/:questionId", requireAdmin, async (req, res) => {
   try {
     const data = await questionService.remove(req.params.questionId);
+    logAdminAction(req, {
+      action: "DELETE",
+      entityType: "question",
+      entityId: req.params.questionId,
+    });
     res.json({ status: "ok", data });
   } catch (error) {
     console.error("DELETE /api/assessments/:id/questions/:questionId ERROR:", error);
@@ -111,7 +272,7 @@ router.delete("/:id/questions/:questionId", requireAdmin, async (req, res) => {
 // GET /api/assessments
 router.get("/", async (req, res) => {
   try {
-    const assessments = await assessmentService.getAll(req.query);
+    const assessments = await assessmentService.getAll(req.query, req.user?.id);
     res.json({ status: "ok", data: assessments });
   } catch (error) {
     console.error("GET /api/assessments ERROR:", error);
@@ -141,10 +302,21 @@ router.post("/attempts/:attemptId/submit", async (req, res) => {
   }
 });
 
+// POST /api/assessments/attempts/:attemptId/analyze-gap - Trigger / retry AI Gap Analysis
+router.post("/attempts/:attemptId/analyze-gap", async (req, res) => {
+  try {
+    const result = await assessmentService.retryAiGapAnalysis(req.user.id, req.params.attemptId);
+    res.json({ status: "ok", data: result });
+  } catch (error) {
+    console.error("POST /api/assessments/attempts/:attemptId/analyze-gap ERROR:", error);
+    res.status(error.statusCode || 500).json({ status: "error", message: error.message });
+  }
+});
+
 // GET /api/assessments/:id
 router.get("/:id", async (req, res) => {
   try {
-    const assessment = await assessmentService.getById(req.params.id);
+    const assessment = await assessmentService.getById(req.params.id, req.user?.id);
     if (!assessment) {
       return res.status(404).json({ status: "error", message: "Assessment not found" });
     }
@@ -162,7 +334,8 @@ router.get("/:id/questions", async (req, res) => {
     if (!assessment) {
       return res.status(404).json({ status: "error", message: "Assessment not found" });
     }
-    const questions = await assessmentService.getQuestionsByAssessmentId(req.params.id);
+    const attemptId = req.query.attemptId || null;
+    const questions = await assessmentService.getQuestionsByAssessmentId(req.params.id, false, attemptId);
     res.json({ status: "ok", data: questions });
   } catch (error) {
     console.error("GET /api/assessments/:id/questions ERROR:", error);

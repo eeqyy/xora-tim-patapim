@@ -1,12 +1,36 @@
 // ============================================================
 // XORA — Learner Profile Page
+// Premium Light Glassmorphism · Minimal · Reusable
 // frontend/src/pages/ProfilePage.jsx
 // ============================================================
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Link } from "../context/RouterContext";
+import { useRouter } from "../context/RouterContext";
 import { profileApi, subjectsApi } from "../services/api";
+import {
+  PageContainer,
+  PageHeader,
+  GlassPanel,
+  SectionHeader,
+  StatusBadge,
+  PrimaryButton,
+  OutlineButton,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+  Field,
+  Input,
+  Select,
+  Textarea,
+  Alert,
+  Avatar,
+  MicroMeta,
+  cx,
+  INK,
+  MUTED,
+} from "../components";
+import { IconCheck, IconRefresh } from "../components/Icons";
 
 const EXPERIENCE_OPTIONS = [
   { value: "BEGINNER", label: "Beginner / Pemula" },
@@ -16,13 +40,12 @@ const EXPERIENCE_OPTIONS = [
 
 export default function ProfilePage() {
   const { user: authUser, refreshUser } = useAuth();
+  const { navigate } = useRouter();
 
   const [profileData, setProfileData] = useState(null);
   const [subjectsList, setSubjectsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
-  // 404 dari GET /api/profile = user memang belum punya learner_profiles
-  // (mis. akun admin). Tampilkan empty-state, bukan pesan error mentah.
   const [profileMissing, setProfileMissing] = useState(false);
 
   // Edit Mode State
@@ -102,30 +125,31 @@ export default function ProfilePage() {
     setSuccessMessage(null);
 
     if (!editForm.name.trim()) {
-      setEditError("Nama lengkap tidak boleh kosong.");
+      setEditError("Nama pengguna wajib diisi.");
       return;
     }
 
     setIsSaving(true);
-
     try {
-      const payload = {
+      const res = await profileApi.updateProfile({
         name: editForm.name.trim(),
-        learning_goal: editForm.learning_goal.trim() ? editForm.learning_goal.trim() : null,
-        experience_level: editForm.experience_level.trim() ? editForm.experience_level.trim() : null,
-        preferred_subject_id: editForm.preferred_subject_id ? editForm.preferred_subject_id : null,
-      };
+        learning_goal: editForm.learning_goal.trim() || null,
+        experience_level: editForm.experience_level,
+        preferred_subject_id: editForm.preferred_subject_id || null,
+      });
 
-      const res = await profileApi.updateProfile(payload);
       if (res?.data) {
         setProfileData(res.data);
       }
-      await refreshUser();
       setIsEditing(false);
-      setSuccessMessage("Profil berhasil diperbarui!");
+      setSuccessMessage("Profil berhasil diperbarui.");
       setTimeout(() => setSuccessMessage(null), 4000);
+
+      if (refreshUser) {
+        await refreshUser();
+      }
     } catch (err) {
-      setEditError(err.message || "Gagal memperbarui profil.");
+      setEditError(err.message || "Gagal menyimpan perubahan profil.");
     } finally {
       setIsSaving(false);
     }
@@ -133,9 +157,7 @@ export default function ProfilePage() {
 
   const handleCompleteOnboarding = async () => {
     setIsOnboardingUpdating(true);
-    setSuccessMessage(null);
     setFetchError(null);
-
     try {
       await profileApi.completeOnboarding();
       setProfileData((prev) => {
@@ -148,7 +170,7 @@ export default function ProfilePage() {
           },
         };
       });
-      setSuccessMessage("Selamat! Tahap onboarding telah berhasil diselesaikan.");
+      setSuccessMessage("Tahap onboarding telah berhasil diselesaikan.");
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       setFetchError(err.message || "Gagal menyelesaikan tahap onboarding.");
@@ -159,244 +181,245 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="profile-container">
-        <div className="card loading-card">
-          <p>Memuat profil pembelajar...</p>
-        </div>
-      </div>
+      <PageContainer maxWidth="normal">
+        <LoadingState message="Memuat profil pembelajar..." />
+      </PageContainer>
     );
   }
 
   if (profileMissing) {
-    const isAdmin =
-      Array.isArray(authUser?.roles) && authUser.roles.includes("ADMIN");
+    const isAdmin = Array.isArray(authUser?.roles) && authUser.roles.includes("ADMIN");
 
     return (
-      <div className="profile-container">
-        <div className="card empty-card">
-          <p>Profil pembelajar belum tersedia untuk akun ini.</p>
-          <p className="text-muted" style={{ marginTop: "0.5rem" }}>
-            {isAdmin
-              ? "Akun admin tidak memiliki data profil pembelajar."
-              : "Lengkapi data pembelajaran Anda terlebih dahulu."}
-          </p>
-          <div className="admin-form-actions" style={{ justifyContent: "center" }}>
-            {isAdmin && (
-              <Link to="/admin/assessments" className="btn btn-primary">
-                Buka Halaman Kelola
-              </Link>
-            )}
-            <button onClick={loadProfile} className="btn btn-outline">
-              Muat Ulang
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageContainer maxWidth="normal">
+        <EmptyState
+          title="Profil Pembelajar Belum Tersedia"
+          description={
+            isAdmin
+              ? "Akun administrator tidak memiliki catatan profil pembelajar individual."
+              : "Lengkapi data pembelajaran Anda terlebih dahulu."
+          }
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {isAdmin && (
+                <PrimaryButton onClick={() => navigate("/admin/assessments")}>
+                  Buka Halaman Kelola
+                </PrimaryButton>
+              )}
+              <OutlineButton onClick={loadProfile} icon={<IconRefresh size={14} />}>
+                Muat Ulang
+              </OutlineButton>
+            </div>
+          }
+        />
+      </PageContainer>
     );
   }
 
   if (fetchError) {
     return (
-      <div className="profile-container">
-        <div className="card">
-          <div className="alert alert-error">{fetchError}</div>
-          <button onClick={loadProfile} className="btn btn-primary" style={{ marginTop: "1rem" }}>
-            Coba Lagi
-          </button>
-        </div>
-      </div>
+      <PageContainer maxWidth="normal">
+        <ErrorState
+          title="Gagal Memuat Profil"
+          message={fetchError}
+          onRetry={loadProfile}
+        />
+      </PageContainer>
     );
   }
 
   const user = profileData?.user || authUser;
   const profile = profileData?.profile || {};
+  const detailIndex = isEditing ? "02" : "01";
 
   return (
-    <div className="profile-container">
-      {successMessage && <div className="alert alert-success">{successMessage}</div>}
-
-      {/* Main Profile Header Card */}
-      <div className="card profile-header-card">
-        <div className="profile-avatar-row">
-          <div className="profile-avatar">
-            {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-          </div>
-          <div className="profile-title-block">
-            <h2 className="profile-name">{user?.name}</h2>
-            <p className="profile-email">{user?.email}</p>
-            <div className="badge-row">
-              <span className={`badge badge-status ${user?.status === "ACTIVE" ? "badge-active" : "badge-inactive"}`}>
-                {user?.status}
-              </span>
-              {Array.isArray(user?.roles) &&
-                user.roles.map((r) => (
-                  <span key={r} className="badge badge-role">
-                    {r}
-                  </span>
-                ))}
-            </div>
-          </div>
-        </div>
-
-        {!isEditing && (
-          <button onClick={handleStartEdit} className="btn btn-outline" style={{ marginTop: "1rem" }}>
-            Edit Profil
-          </button>
-        )}
-      </div>
-
-      {/* Edit Form Card */}
-      {isEditing && (
-        <div className="card edit-card">
-          <h3 className="section-title">Edit Profil Pembelajar</h3>
-
-          {editError && <div className="alert alert-error">{editError}</div>}
-
-          <form onSubmit={handleSaveProfile} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="edit-name">Nama Lengkap</label>
-              <input
-                id="edit-name"
-                name="name"
-                type="text"
-                value={editForm.name}
-                onChange={handleEditChange}
-                disabled={isSaving}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="edit-learning-goal">Tujuan Belajar (Learning Goal)</label>
-              <textarea
-                id="edit-learning-goal"
-                name="learning_goal"
-                rows="3"
-                placeholder="Contoh: Menguasai arsitektur backend & database PostgreSQL"
-                value={editForm.learning_goal}
-                onChange={handleEditChange}
-                disabled={isSaving}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="edit-experience-level">Tingkat Pengalaman</label>
-              <select
-                id="edit-experience-level"
-                name="experience_level"
-                value={editForm.experience_level}
-                onChange={handleEditChange}
-                disabled={isSaving}
-              >
-                {EXPERIENCE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="edit-preferred-subject">Mata Pelajaran / Subject Pilihan</label>
-              <select
-                id="edit-preferred-subject"
-                name="preferred_subject_id"
-                value={editForm.preferred_subject_id}
-                onChange={handleEditChange}
-                disabled={isSaving}
-              >
-                <option value="">-- Belum Memilih Subject --</option>
-                {subjectsList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} {s.description ? `— ${s.description}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="btn-group">
-              <button type="submit" className="btn btn-primary" disabled={isSaving}>
-                {isSaving ? "Menyimpan Perubahan..." : "Simpan Profil"}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                className="btn btn-secondary"
-                disabled={isSaving}
-              >
-                Batal
-              </button>
-            </div>
-          </form>
-        </div>
+    <PageContainer maxWidth="normal">
+      {successMessage && (
+        <Alert tone="success">
+          <span className="inline-flex items-center gap-2">
+            <IconCheck size={16} />
+            {successMessage}
+          </span>
+        </Alert>
       )}
 
-      {/* Learner Profile Details */}
-      <div className="card profile-details-card">
-        <h3 className="section-title">Detail Pembelajar</h3>
+      {/* Header editorial */}
+      <PageHeader
+        badge="PROFIL PEMBELAJAR"
+        title={user?.name}
+        description={user?.email}
+        actions={
+          !isEditing ? (
+            <OutlineButton onClick={handleStartEdit}>Edit Profil</OutlineButton>
+          ) : null
+        }
+      />
 
-        <div className="detail-grid">
-          <div className="detail-item">
-            <span className="detail-label">Tujuan Belajar</span>
-            <span className="detail-value">
-              {profile.learning_goal || <em className="text-muted">Belum ditentukan</em>}
+      {/* Identitas & status akun */}
+      <GlassPanel variant="subtle" className="mt-8 flex flex-wrap items-center gap-5 p-5 md:p-6">
+        <Avatar name={user?.name} size={56} />
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {Array.isArray(user?.roles) &&
+            user.roles.map((r) => (
+              <StatusBadge key={r} status={r} />
+            ))}
+          <StatusBadge
+            variant={user?.is_active ? "success" : "error"}
+            label={user?.is_active ? "Aktif" : "Nonaktif"}
+            dot
+          />
+        </div>
+      </GlassPanel>
+
+      {/* Profile Edit Form */}
+      {isEditing && (
+        <>
+          <SectionHeader index="01" title="Edit Profil Pembelajar" />
+          {editError && <Alert tone="error">{editError}</Alert>}
+          <GlassPanel variant="subtle" className="p-5 md:p-6">
+            <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+              <Field label="Nama Lengkap" htmlFor="edit-name" required>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  type="text"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  disabled={isSaving}
+                  required
+                />
+              </Field>
+
+              <Field label="Tujuan Belajar (Learning Goal)" htmlFor="edit-goal">
+                <Textarea
+                  id="edit-goal"
+                  name="learning_goal"
+                  rows={3}
+                  placeholder="Misal: Memahami logika pemrograman dasar & struktur data..."
+                  value={editForm.learning_goal}
+                  onChange={handleEditChange}
+                  disabled={isSaving}
+                />
+              </Field>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Tingkat Pengalaman (Experience Level)" htmlFor="edit-experience">
+                  <Select
+                    id="edit-experience"
+                    name="experience_level"
+                    value={editForm.experience_level}
+                    onChange={handleEditChange}
+                    disabled={isSaving}
+                  >
+                    {EXPERIENCE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+
+                <Field label="Mata Pelajaran Pilihan" htmlFor="edit-preferred-subject">
+                  <Select
+                    id="edit-preferred-subject"
+                    name="preferred_subject_id"
+                    value={editForm.preferred_subject_id}
+                    onChange={handleEditChange}
+                    disabled={isSaving}
+                  >
+                    <option value="">-- Belum Memilih Subject --</option>
+                    {subjectsList.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {s.description ? `— ${s.description}` : ""}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <PrimaryButton type="submit" disabled={isSaving} loading={isSaving}>
+                  Simpan Profil
+                </PrimaryButton>
+                <OutlineButton type="button" onClick={handleCancelEdit} disabled={isSaving}>
+                  Batal
+                </OutlineButton>
+              </div>
+            </form>
+          </GlassPanel>
+        </>
+      )}
+
+      {/* Detail Pembelajar */}
+      <SectionHeader index={detailIndex} title="Detail Pembelajar" />
+      <GlassPanel>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+          <div className="flex flex-col gap-1">
+            <MicroMeta>Tujuan Belajar</MicroMeta>
+            <span className={cx("text-[13px]", INK)}>
+              {profile.learning_goal || <em className={MUTED}>Belum ditentukan</em>}
             </span>
           </div>
 
-          <div className="detail-item">
-            <span className="detail-label">Tingkat Pengalaman</span>
-            <span className="detail-value">
-              {profile.experience_level || <em className="text-muted">Belum ditentukan</em>}
+          <div className="flex flex-col gap-1">
+            <MicroMeta>Tingkat Pengalaman</MicroMeta>
+            <span className={cx("text-[13px]", INK)}>
+              {profile.experience_level || <em className={MUTED}>Belum ditentukan</em>}
             </span>
           </div>
 
-          <div className="detail-item">
-            <span className="detail-label">Subject Pilihan</span>
-            <span className="detail-value">
+          <div className="flex flex-col gap-1">
+            <MicroMeta>Mata Pelajaran Pilihan</MicroMeta>
+            <span className={cx("text-[13px]", INK)}>
               {profile.preferred_subject ? (
                 <span>
                   <strong>{profile.preferred_subject.name}</strong>
                   {profile.preferred_subject.description && (
-                    <span className="subject-desc"> ({profile.preferred_subject.description})</span>
+                    <span className={cx("text-[13px]", MUTED)}>
+                      {" "}
+                      ({profile.preferred_subject.description})
+                    </span>
                   )}
                 </span>
               ) : (
-                <em className="text-muted">Belum memilih subject</em>
+                <em className={MUTED}>Belum memilih subject</em>
               )}
             </span>
           </div>
 
-          <div className="detail-item">
-            <span className="detail-label">Status Onboarding</span>
-            <span className="detail-value">
-              {profile.onboarding_completed ? (
-                <span className="badge badge-success">Selesai (Completed)</span>
-              ) : (
-                <span className="badge badge-warning">Belum Selesai</span>
-              )}
+          <div className="flex flex-col gap-1">
+            <MicroMeta>Status Onboarding</MicroMeta>
+            <span>
+              <StatusBadge
+                variant={profile.onboarding_completed ? "success" : "warning"}
+                label={profile.onboarding_completed ? "Selesai" : "Belum Selesai"}
+                dot
+              />
             </span>
           </div>
         </div>
 
         {/* Onboarding Completion Action */}
         {!profile.onboarding_completed && (
-          <div className="onboarding-action-box">
+          <div className="mt-6 flex flex-col gap-4 border-t border-hairline pt-6 dark:border-hairline-dark sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h4 style={{ margin: "0 0 0.25rem 0" }}>Selesaikan Onboarding</h4>
-              <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280" }}>
+              <h3 className={cx("text-[15px] font-bold", INK)}>
+                Selesaikan Orientasi (Onboarding)
+              </h3>
+              <p className={cx("mt-1 text-[13px] leading-relaxed", MUTED)}>
                 Tandai bahwa Anda telah menyelesaikan orientasi profil belajar Xora.
               </p>
             </div>
-            <button
+            <PrimaryButton
               onClick={handleCompleteOnboarding}
-              className="btn btn-success"
               disabled={isOnboardingUpdating}
+              loading={isOnboardingUpdating}
             >
-              {isOnboardingUpdating ? "Menyelesaikan..." : "Selesaikan Onboarding"}
-            </button>
+              Selesaikan Onboarding
+            </PrimaryButton>
           </div>
         )}
-      </div>
-    </div>
+      </GlassPanel>
+    </PageContainer>
   );
 }

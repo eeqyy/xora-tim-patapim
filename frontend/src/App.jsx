@@ -5,8 +5,11 @@
 
 import React from "react";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import { DashboardFilterProvider } from "./context/DashboardFilterContext";
 import { RouterProvider, useRouter, ProtectedRoute, AdminRoute } from "./context/RouterContext";
 import Navbar from "./components/Navbar";
+import BottomNav from "./components/BottomNav";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -17,6 +20,12 @@ import AssessmentPage from "./pages/AssessmentPage";
 import AssessmentResultPage from "./pages/AssessmentResultPage";
 import AdminAssessmentsPage from "./pages/AdminAssessmentsPage";
 import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
+import AdminHomePage from "./pages/AdminHomePage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminSystemPage from "./pages/AdminSystemPage";
+import DashboardPage from "./pages/DashboardPage";
+import ProgressPage from "./pages/ProgressPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function AppContent() {
   const { currentPath } = useRouter();
@@ -35,6 +44,18 @@ function AppContent() {
         <ProfilePage />
       </ProtectedRoute>
     );
+  } else if (currentPath === "/dashboard") {
+    pageContent = (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    );
+  } else if (currentPath === "/progress" || currentPath === "/history") {
+    pageContent = (
+      <ProtectedRoute>
+        <ProgressPage />
+      </ProtectedRoute>
+    );
   } else if (currentPath === "/learning-path") {
     pageContent = (
       <ProtectedRoute>
@@ -47,26 +68,65 @@ function AppContent() {
         <AssessmentListPage />
       </ProtectedRoute>
     );
-  } else if (currentPath.startsWith("/assessments/result/")) {
-    const attemptId = currentPath.replace("/assessments/result/", "").split("?")[0];
+  } else if (currentPath.startsWith("/assessments/result/") || currentPath.startsWith("/assessments/results/")) {
+    const attemptId = currentPath.replace(/^\/assessments\/results?\//, "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentResultPage attemptId={attemptId} />
       </ProtectedRoute>
     );
   } else if (currentPath.startsWith("/attempts/")) {
-    const attemptId = currentPath.replace("/attempts/", "").split("?")[0];
+    const attemptId = currentPath.replace("/attempts/", "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentResultPage attemptId={attemptId} />
       </ProtectedRoute>
     );
+  } else if (currentPath.startsWith("/verification/")) {
+    const diagnosticId = currentPath.replace("/verification/", "");
+    pageContent = (
+      <ProtectedRoute>
+        <AssessmentPage diagnosticId={diagnosticId} isVerification={true} />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/practice/")) {
+    const actionId = currentPath.replace("/practice/", "");
+    pageContent = (
+      <ProtectedRoute>
+        <AssessmentPage actionId={actionId} isPractice={true} />
+      </ProtectedRoute>
+    );
+  } else if (currentPath.startsWith("/reassess/")) {
+    const assessmentId = currentPath.replace("/reassess/", "");
+    pageContent = (
+      <ProtectedRoute>
+        <AssessmentPage assessmentId={assessmentId} isReassessment={true} />
+      </ProtectedRoute>
+    );
   } else if (currentPath.startsWith("/assessments/")) {
-    const assessmentId = currentPath.replace("/assessments/", "").split("?")[0];
+    const assessmentId = currentPath.replace("/assessments/", "");
     pageContent = (
       <ProtectedRoute>
         <AssessmentPage assessmentId={assessmentId} />
       </ProtectedRoute>
+    );
+  } else if (currentPath === "/admin" || currentPath === "/admin/") {
+    pageContent = (
+      <AdminRoute>
+        <AdminHomePage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/users") {
+    pageContent = (
+      <AdminRoute>
+        <AdminUsersPage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/system") {
+    pageContent = (
+      <AdminRoute>
+        <AdminSystemPage />
+      </AdminRoute>
     );
   } else if (currentPath === "/admin/assessments") {
     pageContent = (
@@ -75,30 +135,35 @@ function AppContent() {
       </AdminRoute>
     );
   } else if (currentPath.startsWith("/admin/assessments/")) {
-    const assessmentId = currentPath.replace("/admin/assessments/", "").split("?")[0];
+    const assessmentId = currentPath.replace("/admin/assessments/", "");
     pageContent = (
       <AdminRoute>
         <AdminAssessmentEditorPage assessmentId={assessmentId} />
       </AdminRoute>
     );
   } else {
-    pageContent = <HomePage />;
+    pageContent = <NotFoundPage />;
   }
 
   return (
-    <div className="app-layout">
+    <div className="flex min-h-dvh flex-col bg-canvas text-ink dark:bg-canvas-dark dark:text-ink-dark">
       <Navbar />
-      <main className="main-content">{pageContent}</main>
+      <main className="flex-1 pb-20 md:pb-0">{pageContent}</main>
+      <BottomNav />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <RouterProvider>
-        <AppContent />
-      </RouterProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RouterProvider>
+          <DashboardFilterProvider>
+            <AppContent />
+          </DashboardFilterProvider>
+        </RouterProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

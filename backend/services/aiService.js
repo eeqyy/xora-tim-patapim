@@ -119,4 +119,110 @@ async function analyzeEvidence(learnerId, { conceptId } = {}) {
   };
 }
 
-module.exports = { analyzeEvidence };
+/**
+ * AI Research Gap Analysis untuk hasil pengerjaan asesmen campuran / topik.
+ * Menganalisis kelemahan materi & topik secara kualitatif.
+ */
+async function analyzeAssessmentGap({
+  assessmentTitle,
+  score,
+  isPassed,
+  materialBreakdown = {},
+  topicBreakdown = [],
+  primaryGap = null,
+}) {
+  const systemInstruction = `Anda adalah AI Educational Diagnostic Engine untuk sistem XORA.
+Tugas Anda adalah menafsirkan data hasil asesmen learner, menjelaskan gap pemahaman (learning gap), kekuatan materi, serta memberikan arahan belajar kontekstual.
+Gunakan bahasa Indonesia yang profesional, empatik, berbasis bukti, dan jelas.
+Output WAJIB berupa JSON murni dengan format:
+{
+  "summary": "Ringkasan evaluasi performa learner",
+  "strengths": ["Daftar kekuatan / materi yang dikuasai dengan baik"],
+  "gap_explanation": "Penjelasan mendalam mengenai materi/topik yang paling membutuhkan peningkatan",
+  "study_advice": "Rekomendasi langkah pembelajaran terarah berikutnya"
+}`;
+
+  const userContent = JSON.stringify({
+    assessment_title: assessmentTitle,
+    overall_score: score,
+    is_passed: isPassed,
+    material_performance: materialBreakdown,
+    topic_performance: topicBreakdown,
+    detected_primary_gap: primaryGap,
+  }, null, 2);
+
+  const messages = [
+    { role: "system", content: systemInstruction },
+    { role: "user", content: `Analisis data asesmen berikut dan buatkan gap analysis:\n${userContent}` },
+  ];
+
+  const raw = await aiProvider.chat(messages, { jsonMode: true });
+  let clean = raw.trim();
+  if (clean.startsWith("```json")) clean = clean.replace("```json", "").replace(/```$/, "").trim();
+  else if (clean.startsWith("```")) clean = clean.replace("```", "").trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(clean);
+  } catch (e) {
+    const err = new Error("Respons AI tidak valid (JSON parse gagal)");
+    err.statusCode = 502;
+    throw err;
+  }
+
+  return {
+    summary: parsed.summary || `Evaluasi asesmen dengan skor akhir ${score}%.`,
+    strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+    gap_explanation: parsed.gap_explanation || (primaryGap ? `Fokus peningkatan utama ada pada materi ${primaryGap.material}.` : "Performa seimbang di semua materi."),
+    study_advice: parsed.study_advice || "Lanjutkan latihan remediasi terarah pada materi yang masih perlu penguatan.",
+    provider_model: process.env.AI_MODEL || "openrouter/free",
+    analyzed_at: new Date().toISOString(),
+  };
+}
+
+/**
+ * Fallback deterministik jika provider AI tidak tersedia / offline.
+ * Menjamin hasil penilaian tetap valid dan transparan tanpa memalsukan keberhasilan AI.
+ */
+function getDeterministicGapFallback({
+  assessmentTitle,
+  score,
+  isPassed,
+  materialBreakdown = {},
+  primaryGap = null,
+}) {
+  const strengths = [];
+  for (const [mat, data] of Object.entries(materialBreakdown)) {
+    if (data.score_percent >= 75) {
+      strengths.push(`Penguasaan ${mat} kuat (${data.score_percent}% benar, ${data.correct}/${data.total} soal)`);
+    }
+  }
+
+  let gapExplanation = "Distribusi performa seimbang pada seluruh materi yang diuji.";
+  let studyAdvice = "Pertahankan konsistensi belajar Anda dan lanjutkan ke tantangan tingkat berikutnya.";
+
+  if (primaryGap && primaryGap.material) {
+    gapExplanation = `Berdasarkan data jawaban tersimpan, materi ${primaryGap.material} menunjukkan tingkat akurasi terendah (${primaryGap.score_percent}%, ${primaryGap.correct_count}/${primaryGap.total_questions} soal). Disarankan memprioritaskan review pada topik-topik fundamental ${primaryGap.material}.`;
+    studyAdvice = `Kerjakan latihan terarah khusus materi ${primaryGap.material} untuk memperkuat konsep dasar sebelum mengulang asesmen tingkat ini.`;
+  } else if (!isPassed) {
+    gapExplanation = `Skor akhir (${score}%) belum mencapai ambang kelulusan. Diperlukan penguatan konsep merata sebelum mengambil retake.`;
+    studyAdvice = "Pelajari kembali materi yang belum maksimal dan manfaatkan modul latihan topik.";
+  }
+
+  return {
+    is_fallback: true,
+    notice: "Analisis dihasilkan oleh engine deterministik berbasis data tersimpan (layanan AI kualitatif sedang offline).",
+    summary: `Hasil asesmen "${assessmentTitle}" mencatat skor ${score}% (${isPassed ? "LULUS" : "BELUM LULUS"}).`,
+    strengths,
+    gap_explanation: gapExplanation,
+    study_advice: studyAdvice,
+    analyzed_at: new Date().toISOString(),
+  };
+}
+
+module.exports = {
+  analyzeEvidence,
+  analyzeAssessmentGap,
+  getDeterministicGapFallback,
+};
+

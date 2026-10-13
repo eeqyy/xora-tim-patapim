@@ -13,8 +13,8 @@ const { sendError } = require("../utils/errors");
 
 router.use(requireAuth);
 
-// GET /api/history
-router.get("/", async (req, res) => {
+// GET /api/history and /api/history/progress
+const handleGetHistory = async (req, res) => {
   try {
     const { limit, offset, eventType } = req.query;
     const data = await historyService.getLearnerHistory(req.user.id, {
@@ -27,6 +27,9 @@ router.get("/", async (req, res) => {
     console.error("GET /api/history ERROR:", error);
     sendError(res, error);
   }
-});
+};
+
+router.get("/", handleGetHistory);
+router.get("/progress", handleGetHistory);
 
 module.exports = router;

@@ -35,20 +35,21 @@ async function upsertRow(client, table, columns, values, conflictTarget, lookupC
 /**
  * Upsert question by (assessment_id, order_index) with DO UPDATE
  */
-async function upsertQuestion(client, assessmentId, conceptId, difficulty, type, text, answerJson, points, order) {
-  const sql = `INSERT INTO questions (assessment_id, concept_id, difficulty, type, question_text, correct_answer, points, order_index)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+async function upsertQuestion(client, assessmentId, conceptId, difficulty, material, type, text, answerJson, points, order) {
+  const sql = `INSERT INTO questions (assessment_id, concept_id, difficulty, material, type, question_text, correct_answer, points, order_index)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              ON CONFLICT (assessment_id, order_index)
              DO UPDATE SET
                concept_id = EXCLUDED.concept_id,
                difficulty = EXCLUDED.difficulty,
+               material = EXCLUDED.material,
                type = EXCLUDED.type,
                question_text = EXCLUDED.question_text,
                correct_answer = EXCLUDED.correct_answer,
                points = EXCLUDED.points
              RETURNING *`;
   const res = await client.query(sql, [
-    assessmentId, conceptId, difficulty, type, text, answerJson, points, order,
+    assessmentId, conceptId, difficulty, material, type, text, answerJson, points, order,
   ]);
   return res.rows[0];
 }
@@ -807,6 +808,7 @@ async function seed() {
         assessHtmlBasics.id,
         concepts[conceptName].id,
         htmlBasicsDifficulty[q.order] || "MEDIUM",
+        "HTML",
         q.type,
         q.text,
         JSON.stringify(q.answer),
@@ -842,7 +844,7 @@ async function seed() {
     for (const q of questionsLevelFinal) {
       await upsertQuestion(
         client, assessLevelFinal.id, concepts[q.concept].id, q.difficulty,
-        q.type, q.text, JSON.stringify(q.answer), q.points, q.order
+        "HTML", q.type, q.text, JSON.stringify(q.answer), q.points, q.order
       );
     }
 
@@ -872,7 +874,7 @@ async function seed() {
     for (const q of questionsJsPractice) {
       await upsertQuestion(
         client, assessJsPractice.id, concepts[q.concept].id, q.difficulty,
-        q.type, q.text, JSON.stringify(q.answer), q.points, q.order
+        "JAVASCRIPT", q.type, q.text, JSON.stringify(q.answer), q.points, q.order
       );
     }
 

@@ -3,14 +3,27 @@
 // frontend/src/services/api.js
 // ============================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const TOKEN_KEY = "xora_auth_token";
 
 export const tokenStorage = {
   get: () => {
     try {
-      return localStorage.getItem(TOKEN_KEY);
+      const raw = localStorage.getItem(TOKEN_KEY);
+      if (!raw) return null;
+      // Handle cases where token was saved as JSON serialized object or string
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === "string") return parsed.trim();
+        if (parsed && typeof parsed === "object") {
+          const val = parsed.token || parsed.accessToken || parsed.id || null;
+          return val ? String(val).trim() : null;
+        }
+      } catch {
+        return raw.trim();
+      }
+      return raw.trim();
     } catch {
       return null;
     }
@@ -18,7 +31,10 @@ export const tokenStorage = {
   set: (token) => {
     try {
       if (token) {
-        localStorage.setItem(TOKEN_KEY, token);
+        const tokenStr = typeof token === "object"
+          ? (token.token || token.accessToken || JSON.stringify(token))
+          : String(token).trim();
+        localStorage.setItem(TOKEN_KEY, tokenStr);
       } else {
         localStorage.removeItem(TOKEN_KEY);
       }
@@ -45,9 +61,22 @@ async function apiRequest(endpoint, options = {}) {
     ...(options.headers || {}),
   };
 
-  const token = options.token !== undefined ? options.token : tokenStorage.get();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  // Determine token: prioritize explicit string/object token, fallback to tokenStorage.get()
+  let rawToken = options.token;
+  if (!rawToken || (typeof rawToken === "string" && !rawToken.trim())) {
+    rawToken = tokenStorage.get();
+  } else if (typeof rawToken === "object") {
+    rawToken = rawToken.token || rawToken.accessToken || rawToken.id || tokenStorage.get();
+  }
+
+  if (rawToken && typeof rawToken === "string") {
+    let clean = rawToken.trim();
+    if (clean.startsWith("Bearer ")) {
+      clean = clean.slice(7).trim();
+    }
+    if (clean && clean !== "undefined" && clean !== "null" && clean !== "[object Object]") {
+      headers["Authorization"] = `Bearer ${clean}`;
+    }
   }
 
   const config = {
@@ -102,6 +131,12 @@ export const authApi = {
       method: "GET",
       token,
     }),
+
+  logout: (token) =>
+    apiRequest("/api/auth/logout", {
+      method: "POST",
+      token,
+    }),
 };
 
 export const profileApi = {
@@ -139,6 +174,13 @@ export const subjectsApi = {
     }),
 };
 
+// Daftar konsep (menyertakan subject_id) — dipakai untuk memetakan
+// konsep ke "kelas" (subject) saat memfilter dashboard.
+export const conceptsApi = {
+  getAll: (token) => apiRequest("/api/concepts", { method: "GET", token }),
+  getById: (id, token) => apiRequest(`/api/concepts/${id}`, { method: "GET", token }),
+};
+
 export const learningPathApi = {
   getPath: (subjectId, token) => {
     const endpoint = subjectId ? `/api/learning-path/${subjectId}` : "/api/learning-path";
@@ -163,8 +205,25 @@ export const assessmentsApi = {
   getById: (id, token) =>
     apiRequest(`/api/assessments/${id}`, { method: "GET", token }),
 
-  getQuestions: (id, token) =>
-    apiRequest(`/api/assessments/${id}/questions`, { method: "GET", token }),
+  getQuestions: (id, tokenOrAttemptId = null, maybeAttemptId = null) => {
+    let token = null;
+    let attemptId = null;
+
+    if (maybeAttemptId) {
+      token = tokenOrAttemptId;
+      attemptId = maybeAttemptId;
+    } else if (tokenOrAttemptId) {
+      // Check if 2nd arg is an attemptId (UUID format) rather than a JWT/token
+      if (typeof tokenOrAttemptId === "string" && tokenOrAttemptId.length === 36 && tokenOrAttemptId.includes("-")) {
+        attemptId = tokenOrAttemptId;
+      } else {
+        token = tokenOrAttemptId;
+      }
+    }
+
+    const qs = attemptId ? `?attemptId=${encodeURIComponent(attemptId)}` : "";
+    return apiRequest(`/api/assessments/${id}/questions${qs}`, { method: "GET", token });
+  },
 
   startAttempt: (id, token) =>
     apiRequest(`/api/assessments/${id}/attempts`, { method: "POST", token }),
@@ -181,6 +240,12 @@ export const assessmentsApi = {
 
   getAttempt: (attemptId, token) =>
     apiRequest(`/api/assessments/attempts/${attemptId}`, { method: "GET", token }),
+
+  getLevelStatus: (token) =>
+    apiRequest("/api/assessments/levels/status", { method: "GET", token }),
+
+  retryGapAnalysis: (attemptId, token) =>
+    apiRequest(`/api/assessments/attempts/${attemptId}/analyze-gap`, { method: "POST", token }),
 };
 
 export const attemptsApi = {
@@ -255,6 +320,48 @@ export const adminQuestionsApi = {
     }),
 };
 
+export const adminQuestionBankApi = {
+  list: (params = {}, token) => {
+    const query = new URLSearchParams();
+    if (params.material) query.append("material", params.material);
+    if (params.difficulty) query.append("difficulty", params.difficulty);
+    if (params.type) query.append("type", params.type);
+    if (params.is_active !== undefined) query.append("is_active", params.is_active);
+    if (params.search) query.append("search", params.search);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/assessments/admin/questions/bank${qs}`, { method: "GET", token });
+  },
+
+  create: (body, token) =>
+    apiRequest("/api/assessments/admin/questions/bank", {
+      method: "POST",
+      body,
+      token,
+    }),
+
+  getById: (id, token) =>
+    apiRequest(`/api/assessments/admin/questions/bank/${id}`, { method: "GET", token }),
+
+  update: (id, body, token) =>
+    apiRequest(`/api/assessments/admin/questions/bank/${id}`, {
+      method: "PUT",
+      body,
+      token,
+    }),
+
+  remove: (id, token) =>
+    apiRequest(`/api/assessments/admin/questions/bank/${id}`, {
+      method: "DELETE",
+      token,
+    }),
+
+  toggleActive: (id, token) =>
+    apiRequest(`/api/assessments/admin/questions/bank/${id}/toggle-active`, {
+      method: "PATCH",
+      token,
+    }),
+};
+
 export const masteryApi = {
   getSummary: (token) =>
     apiRequest("/api/mastery", { method: "GET", token }),
@@ -287,32 +394,32 @@ export const recommendationsApi = {
     apiRequest("/api/recommendations", { method: "GET", token }),
 
   getNextStep: (token) =>
-    apiRequest("/api/recommendations/next-step", { method: "GET", token }),
-
-  getDetail: (id, token) =>
-    apiRequest(`/api/recommendations/${id}`, { method: "GET", token }),
+    apiRequest("/api/recommendations/next", { method: "GET", token }),
 
   getMaterials: (id, token) =>
     apiRequest(`/api/recommendations/${id}/materials`, { method: "GET", token }),
 
+  start: (id, token) =>
+    apiRequest(`/api/recommendations/${id}/start`, { method: "POST", token }),
+
   startPractice: (id, token) =>
-    apiRequest(`/api/recommendations/${id}/start-practice`, { method: "POST", token }),
+    apiRequest(`/api/recommendations/${id}/start`, { method: "POST", token }),
 
   submit: (attemptId, answers, token) =>
-    apiRequest(`/api/recommendations/attempts/${attemptId}/submit`, {
+    apiRequest(`/api/assessments/attempts/${attemptId}/submit`, {
       method: "POST",
       body: { answers },
       token,
     }),
 
   getResult: (attemptId, token) =>
-    apiRequest(`/api/recommendations/attempts/${attemptId}/result`, { method: "GET", token }),
+    apiRequest(`/api/assessments/attempts/${attemptId}`, { method: "GET", token }),
 
   complete: (id, token) =>
-    apiRequest(`/api/recommendations/${id}/complete`, { method: "PATCH", token }),
+    apiRequest(`/api/recommendations/${id}/complete`, { method: "POST", token }),
 
   skip: (id, token) =>
-    apiRequest(`/api/recommendations/${id}/skip`, { method: "PATCH", token }),
+    apiRequest(`/api/recommendations/${id}/skip`, { method: "POST", token }),
 };
 
 export const practicesApi = {
@@ -351,6 +458,9 @@ export const historyApi = {
     const qs = query.toString() ? `?${query.toString()}` : "";
     return apiRequest(`/api/history${qs}`, { method: "GET", token });
   },
+
+  getProgress: (params = {}, token) =>
+    historyApi.getHistory(params, token),
 };
 
 export const systemApi = {
@@ -358,4 +468,71 @@ export const systemApi = {
     apiRequest("/api/health", {
       method: "GET",
     }),
+};
+
+/**
+ * Admin — kelola akun pengguna. Butuh role ADMIN.
+ * Semua endpoint di bawah prefix /api/admin (lihat backend/routes/admin.js).
+ */
+export const adminUsersApi = {
+  list: (params = {}, token) => {
+    const query = new URLSearchParams();
+    if (params.search) query.append("search", params.search);
+    if (params.role) query.append("role", params.role);
+    if (params.status) query.append("status", params.status);
+    if (params.limit) query.append("limit", params.limit);
+    if (params.offset) query.append("offset", params.offset);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/admin/users${qs}`, { method: "GET", token });
+  },
+
+  getById: (id, token) =>
+    apiRequest(`/api/admin/users/${id}`, { method: "GET", token }),
+
+  updateStatus: (id, status, token) =>
+    apiRequest(`/api/admin/users/${id}/status`, {
+      method: "PATCH",
+      body: { status },
+      token,
+    }),
+
+  updateRoles: (id, roles, token) =>
+    apiRequest(`/api/admin/users/${id}/roles`, {
+      method: "PUT",
+      body: { roles },
+      token,
+    }),
+
+  resetPassword: (id, newPassword, token) =>
+    apiRequest(`/api/admin/users/${id}/reset-password`, {
+      method: "POST",
+      body: { newPassword },
+      token,
+    }),
+
+  // Ringkasan analitik learner (read-only) untuk dashboard admin.
+  getAnalytics: (id, token) =>
+    apiRequest(`/api/admin/users/${id}/analytics`, { method: "GET", token }),
+};
+
+/**
+ * Admin — pantau kesehatan sistem & data. Butuh role ADMIN.
+ */
+export const adminSystemApi = {
+  getHealth: (token) =>
+    apiRequest("/api/admin/system/health", { method: "GET", token }),
+
+  getStats: (token) =>
+    apiRequest("/api/admin/system/stats", { method: "GET", token }),
+
+  getActivity: (params = {}, token) => {
+    const query = new URLSearchParams();
+    if (params.limit) query.append("limit", params.limit);
+    if (params.offset) query.append("offset", params.offset);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/admin/system/activity${qs}`, { method: "GET", token });
+  },
+
+  getAnalytics: (token) =>
+    apiRequest("/api/admin/system/analytics", { method: "GET", token }),
 };

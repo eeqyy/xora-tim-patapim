@@ -1,18 +1,33 @@
 // ============================================================
-// XORA — Admin: Kelola Asesmen (list + hapus)
+// XORA — Admin: Kelola Asesmen (list + hapus) — Editorial Grid System
 // frontend/src/pages/AdminAssessmentsPage.jsx
 // ============================================================
 // Hanya bisa dibuka lewat AdminRoute (role ADMIN).
 // Form pembuatan & pengubahan ada di AdminAssessmentEditorPage
 // (/admin/assessments/new dan /admin/assessments/:id) supaya satu sumber
 // form yang sama untuk create & edit.
-// Layout memakai kelas .assessment-* yang sudah ada di index.css
-// supaya tampilan admin konsisten dengan halaman peserta.
 // ============================================================
 
 import React, { useEffect, useState } from "react";
 import { assessmentsApi, adminAssessmentsApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
+import {
+  PageContainer,
+  PageHeader,
+  PrimaryButton,
+  SecondaryButton,
+  Button,
+  StatusBadge,
+  LoadingState,
+  EmptyState,
+  Alert,
+  TABLE_CLASS,
+  TH_CLASS,
+  TD_CLASS,
+  HAIRLINE,
+  MUTED,
+  cx,
+} from "../components";
 
 const TYPE_LABELS = {
   PRACTICE: "Latihan",
@@ -21,6 +36,11 @@ const TYPE_LABELS = {
   MIXED: "Campuran",
   REASSESSMENT: "Remedial",
 };
+
+const CAPTION_CLASS = cx(
+  "border-b px-3 py-3 text-left tabular-nums text-[10px] font-bold uppercase tracking-widest",
+  "border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark md:text-[11px]"
+);
 
 export default function AdminAssessmentsPage() {
   const { navigate } = useRouter();
@@ -61,119 +81,112 @@ export default function AdminAssessmentsPage() {
     }
   };
 
-  const typeBadgeClass = (type) => {
+  const typeVariant = (type) => {
     switch (type) {
       case "LEVEL_FINAL":
-        return "badge badge-difficulty badge-hard";
+        return "error";
       case "TOPIC":
-        return "badge badge-topic";
+        return "primary";
       case "PRACTICE":
-        return "badge badge-difficulty badge-medium";
+        return "warning";
       default:
-        return "badge badge-role";
+        return "neutral";
     }
   };
 
   return (
-    <div className="assessment-container">
-      {/* Header */}
-      <div className="card assessment-header-card">
-        <div className="assessment-header-badge">ADMIN</div>
-        <div className="admin-title-row">
-          <div>
-            <h1 className="assessment-title">Kelola Asesmen</h1>
-            <p className="assessment-subtitle">
-              Buat asesmen baru, ubah detailnya, dan atur isinya. Perubahan di sini
-              langsung dipakai saat peserta mengerjakan asesmen.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => navigate("/admin/assessments/new")}
-          >
+    <PageContainer>
+      <PageHeader
+        badge="ADMIN"
+        title="Kelola Asesmen"
+        description="Buat asesmen baru, ubah detailnya, dan atur isinya. Perubahan di sini langsung dipakai saat peserta mengerjakan asesmen."
+        actions={
+          <PrimaryButton onClick={() => navigate("/admin/assessments/new")}>
             + Buat Asesmen
-          </button>
-        </div>
-      </div>
+          </PrimaryButton>
+        }
+      />
 
-      {/* Loading / error / kosong */}
-      {isLoading && (
-        <div className="card loading-card">
-          <p>Memuat daftar asesmen...</p>
-        </div>
-      )}
+      {isLoading && <LoadingState message="Memuat daftar asesmen..." />}
 
-      {error && !isLoading && (
-        <div className="alert alert-error" role="alert">
-          <p>{error}</p>
-        </div>
-      )}
+      {error && !isLoading && <Alert tone="error">{error}</Alert>}
 
       {!isLoading && !error && assessments.length === 0 && (
-        <div className="card empty-card">
-          <p>Belum ada asesmen. Gunakan tombol “+ Buat Asesmen” untuk memulai.</p>
-        </div>
+        <EmptyState
+          title="Belum Ada Asesmen"
+          description="Belum ada asesmen. Gunakan tombol “+ Buat Asesmen” untuk memulai."
+        />
       )}
 
       {!isLoading && assessments.length > 0 && (
-        <div className="card admin-table-card">
-          <div className="table-scroll">
-            <table className="admin-table">
-              <caption className="admin-caption">
-                {assessments.length} asesmen terdaftar. Kolom “Aksi” berisi tombol ubah dan hapus.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Judul</th>
-                  <th scope="col">Tipe</th>
-                  <th scope="col">Subjek</th>
-                  <th scope="col">Level / Topik</th>
-                  <th scope="col">Soal</th>
-                  <th scope="col" className="admin-col-actions">
-                    Aksi
+        <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+          <table className={TABLE_CLASS}>
+            <caption className={CAPTION_CLASS}>
+              {assessments.length} asesmen terdaftar. Kolom “Aksi” berisi tombol ubah dan hapus.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" className={TH_CLASS}>
+                  Judul
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Tipe
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Subjek
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Level / Topik
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Soal
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {assessments.map((item) => (
+                <tr key={item.id}>
+                  <th scope="row" className={cx(TD_CLASS, "font-bold")}>
+                    {item.title}
                   </th>
+                  <td className={TD_CLASS}>
+                    <StatusBadge
+                      status={item.type}
+                      label={TYPE_LABELS[item.type] || item.type}
+                      variant={typeVariant(item.type)}
+                    />
+                  </td>
+                  <td className={TD_CLASS}>{item.subject_name}</td>
+                  <td className={cx(TD_CLASS, MUTED)}>
+                    {[item.level_name, item.topic_name].filter(Boolean).join(" · ") || "—"}
+                  </td>
+                  <td className={cx(TD_CLASS, "tabular-nums")}>{item.question_count}</td>
+                  <td className={TD_CLASS}>
+                    <div className="flex flex-wrap gap-2">
+                      <SecondaryButton
+                        size="sm"
+                        onClick={() => navigate(`/admin/assessments/${item.id}`)}
+                      >
+                        Ubah
+                      </SecondaryButton>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDelete(item)}
+                      >
+                        Hapus
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {assessments.map((item) => (
-                  <tr key={item.id}>
-                    <th scope="row" className="admin-cell-title">
-                      {item.title}
-                    </th>
-                    <td>
-                      <span className={typeBadgeClass(item.type)}>{TYPE_LABELS[item.type] || item.type}</span>
-                    </td>
-                    <td>{item.subject_name}</td>
-                    <td className="admin-cell-muted">
-                      {[item.level_name, item.topic_name].filter(Boolean).join(" · ") || "—"}
-                    </td>
-                    <td className="admin-cell-num">{item.question_count}</td>
-                    <td className="admin-cell-actions">
-                      <div className="btn-group">
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => navigate(`/admin/assessments/${item.id}`)}
-                        >
-                          Ubah
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDelete(item)}
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

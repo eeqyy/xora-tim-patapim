@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "21st": {
+      "type": "remote",
+      "url": "https://21st.dev/api/mcp",
+      "oauth": false,
+      "headers": {
+        "x-api-key": "{file:~/.config/21st/mcp-key}"
+      },
+      "enabled": true
+    },
+    "streamline": {
+      "type": "remote",
+      "url": "https://public-api.streamlinehq.com/mcp",
+      "enabled": true
+    }
+  }
+}
