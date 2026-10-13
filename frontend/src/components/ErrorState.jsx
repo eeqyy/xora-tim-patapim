@@ -1,11 +1,12 @@
 // ============================================================
-// XORA — ErrorState Component
+// XORA — ErrorState (Editorial System v2)
 // frontend/src/components/ErrorState.jsx
 // ============================================================
 
 import React from "react";
 import { IconAlertTriangle, IconRefresh } from "./Icons";
-import { PrimaryButton } from "./Button";
+import Button from "./Button";
+import { INK, MUTED, cx } from "./ui";
 
 export default function ErrorState({
   title = "Terjadi Kesalahan",
@@ -16,23 +17,21 @@ export default function ErrorState({
   style,
 }) {
   return (
-    <div className={`error-state-card glass-panel glass-panel-highlight ${className}`} style={style}>
-      <div className="error-state-icon-wrap">
-        <IconAlertTriangle size={32} className="error-state-icon" />
-      </div>
-      <h3 className="error-state-title">{title}</h3>
-      <p className="error-state-message">{message}</p>
-      {onRetry && (
-        <div className="error-state-actions">
-          <PrimaryButton
-            size="sm"
-            onClick={onRetry}
-            icon={<IconRefresh size={14} />}
-          >
+    <div className={cx("flex flex-col items-start gap-3 py-10", className)} style={style}>
+      <span className="text-brand">
+        <IconAlertTriangle size={28} />
+      </span>
+      <h3 className={cx("text-lg font-bold tracking-tight md:text-xl", INK)}>
+        {title}
+      </h3>
+      <p className={cx("max-w-xl text-[13px] leading-relaxed", MUTED)}>{message}</p>
+      {onRetry ? (
+        <div className="mt-1 flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={onRetry} icon={<IconRefresh size={16} />}>
             {retryLabel}
-          </PrimaryButton>
+          </Button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

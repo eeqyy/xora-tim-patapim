@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Editor asesmen (detail meta + CRUD soal)
+// XORA — Admin: Editor asesmen (detail meta + CRUD soal) — Editorial Grid System
 // frontend/src/pages/AdminAssessmentEditorPage.jsx
 // ============================================================
 // Dua mode lewat satu komponen:
@@ -23,6 +23,30 @@ import {
 } from "../services/api";
 import { useRouter } from "../context/RouterContext";
 import AssessmentMetaFields from "../components/AssessmentMetaFields";
+import {
+  PageContainer,
+  PageHeader,
+  GlassPanel,
+  SectionHeader,
+  PrimaryButton,
+  SecondaryButton,
+  OutlineButton,
+  Button,
+  StatusBadge,
+  LoadingState,
+  EmptyState,
+  Alert,
+  Field,
+  Input,
+  Select,
+  Textarea,
+  TABLE_CLASS,
+  TH_CLASS,
+  TD_CLASS,
+  HAIRLINE,
+  MUTED,
+  cx,
+} from "../components";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
@@ -34,6 +58,21 @@ const Q_TYPE_LABELS = {
 };
 
 const DIFF_LABELS = { EASY: "Mudah", MEDIUM: "Sedang", HARD: "Sulit" };
+
+// Pemetaan tampilan badge tingkat kesulitan ke varian StatusBadge editorial.
+const DIFF_VARIANT = { EASY: "success", MEDIUM: "warning", HARD: "error" };
+
+const CAPTION_CLASS = cx(
+  "border-b px-3 py-3 text-left tabular-nums text-[10px] font-bold uppercase tracking-widest",
+  "border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark md:text-[11px]"
+);
+
+const HINT_CLASS = cx("text-[11px] leading-snug", MUTED);
+
+const ERROR_CLASS =
+  "tabular-nums text-[10px] font-bold uppercase tracking-widest text-brand";
+
+const FIELD_GRID = "grid grid-cols-1 gap-4 md:grid-cols-2";
 
 const EMPTY_META = {
   title: "",
@@ -508,133 +547,130 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
 
   const renderNotice = (notice) =>
     notice ? (
-      <div
-        className={`alert ${notice.type === "error" ? "alert-error" : "alert-success"}`}
-        role={notice.type === "error" ? "alert" : "status"}
-      >
-        {notice.text}
-      </div>
+      <Alert tone={notice.type === "error" ? "error" : "success"}>{notice.text}</Alert>
     ) : null;
 
   const renderFieldError = (key) =>
     questionErrors[key] ? (
-      <p className="field-error" role="alert">
+      <p className={ERROR_CLASS} role="alert">
         {questionErrors[key]}
       </p>
     ) : null;
 
   return (
-    <div className="assessment-container">
-      {/* Header */}
-      <div className="card assessment-header-card">
-        <div className="assessment-header-badge">ADMIN</div>
-        <div className="admin-title-row">
-          <div>
-            <button type="button" className="btn btn-outline btn-sm admin-back-btn" onClick={handleBack}>
+    <PageContainer>
+      <PageHeader
+        badge="ADMIN"
+        title={isNew ? "Buat Asesmen" : "Ubah Asesmen"}
+        description={
+          isNew
+            ? "Isi detail asesmen terlebih dahulu, lalu tambahkan soalnya di halaman berikutnya."
+            : "Ubah detail asesmen dan kelola soalnya. Peserta melihat perubahan ini pada pengerjaan berikutnya."
+        }
+        actions={
+          <>
+            <OutlineButton size="sm" onClick={handleBack}>
               Kembali
-            </button>
-            <h1 className="assessment-title">{isNew ? "Buat Asesmen" : "Ubah Asesmen"}</h1>
-            <p className="assessment-subtitle">
-              {isNew
-                ? "Isi detail asesmen terlebih dahulu, lalu tambahkan soalnya di halaman berikutnya."
-                : "Ubah detail asesmen dan kelola soalnya. Peserta melihat perubahan ini pada pengerjaan berikutnya."}
-            </p>
-          </div>
-          {!isNew && <span className="badge badge-role">{questions.length} soal</span>}
-        </div>
-      </div>
+            </OutlineButton>
+            {!isNew && <StatusBadge label={`${questions.length} soal`} variant="neutral" />}
+          </>
+        }
+      />
 
-      {isLoading && (
-        <div className="card loading-card">
-          <p>Memuat data asesmen...</p>
-        </div>
-      )}
+      {isLoading && <LoadingState message="Memuat data asesmen..." />}
 
-      {loadError && !isLoading && (
-        <div className="alert alert-error" role="alert">
-          {loadError}
-        </div>
-      )}
+      {loadError && !isLoading && <Alert tone="error">{loadError}</Alert>}
 
       {!isLoading && !loadError && (
         <>
           {/* Detail asesmen */}
-          <section className="card" aria-labelledby="meta-heading">
-            <h2 id="meta-heading" className="admin-section-title">
-              Detail asesmen
-            </h2>
+          <section aria-labelledby="meta-heading">
+            <SectionHeader id="meta-heading" index="01" title="Detail asesmen" />
             {renderNotice(metaNotice)}
-            <form className="admin-form" onSubmit={handleSaveMeta} noValidate>
-              <AssessmentMetaFields
-                form={meta}
-                onChange={handleMetaChange}
-                errors={metaErrors}
-                subjects={subjects}
-                levels={levels}
-                topics={topics}
-                idPrefix="meta"
-              />
-              <div className="admin-form-actions">
-                <button type="submit" className="btn btn-primary" disabled={isSavingMeta}>
-                  {isSavingMeta ? "Menyimpan..." : isNew ? "Buat Asesmen" : "Simpan perubahan"}
-                </button>
-                <span className="field-hint">
-                  {isNew
-                    ? "Setelah dibuat, Anda langsung bisa menambahkan soal."
-                    : "Kosongkan durasi bila tanpa batas waktu."}
-                </span>
-              </div>
-            </form>
+            <GlassPanel variant="subtle" className="mt-8 p-4 md:p-6">
+              <form onSubmit={handleSaveMeta} noValidate>
+                <AssessmentMetaFields
+                  form={meta}
+                  onChange={handleMetaChange}
+                  errors={metaErrors}
+                  subjects={subjects}
+                  levels={levels}
+                  topics={topics}
+                  idPrefix="meta"
+                />
+                <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="w-full md:w-64">
+                    <PrimaryButton type="submit" disabled={isSavingMeta}>
+                      {isSavingMeta ? "Menyimpan..." : isNew ? "Buat Asesmen" : "Simpan perubahan"}
+                    </PrimaryButton>
+                  </div>
+                  <p className={HINT_CLASS}>
+                    {isNew
+                      ? "Setelah dibuat, Anda langsung bisa menambahkan soal."
+                      : "Kosongkan durasi bila tanpa batas waktu."}
+                  </p>
+                </div>
+              </form>
+            </GlassPanel>
           </section>
 
           {/* Soal — baru bisa diisi setelah asesmen punya id */}
           {!isNew && (
-            <section className="card" aria-labelledby="question-heading">
-              <div className="admin-title-row">
-                <div>
-                  <h2 id="question-heading" className="admin-section-title">
-                    Daftar soal
-                  </h2>
-                  <p className="field-hint">
-                    Setiap soal terikat ke satu konsep (penentu mastery) dan satu tingkat kesulitan.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
+            <section aria-labelledby="question-heading">
+              <SectionHeader id="question-heading" index="02" title="Daftar soal" />
+
+              <GlassPanel variant="subtle" className="mt-8 flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:px-6">
+                <p className={HINT_CLASS}>
+                  Setiap soal terikat ke satu konsep (penentu mastery) dan satu tingkat kesulitan.
+                </p>
+                <SecondaryButton
+                  size="sm"
                   onClick={() => (showQuestionForm ? closeQuestionForm() : openQuestionForm())}
                   aria-expanded={showQuestionForm}
                   aria-controls="question-form"
                 >
                   {showQuestionForm ? "Tutup form soal" : "Tambah soal"}
-                </button>
-              </div>
+                </SecondaryButton>
+              </GlassPanel>
 
               {renderNotice(questionNotice)}
 
               {questions.length === 0 ? (
-                <p className="empty-card">Belum ada soal. Tekan “Tambah soal” untuk memulai.</p>
+                <EmptyState
+                  title="Belum ada soal."
+                  description="Tekan “Tambah soal” untuk memulai."
+                />
               ) : (
-                <div className="table-scroll">
-                  <table className="admin-table">
-                    <caption className="admin-caption">
+                <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+                  <table className={TABLE_CLASS}>
+                    <caption className={CAPTION_CLASS}>
                       {questions.length} soal tersusun sesuai nomor urut. Tombol naik/turun mengubah
                       urutan pengerjaan peserta.
                     </caption>
                     <thead>
                       <tr>
-                        <th scope="col" className="admin-col-num">
+                        <th scope="col" className={TH_CLASS}>
                           Urut
                         </th>
-                        <th scope="col">Pertanyaan</th>
-                        <th scope="col">Tipe</th>
-                        <th scope="col">Materi</th>
-                        <th scope="col">Konsep</th>
-                        <th scope="col">Kesulitan</th>
-                        <th scope="col" className="admin-col-num">
+                        <th scope="col" className={TH_CLASS}>
+                          Pertanyaan
+                        </th>
+                        <th scope="col" className={TH_CLASS}>
+                          Tipe
+                        </th>
+                        <th scope="col" className={TH_CLASS}>
+                          Materi
+                        </th>
+                        <th scope="col" className={TH_CLASS}>
+                          Konsep
+                        </th>
+                        <th scope="col" className={TH_CLASS}>
+                          Kesulitan
+                        </th>
+                        <th scope="col" className={TH_CLASS}>
                           Poin
                         </th>
-                        <th scope="col" className="admin-col-actions">
+                        <th scope="col" className={TH_CLASS}>
                           Aksi
                         </th>
                       </tr>
@@ -642,63 +678,65 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                     <tbody>
                       {questions.map((question, index) => (
                         <tr key={question.id}>
-                          <td className="admin-cell-num">{index + 1}</td>
-                          <th scope="row" className="admin-cell-title admin-cell-question">
+                          <td className={cx(TD_CLASS, "tabular-nums")}>{index + 1}</td>
+                          <th scope="row" className={cx(TD_CLASS, "font-bold")}>
                             {question.questionText}
                           </th>
-                          <td>
-                            <span className="badge badge-role">{Q_TYPE_LABELS[question.type] || question.type}</span>
+                          <td className={TD_CLASS}>
+                            <StatusBadge
+                              label={Q_TYPE_LABELS[question.type] || question.type}
+                              variant="info"
+                            />
                           </td>
-                          <td>
-                            <span className="badge badge-difficulty badge-easy" style={{ textTransform: "uppercase" }}>
-                              {question.material || "HTML"}
-                            </span>
+                          <td className={TD_CLASS}>
+                            <StatusBadge label={question.material || "HTML"} variant="neutral" />
                           </td>
-                          <td className="admin-cell-muted">{question.conceptName || "—"}</td>
-                          <td>
-                            <span
-                              className={`badge badge-difficulty badge-${String(
-                                question.difficulty || "MEDIUM"
-                              ).toLowerCase()}`}
-                            >
-                              {DIFF_LABELS[question.difficulty] || question.difficulty}
-                            </span>
+                          <td className={cx(TD_CLASS, MUTED)}>{question.conceptName || "—"}</td>
+                          <td className={TD_CLASS}>
+                            <StatusBadge
+                              status={question.difficulty}
+                              label={DIFF_LABELS[question.difficulty] || question.difficulty}
+                              variant={DIFF_VARIANT[question.difficulty]}
+                            />
                           </td>
-                          <td className="admin-cell-num">{question.points}</td>
-                          <td className="admin-cell-actions">
-                            <div className="btn-group">
-                              <button
+                          <td className={cx(TD_CLASS, "tabular-nums")}>{question.points}</td>
+                          <td className={TD_CLASS}>
+                            <div className="flex flex-wrap gap-1">
+                              <OutlineButton
+                                size="sm"
                                 type="button"
-                                className="btn btn-outline btn-sm"
                                 onClick={() => handleMoveQuestion(index, -1)}
                                 disabled={index === 0 || isReordering}
                                 aria-label={`Naikkan soal nomor ${index + 1}`}
+                                className="w-11"
                               >
                                 ↑
-                              </button>
-                              <button
+                              </OutlineButton>
+                              <OutlineButton
+                                size="sm"
                                 type="button"
-                                className="btn btn-outline btn-sm"
                                 onClick={() => handleMoveQuestion(index, 1)}
                                 disabled={index === questions.length - 1 || isReordering}
                                 aria-label={`Turunkan soal nomor ${index + 1}`}
+                                className="w-11"
                               >
                                 ↓
-                              </button>
-                              <button
+                              </OutlineButton>
+                              <SecondaryButton
+                                size="sm"
                                 type="button"
-                                className="btn btn-secondary btn-sm"
                                 onClick={() => startEditQuestion(question)}
                               >
                                 Ubah
-                              </button>
-                              <button
+                              </SecondaryButton>
+                              <Button
+                                variant="danger"
+                                size="sm"
                                 type="button"
-                                className="btn btn-danger btn-sm"
                                 onClick={() => handleDeleteQuestion(question)}
                               >
                                 Hapus
-                              </button>
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -709,331 +747,348 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
               )}
 
               {showQuestionForm && (
-                <form
-                  id="question-form"
-                  className="admin-question-form"
-                  onSubmit={handleSaveQuestion}
-                  noValidate
-                >
-                  <h3 className="admin-subheading">
-                    {editingQuestionId ? "Ubah soal" : "Soal baru"}
-                  </h3>
+                <GlassPanel variant="subtle" className="mt-8 p-4 md:p-6">
+                  <form id="question-form" onSubmit={handleSaveQuestion} noValidate>
+                    <h3 className="text-sm font-bold text-ink dark:text-ink-dark md:text-[15px]">
+                      {editingQuestionId ? "Ubah soal" : "Soal baru"}
+                    </h3>
 
-                  <div className="form-group">
-                    <label htmlFor="question-text">Pertanyaan *</label>
-                    <textarea
-                      id="question-text"
-                      ref={questionTextRef}
-                      rows={3}
-                      value={questionForm.questionText}
-                      onChange={(e) => handleQuestionChange({ questionText: e.target.value })}
-                      aria-invalid={questionErrors.questionText ? "true" : undefined}
-                      aria-describedby={questionErrors.questionText ? "question-text-err" : undefined}
-                      placeholder="Tulis pertanyaan..."
-                    />
-                    {questionErrors.questionText && (
-                      <p id="question-text-err" className="field-error" role="alert">
-                        {questionErrors.questionText}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="admin-form-grid">
-                    <div className="form-group">
-                      <label htmlFor="question-concept">Konsep (mastery) *</label>
-                      <select
-                        id="question-concept"
-                        value={questionForm.conceptId}
-                        onChange={(e) => handleQuestionChange({ conceptId: e.target.value })}
-                        aria-invalid={questionErrors.conceptId ? "true" : undefined}
-                        aria-describedby="question-concept-hint"
-                      >
-                        <option value="">— Pilih konsep —</option>
-                        {conceptOptions.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p id="question-concept-hint" className="field-hint">
-                        Konsep ini yang nilai penguasaannya diperbarui saat soal dijawab.
-                      </p>
-                      {renderFieldError("conceptId")}
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="question-difficulty">Kesulitan *</label>
-                      <select
-                        id="question-difficulty"
-                        value={questionForm.difficulty}
-                        onChange={(e) => handleQuestionChange({ difficulty: e.target.value })}
-                      >
-                        <option value="EASY">Mudah</option>
-                        <option value="MEDIUM">Sedang</option>
-                        <option value="HARD">Sulit</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="question-material">Materi Utama *</label>
-                      <select
-                        id="question-material"
-                        value={questionForm.material || "HTML"}
-                        onChange={(e) => handleQuestionChange({ material: e.target.value })}
-                      >
-                        <option value="HTML">HTML</option>
-                        <option value="CSS">CSS</option>
-                        <option value="JAVASCRIPT">JavaScript</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="question-type">Tipe soal *</label>
-                      <select
-                        id="question-type"
-                        value={questionForm.type}
-                        onChange={(e) => handleQuestionChange({ type: e.target.value })}
-                      >
-                        <option value="MULTIPLE_CHOICE">Pilihan ganda</option>
-                        <option value="ESSAY">Esai</option>
-                        <option value="DRAG_DROP">Seret &amp; letakkan</option>
-                        <option value="CODE">Kode</option>
-                      </select>
-                      {questionForm.type === "ESSAY" && (
-                        <p className="field-hint" style={{ color: "var(--color-warning-text)", marginTop: "0.35rem" }}>
-                          ℹ️ Soal Esai tersimpan aman di bank soal dan otomatis dikecualikan dari asesmen learner sampai penilaian otomatis esai aktif.
-                        </p>
-                      )}
-                      {questionForm.type === "DRAG_DROP" && (
-                        <p className="field-hint" style={{ color: "var(--color-primary)", marginTop: "0.35rem" }}>
-                          ℹ️ Struktur Drag &amp; Drop memetakan item ke target yang tervalidasi.
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="question-points">Poin *</label>
-                      <input
-                        id="question-points"
-                        type="number"
-                        min="0"
-                        max="999.99"
-                        step="0.01"
-                        inputMode="decimal"
-                        value={questionForm.points}
-                        onChange={(e) => handleQuestionChange({ points: e.target.value })}
-                        aria-invalid={questionErrors.points ? "true" : undefined}
-                      />
-                      {renderFieldError("points")}
-                    </div>
-                  </div>
-
-                  <fieldset className="admin-fieldset">
-                    <legend>Kunci jawaban — {Q_TYPE_LABELS[questionForm.type]}</legend>
-
-                    {questionForm.type === "MULTIPLE_CHOICE" && (
-                      <div className="admin-form-grid">
-                        <div className="form-group">
-                          <label htmlFor="question-options">Pilihan jawaban *</label>
-                          <textarea
-                            id="question-options"
-                            rows={4}
-                            value={questionForm.optionsText}
-                            onChange={(e) => handleQuestionChange({ optionsText: e.target.value })}
-                            aria-describedby="question-options-hint"
-                            aria-invalid={questionErrors.optionsText ? "true" : undefined}
-                            placeholder={"<div>\n<main>\n<section>\n<article>"}
-                          />
-                          <p id="question-options-hint" className="field-hint">
-                            Satu pilihan per baris. Baris pertama menjadi A, baris kedua B, dan seterusnya.
-                          </p>
-                          {renderFieldError("optionsText")}
-                        </div>
-                        <div className="form-group">
-                          <label htmlFor="question-correct">Kunci jawaban *</label>
-                          <select
-                            id="question-correct"
-                            value={questionForm.correctLetter}
-                            onChange={(e) => handleQuestionChange({ correctLetter: e.target.value })}
-                            aria-invalid={questionErrors.correctLetter ? "true" : undefined}
-                          >
-                            {optionLines.length === 0 && <option value="A">A</option>}
-                            {optionLines.map((option, index) => (
-                              <option key={index} value={LETTERS[index]}>
-                                {LETTERS[index]} — {option}
-                              </option>
-                            ))}
-                          </select>
-                          {renderFieldError("correctLetter")}
-                        </div>
-                      </div>
-                    )}
-
-                    {questionForm.type === "ESSAY" && (
-                      <div className="form-group">
-                        <label htmlFor="question-criteria">Kriteria penilaian *</label>
-                        <textarea
-                          id="question-criteria"
-                          rows={4}
-                          value={questionForm.criteriaText}
-                          onChange={(e) => handleQuestionChange({ criteriaText: e.target.value })}
-                          aria-describedby="question-criteria-hint"
-                          aria-invalid={questionErrors.criteriaText ? "true" : undefined}
-                          placeholder={"struktur header\nnav utama\nlandmark main"}
+                    <div className="mt-4">
+                      <Field label="Pertanyaan" htmlFor="question-text" required>
+                        <Textarea
+                          id="question-text"
+                          ref={questionTextRef}
+                          rows={3}
+                          value={questionForm.questionText}
+                          onChange={(e) => handleQuestionChange({ questionText: e.target.value })}
+                          aria-invalid={questionErrors.questionText ? "true" : undefined}
+                          aria-describedby={
+                            questionErrors.questionText ? "question-text-err" : undefined
+                          }
+                          placeholder="Tulis pertanyaan..."
                         />
-                        <p id="question-criteria-hint" className="field-hint">
-                          Satu kriteria per baris. Jawaban peserta dinilai dari kunci kata/frasa ini;
-                          60% kriteria terpenuhi dianggap benar.
-                        </p>
-                        {renderFieldError("criteriaText")}
-                      </div>
-                    )}
-
-                    {questionForm.type === "CODE" && (
-                      <div className="admin-form-grid">
-                        <div className="form-group">
-                          <label htmlFor="question-expected">Jawaban yang benar *</label>
-                          <textarea
-                            id="question-expected"
-                            rows={5}
-                            className="admin-mono"
-                            value={questionForm.expectedText}
-                            onChange={(e) => handleQuestionChange({ expectedText: e.target.value })}
-                            aria-invalid={questionErrors.expectedText ? "true" : undefined}
-                            placeholder={"const x = 1;"}
-                          />
-                          {renderFieldError("expectedText")}
-                        </div>
-                        <div className="form-group">
-                          <label htmlFor="question-code-criteria">Kriteria (opsional)</label>
-                          <textarea
-                            id="question-code-criteria"
-                            rows={5}
-                            value={questionForm.criteriaText}
-                            onChange={(e) => handleQuestionChange({ criteriaText: e.target.value })}
-                            aria-describedby="question-code-criteria-hint"
-                            placeholder={"const\nlet"}
-                          />
-                          <p id="question-code-criteria-hint" className="field-hint">
-                            Satu kriteria per baris, untuk penilaian parsial bila jawaban tidak persis
-                            sama.
+                        {questionErrors.questionText && (
+                          <p id="question-text-err" className={ERROR_CLASS} role="alert">
+                            {questionErrors.questionText}
                           </p>
-                        </div>
-                      </div>
-                    )}
+                        )}
+                      </Field>
+                    </div>
 
-                    {questionForm.type === "DRAG_DROP" && (
-                      <>
-                        <div className="admin-form-grid">
-                          <div className="form-group">
-                            <label htmlFor="question-items">Item yang di-drag *</label>
-                            <textarea
-                              id="question-items"
-                              rows={4}
-                              value={questionForm.itemsText}
-                              onChange={(e) => handleQuestionChange({ itemsText: e.target.value })}
-                              aria-describedby="question-items-hint"
-                              aria-invalid={questionErrors.itemsText ? "true" : undefined}
-                              placeholder={"<nav>\nhref"}
-                            />
-                            <p id="question-items-hint" className="field-hint">
-                              Satu item per baris, sesuai urutan tampilan peserta.
-                            </p>
-                            {renderFieldError("itemsText")}
-                          </div>
-                          <div className="form-group">
-                            <label htmlFor="question-targets">Tujuan / kategori *</label>
-                            <textarea
-                              id="question-targets"
-                              rows={4}
-                              value={questionForm.targetsText}
-                              onChange={(e) => handleQuestionChange({ targetsText: e.target.value })}
-                              aria-describedby="question-targets-hint"
-                              aria-invalid={questionErrors.targetsText ? "true" : undefined}
-                              placeholder={"Elemen Navigasi Dokumen"}
-                            />
-                            <p id="question-targets-hint" className="field-hint">
-                              Satu tujuan per baris.
-                            </p>
-                            {renderFieldError("targetsText")}
-                          </div>
-                        </div>
+                    <div className={cx("mt-4", FIELD_GRID)}>
+                      <Field label="Konsep (mastery)" htmlFor="question-concept" required>
+                        <Select
+                          id="question-concept"
+                          value={questionForm.conceptId}
+                          onChange={(e) => handleQuestionChange({ conceptId: e.target.value })}
+                          aria-invalid={questionErrors.conceptId ? "true" : undefined}
+                          aria-describedby="question-concept-hint"
+                        >
+                          <option value="">— Pilih konsep —</option>
+                          {conceptOptions.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </Select>
+                        <p id="question-concept-hint" className={HINT_CLASS}>
+                          Konsep ini yang nilai penguasaannya diperbarui saat soal dijawab.
+                        </p>
+                        {renderFieldError("conceptId")}
+                      </Field>
 
-                        {dragItems.length > 0 && dragTargets.length > 0 && (
-                          <div className="form-group">
-                            <span className="admin-group-label" id="question-mapping-label">
-                              Pasangan benar
-                            </span>
-                            <div
-                              className="admin-mapping-list"
-                              role="group"
-                              aria-labelledby="question-mapping-label"
-                            >
-                              {dragItems.map((itemLabel, index) => {
-                                const stored = Number(questionForm.mapping[index]);
-                                const value =
-                                  Number.isInteger(stored) && stored >= 0 && stored < dragTargets.length
-                                    ? stored
-                                    : Math.min(index, dragTargets.length - 1);
-                                return (
-                                  <div className="admin-mapping-row" key={index}>
-                                    <span className="admin-mapping-item">{itemLabel}</span>
-                                    <span aria-hidden="true">→</span>
-                                    <select
-                                      aria-label={`Tujuan benar untuk ${itemLabel}`}
-                                      value={value}
-                                      onChange={(e) =>
-                                        handleQuestionChange({
-                                          mapping: {
-                                            ...questionForm.mapping,
-                                            [index]: Number(e.target.value),
-                                          },
-                                        })
-                                      }
-                                    >
-                                      {dragTargets.map((targetLabel, targetIndex) => (
-                                        <option key={targetIndex} value={targetIndex}>
-                                          {targetLabel}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                      <Field label="Kesulitan" htmlFor="question-difficulty" required>
+                        <Select
+                          id="question-difficulty"
+                          value={questionForm.difficulty}
+                          onChange={(e) => handleQuestionChange({ difficulty: e.target.value })}
+                        >
+                          <option value="EASY">Mudah</option>
+                          <option value="MEDIUM">Sedang</option>
+                          <option value="HARD">Sulit</option>
+                        </Select>
+                      </Field>
+
+                      <Field label="Materi Utama" htmlFor="question-material" required>
+                        <Select
+                          id="question-material"
+                          value={questionForm.material || "HTML"}
+                          onChange={(e) => handleQuestionChange({ material: e.target.value })}
+                        >
+                          <option value="HTML">HTML</option>
+                          <option value="CSS">CSS</option>
+                          <option value="JAVASCRIPT">JavaScript</option>
+                        </Select>
+                      </Field>
+
+                      <Field label="Tipe soal" htmlFor="question-type" required>
+                        <Select
+                          id="question-type"
+                          value={questionForm.type}
+                          onChange={(e) => handleQuestionChange({ type: e.target.value })}
+                        >
+                          <option value="MULTIPLE_CHOICE">Pilihan ganda</option>
+                          <option value="ESSAY">Esai</option>
+                          <option value="DRAG_DROP">Seret &amp; letakkan</option>
+                          <option value="CODE">Kode</option>
+                        </Select>
+                        {questionForm.type === "ESSAY" && (
+                          <p className={cx(HINT_CLASS, "text-brand")}>
+                            ℹ️ Soal Esai tersimpan aman di bank soal dan otomatis dikecualikan dari
+                            asesmen learner sampai penilaian otomatis esai aktif.
+                          </p>
+                        )}
+                        {questionForm.type === "DRAG_DROP" && (
+                          <p className={cx(HINT_CLASS, "text-brand")}>
+                            ℹ️ Struktur Drag &amp; Drop memetakan item ke target yang tervalidasi.
+                          </p>
+                        )}
+                      </Field>
+
+                      <Field label="Poin" htmlFor="question-points" required>
+                        <Input
+                          id="question-points"
+                          type="number"
+                          min="0"
+                          max="999.99"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={questionForm.points}
+                          onChange={(e) => handleQuestionChange({ points: e.target.value })}
+                          aria-invalid={questionErrors.points ? "true" : undefined}
+                        />
+                        {renderFieldError("points")}
+                      </Field>
+                    </div>
+
+                    <fieldset className="mt-6">
+                      <legend className="tabular-nums text-[10px] font-bold uppercase tracking-widest text-muted dark:text-muted-dark md:text-[11px]">
+                        Kunci jawaban — {Q_TYPE_LABELS[questionForm.type]}
+                      </legend>
+
+                      <div className="mt-4 flex flex-col gap-4">
+                        {questionForm.type === "MULTIPLE_CHOICE" && (
+                          <div className={FIELD_GRID}>
+                            <Field label="Pilihan jawaban" htmlFor="question-options" required>
+                              <Textarea
+                                id="question-options"
+                                rows={4}
+                                value={questionForm.optionsText}
+                                onChange={(e) =>
+                                  handleQuestionChange({ optionsText: e.target.value })
+                                }
+                                aria-describedby="question-options-hint"
+                                aria-invalid={questionErrors.optionsText ? "true" : undefined}
+                                placeholder={"<div>\n<main>\n<section>\n<article>"}
+                              />
+                              <p id="question-options-hint" className={HINT_CLASS}>
+                                Satu pilihan per baris. Baris pertama menjadi A, baris kedua B, dan
+                                seterusnya.
+                              </p>
+                              {renderFieldError("optionsText")}
+                            </Field>
+                            <Field label="Kunci jawaban" htmlFor="question-correct" required>
+                              <Select
+                                id="question-correct"
+                                value={questionForm.correctLetter}
+                                onChange={(e) =>
+                                  handleQuestionChange({ correctLetter: e.target.value })
+                                }
+                                aria-invalid={questionErrors.correctLetter ? "true" : undefined}
+                              >
+                                {optionLines.length === 0 && <option value="A">A</option>}
+                                {optionLines.map((option, index) => (
+                                  <option key={index} value={LETTERS[index]}>
+                                    {LETTERS[index]} — {option}
+                                  </option>
+                                ))}
+                              </Select>
+                              {renderFieldError("correctLetter")}
+                            </Field>
                           </div>
                         )}
-                      </>
-                    )}
-                  </fieldset>
 
-                  <div className="admin-form-actions">
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={isSavingQuestion || isReordering}
-                    >
-                      {isSavingQuestion
-                        ? "Menyimpan..."
-                        : editingQuestionId
-                        ? "Simpan soal"
-                        : "Tambah soal"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={closeQuestionForm}
-                      disabled={isSavingQuestion}
-                    >
-                      Batal
-                    </button>
-                  </div>
-                </form>
+                        {questionForm.type === "ESSAY" && (
+                          <Field label="Kriteria penilaian" htmlFor="question-criteria" required>
+                            <Textarea
+                              id="question-criteria"
+                              rows={4}
+                              value={questionForm.criteriaText}
+                              onChange={(e) =>
+                                handleQuestionChange({ criteriaText: e.target.value })
+                              }
+                              aria-describedby="question-criteria-hint"
+                              aria-invalid={questionErrors.criteriaText ? "true" : undefined}
+                              placeholder={"struktur header\nnav utama\nlandmark main"}
+                            />
+                            <p id="question-criteria-hint" className={HINT_CLASS}>
+                              Satu kriteria per baris. Jawaban peserta dinilai dari kunci kata/frasa
+                              ini; 60% kriteria terpenuhi dianggap benar.
+                            </p>
+                            {renderFieldError("criteriaText")}
+                          </Field>
+                        )}
+
+                        {questionForm.type === "CODE" && (
+                          <div className={FIELD_GRID}>
+                            <Field label="Jawaban yang benar" htmlFor="question-expected" required>
+                              <Textarea
+                                id="question-expected"
+                                rows={5}
+                                className="font-mono"
+                                value={questionForm.expectedText}
+                                onChange={(e) =>
+                                  handleQuestionChange({ expectedText: e.target.value })
+                                }
+                                aria-invalid={questionErrors.expectedText ? "true" : undefined}
+                                placeholder={"const x = 1;"}
+                              />
+                              {renderFieldError("expectedText")}
+                            </Field>
+                            <Field label="Kriteria (opsional)" htmlFor="question-code-criteria">
+                              <Textarea
+                                id="question-code-criteria"
+                                rows={5}
+                                value={questionForm.criteriaText}
+                                onChange={(e) =>
+                                  handleQuestionChange({ criteriaText: e.target.value })
+                                }
+                                aria-describedby="question-code-criteria-hint"
+                                placeholder={"const\nlet"}
+                              />
+                              <p id="question-code-criteria-hint" className={HINT_CLASS}>
+                                Satu kriteria per baris, untuk penilaian parsial bila jawaban tidak
+                                persis sama.
+                              </p>
+                            </Field>
+                          </div>
+                        )}
+
+                        {questionForm.type === "DRAG_DROP" && (
+                          <>
+                            <div className={FIELD_GRID}>
+                              <Field label="Item yang di-drag" htmlFor="question-items" required>
+                                <Textarea
+                                  id="question-items"
+                                  rows={4}
+                                  value={questionForm.itemsText}
+                                  onChange={(e) =>
+                                    handleQuestionChange({ itemsText: e.target.value })
+                                  }
+                                  aria-describedby="question-items-hint"
+                                  aria-invalid={questionErrors.itemsText ? "true" : undefined}
+                                  placeholder={"<nav>\nhref"}
+                                />
+                                <p id="question-items-hint" className={HINT_CLASS}>
+                                  Satu item per baris, sesuai urutan tampilan peserta.
+                                </p>
+                                {renderFieldError("itemsText")}
+                              </Field>
+                              <Field label="Tujuan / kategori" htmlFor="question-targets" required>
+                                <Textarea
+                                  id="question-targets"
+                                  rows={4}
+                                  value={questionForm.targetsText}
+                                  onChange={(e) =>
+                                    handleQuestionChange({ targetsText: e.target.value })
+                                  }
+                                  aria-describedby="question-targets-hint"
+                                  aria-invalid={questionErrors.targetsText ? "true" : undefined}
+                                  placeholder={"Elemen Navigasi Dokumen"}
+                                />
+                                <p id="question-targets-hint" className={HINT_CLASS}>
+                                  Satu tujuan per baris.
+                                </p>
+                                {renderFieldError("targetsText")}
+                              </Field>
+                            </div>
+
+                            {dragItems.length > 0 && dragTargets.length > 0 && (
+                              <div className="flex flex-col gap-1.5">
+                                <span
+                                  id="question-mapping-label"
+                                  className="tabular-nums text-[10px] font-bold uppercase tracking-widest text-muted dark:text-muted-dark md:text-[11px]"
+                                >
+                                  Pasangan benar
+                                </span>
+                                <div
+                                  className="flex flex-col gap-2"
+                                  role="group"
+                                  aria-labelledby="question-mapping-label"
+                                >
+                                  {dragItems.map((itemLabel, index) => {
+                                    const stored = Number(questionForm.mapping[index]);
+                                    const value =
+                                      Number.isInteger(stored) &&
+                                      stored >= 0 &&
+                                      stored < dragTargets.length
+                                        ? stored
+                                        : Math.min(index, dragTargets.length - 1);
+                                    return (
+                                      <div className="flex items-center gap-2" key={index}>
+                                        <span
+                                          className={cx(
+                                            "min-w-0 flex-1 truncate text-[13px] text-ink dark:text-ink-dark"
+                                          )}
+                                        >
+                                          {itemLabel}
+                                        </span>
+                                        <span aria-hidden="true" className={MUTED}>
+                                          →
+                                        </span>
+                                        <Select
+                                          className="max-w-[220px]"
+                                          aria-label={`Tujuan benar untuk ${itemLabel}`}
+                                          value={value}
+                                          onChange={(e) =>
+                                            handleQuestionChange({
+                                              mapping: {
+                                                ...questionForm.mapping,
+                                                [index]: Number(e.target.value),
+                                              },
+                                            })
+                                          }
+                                        >
+                                          {dragTargets.map((targetLabel, targetIndex) => (
+                                            <option key={targetIndex} value={targetIndex}>
+                                              {targetLabel}
+                                            </option>
+                                          ))}
+                                        </Select>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </fieldset>
+
+                    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <PrimaryButton type="submit" disabled={isSavingQuestion || isReordering}>
+                        {isSavingQuestion
+                          ? "Menyimpan..."
+                          : editingQuestionId
+                            ? "Simpan soal"
+                            : "Tambah soal"}
+                      </PrimaryButton>
+                      <OutlineButton
+                        type="button"
+                        onClick={closeQuestionForm}
+                        disabled={isSavingQuestion}
+                      >
+                        Batal
+                      </OutlineButton>
+                    </div>
+                  </form>
+                </GlassPanel>
               )}
             </section>
           )}
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

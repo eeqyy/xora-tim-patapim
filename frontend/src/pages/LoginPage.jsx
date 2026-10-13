@@ -1,11 +1,22 @@
 // ============================================================
-// XORA — Login Page
+// XORA — Login Page (Editorial Grid System)
 // frontend/src/pages/LoginPage.jsx
 // ============================================================
 
 import React, { useEffect, useState } from "react";
 import { useAuth, homePathFor } from "../context/AuthContext";
 import { useRouter, Link } from "../context/RouterContext";
+import {
+  PageContainer,
+  GlassPanel,
+  Field,
+  Input,
+  PrimaryButton,
+  Alert,
+  INK,
+  MUTED,
+  cx,
+} from "../components";
 
 export default function LoginPage() {
   const { login, isAuthenticated, isLoading, user } = useAuth();
@@ -66,17 +77,24 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2 className="auth-title">Masuk ke Xora</h2>
-        <p className="auth-subtitle">Akses profil belajar dan progres kompetensi Anda</p>
+    <PageContainer maxWidth="narrow" className="flex min-h-[70vh] flex-col justify-center">
+      <GlassPanel variant="elevated" className="p-8 md:p-10">
+        <h1 className={cx("text-2xl font-extrabold leading-tight tracking-tight md:text-3xl", INK)}>
+          Masuk ke Xora
+        </h1>
+        <p className={cx("mt-2 text-[13px] leading-relaxed", MUTED)}>
+          Akses profil belajar dan progres kompetensi Anda
+        </p>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error ? (
+          <Alert tone="error" className="mt-6">
+            {error}
+          </Alert>
+        ) : null}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="login-email">Alamat Email</label>
-            <input
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+          <Field label="Alamat Email" htmlFor="login-email">
+            <Input
               id="login-email"
               name="email"
               type="email"
@@ -87,11 +105,10 @@ export default function LoginPage() {
               autoComplete="email"
               required
             />
-          </div>
+          </Field>
 
-          <div className="form-group">
-            <label htmlFor="login-password">Password</label>
-            <input
+          <Field label="Password" htmlFor="login-password">
+            <Input
               id="login-password"
               name="password"
               type="password"
@@ -102,21 +119,23 @@ export default function LoginPage() {
               autoComplete="current-password"
               required
             />
-          </div>
+          </Field>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-block"
-            disabled={isSubmitting}
-          >
+          <PrimaryButton type="submit" fullWidth disabled={isSubmitting}>
             {isSubmitting ? "Sedang Memeriksa..." : "Masuk"}
-          </button>
+          </PrimaryButton>
         </form>
 
-        <p className="auth-footer">
-          Belum memiliki akun? <Link to="/register" className="text-link">Daftar sekarang</Link>
+        <p className={cx("mt-6 flex flex-wrap items-center gap-2 text-[12px] leading-relaxed", MUTED)}>
+          <span>Belum memiliki akun?</span>
+          <Link
+            to="/register"
+            className="inline-flex min-h-[44px] items-center font-bold text-brand underline underline-offset-2 hover:text-brand-hover"
+          >
+            Daftar sekarang
+          </Link>
         </p>
-      </div>
-    </div>
+      </GlassPanel>
+    </PageContainer>
   );
 }

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Kelola Pengguna
+// XORA — Admin: Kelola Pengguna — Editorial Grid System
 // frontend/src/pages/AdminUsersPage.jsx
 // ============================================================
 // Melihat daftar akun, mengubah status (aktif/nonaktif/suspend),
@@ -13,6 +13,27 @@
 import React, { useEffect, useState } from "react";
 import { adminUsersApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import {
+  PageContainer,
+  PageHeader,
+  GlassPanel,
+  StatusBadge,
+  PrimaryButton,
+  OutlineButton,
+  SecondaryButton,
+  LoadingState,
+  EmptyState,
+  Alert,
+  Field,
+  Input,
+  Select,
+  TABLE_CLASS,
+  TH_CLASS,
+  TD_CLASS,
+  HAIRLINE,
+  MUTED,
+  cx,
+} from "../components";
 
 const STATUS_LABELS = {
   ACTIVE: "Aktif",
@@ -44,6 +65,11 @@ function formatDate(value) {
     return String(value);
   }
 }
+
+const CAPTION_CLASS = cx(
+  "border-b px-3 py-3 text-left tabular-nums text-[10px] font-bold uppercase tracking-widest",
+  "border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark md:text-[11px]"
+);
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
@@ -188,26 +214,18 @@ export default function AdminUsersPage() {
   const isSelf = (item) => currentUser && item.id === currentUser.id;
 
   return (
-    <div className="assessment-container">
-      <div className="card assessment-header-card">
-        <div className="assessment-header-badge">ADMIN</div>
-        <div className="admin-title-row">
-          <div>
-            <h1 className="assessment-title">Kelola Pengguna</h1>
-            <p className="assessment-subtitle">
-              {total} akun terdaftar. Ubah status, atur role, atau reset password
-              bila diperlukan. Tindakan perubahan tercatat di audit log.
-            </p>
-          </div>
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeader
+        badge="ADMIN"
+        title="Kelola Pengguna"
+        description={`${total} akun terdaftar. Ubah status, atur role, atau reset password bila diperlukan. Tindakan perubahan tercatat di audit log.`}
+      />
 
       {/* Filter */}
-      <div className="card admin-table-card" style={{ marginBottom: "1rem" }}>
-        <div className="admin-filter-bar">
-          <div className="admin-filter-field">
-            <label htmlFor="user-search">Cari nama / email</label>
-            <input
+      <GlassPanel variant="subtle" className="mt-8 p-4 md:p-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Field label="Cari nama / email" htmlFor="user-search">
+            <Input
               id="user-search"
               type="text"
               value={search}
@@ -217,10 +235,9 @@ export default function AdminUsersPage() {
                 if (e.key === "Enter") applyFilters();
               }}
             />
-          </div>
-          <div className="admin-filter-field">
-            <label htmlFor="user-role">Role</label>
-            <select
+          </Field>
+          <Field label="Role" htmlFor="user-role">
+            <Select
               id="user-role"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -228,11 +245,10 @@ export default function AdminUsersPage() {
               <option value="">Semua</option>
               <option value="LEARNER">Learner</option>
               <option value="ADMIN">Admin</option>
-            </select>
-          </div>
-          <div className="admin-filter-field">
-            <label htmlFor="user-status">Status</label>
-            <select
+            </Select>
+          </Field>
+          <Field label="Status" htmlFor="user-status">
+            <Select
               id="user-status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -243,125 +259,123 @@ export default function AdminUsersPage() {
                   {STATUS_LABELS[s]}
                 </option>
               ))}
-            </select>
-          </div>
-          <div className="admin-filter-actions">
-            <button type="button" className="btn btn-primary btn-sm" onClick={applyFilters}>
-              Terapkan
-            </button>
-            <button type="button" className="btn btn-outline btn-sm" onClick={resetFilters}>
-              Reset
-            </button>
-          </div>
+            </Select>
+          </Field>
         </div>
-      </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <PrimaryButton type="button" onClick={applyFilters}>
+            Terapkan
+          </PrimaryButton>
+          <OutlineButton type="button" onClick={resetFilters}>
+            Reset
+          </OutlineButton>
+        </div>
+      </GlassPanel>
 
-      {notice && (
-        <div className="alert alert-success" role="status">
-          <p>{notice}</p>
-        </div>
-      )}
+      {notice && <Alert tone="success">{notice}</Alert>}
 
-      {error && (
-        <div className="alert alert-error" role="alert">
-          <p>{error}</p>
-        </div>
-      )}
+      {error && <Alert tone="error">{error}</Alert>}
 
-      {isLoading && (
-        <div className="card loading-card">
-          <p>Memuat daftar pengguna...</p>
-        </div>
-      )}
+      {isLoading && <LoadingState message="Memuat daftar pengguna..." />}
 
       {!isLoading && !error && users.length === 0 && (
-        <div className="card empty-card">
-          <p>Tidak ada pengguna yang cocok dengan filter.</p>
-        </div>
+        <EmptyState
+          title="Tidak Ada Pengguna"
+          description="Tidak ada pengguna yang cocok dengan filter."
+        />
       )}
 
       {!isLoading && users.length > 0 && (
-        <div className="card admin-table-card">
-          <div className="table-scroll">
-            <table className="admin-table">
-              <caption className="admin-caption">
-                Menampilkan {users.length} dari {total} akun. Akun Anda sendiri
-                tidak dapat diubah status/role-nya di sini.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Nama</th>
-                  <th scope="col">Email</th>
-                  <th scope="col">Role</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Dibuat</th>
-                  <th scope="col" className="admin-col-actions">
-                    Aksi
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((item) => {
-                  const self = isSelf(item);
-                  const busy = busyId === item.id;
-                  return (
-                    <tr key={item.id}>
-                      <th scope="row" className="admin-cell-title">
+        <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+          <table className={TABLE_CLASS}>
+            <caption className={CAPTION_CLASS}>
+              Menampilkan {users.length} dari {total} akun. Akun Anda sendiri
+              tidak dapat diubah status/role-nya di sini.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" className={TH_CLASS}>
+                  Nama
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Email
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Role
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Status
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Dibuat
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((item) => {
+                const self = isSelf(item);
+                const busy = busyId === item.id;
+                return (
+                  <tr key={item.id}>
+                    <th scope="row" className={cx(TD_CLASS, "font-bold")}>
+                      <span className="inline-flex flex-wrap items-center gap-2">
                         {item.name}
-                        {self && <span className="badge badge-subtle" style={{ marginLeft: "0.5rem" }}>Anda</span>}
-                      </th>
-                      <td className="admin-cell-muted">{item.email}</td>
-                      <td>
-                        <select
-                          className="admin-inline-select"
-                          value={roleValueFromRoles(item.roles)}
-                          disabled={self || busy}
-                          onChange={(e) => handleRoleChange(item, e.target.value)}
-                          aria-label={`Role untuk ${item.name}`}
+                        {self && <StatusBadge label="Anda" variant="neutral" />}
+                      </span>
+                    </th>
+                    <td className={cx(TD_CLASS, MUTED)}>{item.email}</td>
+                    <td className={TD_CLASS}>
+                      <Select
+                        className="min-w-[150px]"
+                        value={roleValueFromRoles(item.roles)}
+                        disabled={self || busy}
+                        onChange={(e) => handleRoleChange(item, e.target.value)}
+                        aria-label={`Role untuk ${item.name}`}
+                      >
+                        {ROLE_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </td>
+                    <td className={TD_CLASS}>
+                      <Select
+                        className="min-w-[150px]"
+                        value={item.status}
+                        disabled={self || busy}
+                        onChange={(e) => handleStatusChange(item, e.target.value)}
+                        aria-label={`Status untuk ${item.name}`}
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {STATUS_LABELS[s]}
+                          </option>
+                        ))}
+                      </Select>
+                    </td>
+                    <td className={cx(TD_CLASS, MUTED)}>{formatDate(item.created_at)}</td>
+                    <td className={TD_CLASS}>
+                      <div className="flex flex-wrap gap-2">
+                        <SecondaryButton
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => handleResetPassword(item)}
                         >
-                          {ROLE_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {o.label}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <select
-                          className="admin-inline-select"
-                          value={item.status}
-                          disabled={self || busy}
-                          onChange={(e) => handleStatusChange(item, e.target.value)}
-                          aria-label={`Status untuk ${item.name}`}
-                        >
-                          {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                              {STATUS_LABELS[s]}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="admin-cell-muted">{formatDate(item.created_at)}</td>
-                      <td className="admin-cell-actions">
-                        <div className="btn-group">
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            disabled={busy}
-                            onClick={() => handleResetPassword(item)}
-                          >
-                            Reset Password
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                          Reset Password
+                        </SecondaryButton>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

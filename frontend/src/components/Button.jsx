@@ -1,11 +1,31 @@
 // ============================================================
-// XORA — Reusable Button Components
+// XORA — Button (Editorial System v2)
 // frontend/src/components/Button.jsx
+// ------------------------------------------------------------
+// Sudut pil (rounded-full), tanpa shadow. Semua ukuran >=44px
+// agar ramah target sentuh. Warna murni mono + aksen cobalt.
 // ============================================================
 
 import React from "react";
+import { cx } from "./ui";
 
-function BaseButton({
+const VARIANT_CLASSES = {
+  primary: "bg-brand text-white hover:bg-brand-hover",
+  secondary:
+    "border border-hairline text-ink hover:border-brand hover:text-brand dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-brand",
+  outline:
+    "border border-hairline text-ink hover:border-brand hover:text-brand dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-brand",
+  danger: "border border-brand text-brand hover:bg-brand hover:text-white",
+  ghost: "text-brand hover:underline px-0",
+};
+
+const SIZE_CLASSES = {
+  sm: "min-h-[44px] px-4 text-[13px]",
+  md: "min-h-[48px] px-5 text-[14px]",
+  lg: "min-h-[56px] px-7 text-[15px]",
+};
+
+export default function Button({
   children,
   variant = "primary", // "primary" | "secondary" | "outline" | "danger" | "ghost"
   size = "md", // "sm" | "md" | "lg"
@@ -19,39 +39,46 @@ function BaseButton({
   onClick,
   ...props
 }) {
-  const sizeClass = size === "sm" ? "btn-sm" : size === "lg" ? "btn-lg" : "";
-  const variantClass = `btn-${variant}`;
-  const widthClass = fullWidth ? "btn-block" : "";
+  const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.md;
+  const variantClass = VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary;
 
   return (
     <button
       type={type}
-      className={`btn ${variantClass} ${sizeClass} ${widthClass} ${className}`}
+      className={cx(
+        "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-colors",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        sizeClass,
+        variantClass,
+        fullWidth && "w-full",
+        className
+      )}
       disabled={disabled || loading}
       onClick={onClick}
       {...props}
     >
       {loading ? (
-        <span className="btn-spinner" aria-hidden="true"></span>
+        <span
+          className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+          aria-hidden="true"
+        />
       ) : (
-        icon && <span className="btn-icon-left">{icon}</span>
+        icon && <span className="shrink-0">{icon}</span>
       )}
       <span>{children}</span>
-      {!loading && iconRight && <span className="btn-icon-right">{iconRight}</span>}
+      {!loading && iconRight && <span className="shrink-0">{iconRight}</span>}
     </button>
   );
 }
 
 export function PrimaryButton(props) {
-  return <BaseButton variant="primary" {...props} />;
+  return <Button variant="primary" {...props} />;
 }
 
 export function SecondaryButton(props) {
-  return <BaseButton variant="secondary" {...props} />;
+  return <Button variant="secondary" {...props} />;
 }
 
 export function OutlineButton(props) {
-  return <BaseButton variant="outline" {...props} />;
+  return <Button variant="outline" {...props} />;
 }
-
-export default BaseButton;

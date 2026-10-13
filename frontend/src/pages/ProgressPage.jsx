@@ -1,7 +1,15 @@
 // ============================================================
 // XORA — Learner Progress & Growth History Page
-// Premium Light Glassmorphism · Minimal · Reusable
+// Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/ProgressPage.jsx
+// ------------------------------------------------------------
+// Struktur editorial per tab (nomor di-reset tiap tab):
+//   Ringkasan  : 01 metrik, 02 penguasaan, 03 rincian konsep
+//   Pertumbuhan: 01 perbandingan skor
+//   Linimasa   : 01 filter + daftar aktivitas
+//   Langkah    : 01 rekomendasi utama, 02 rekomendasi tambahan
+//
+// Logika data (state, useEffect, API, handler, URL, teks) tidak berubah.
 // ============================================================
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -10,6 +18,9 @@ import { useRouter } from "../context/RouterContext";
 import {
   PageContainer,
   PageHeader,
+  Grid,
+  GridCell,
+  SectionHeader,
   GlassPanel,
   StatCard,
   StatusBadge,
@@ -19,6 +30,15 @@ import {
   EmptyState,
   LoadingState,
   ErrorState,
+  Alert,
+  MicroMeta,
+  HAIRLINE,
+  CHIP_CLASS,
+  CHIP_ACTIVE,
+  CHIP_INACTIVE,
+  INK,
+  MUTED,
+  cx,
 } from "../components";
 import {
   IconArrowRight,
@@ -106,66 +126,73 @@ export default function ProgressPage() {
   const growth = historyData?.growth || {};
   const insights = historyData?.insights || {};
 
+  const tabBase =
+    "inline-flex min-h-[44px] items-center rounded-full px-4 py-2.5 text-[13px] font-semibold transition-colors";
+  const tabActive = "bg-brand-soft text-brand";
+  const tabInactive =
+    "text-muted hover:bg-cell hover:text-ink dark:text-muted-dark dark:hover:bg-cell-dark dark:hover:text-ink-dark";
+
+  const chipBase = CHIP_CLASS;
+  const chipActive = CHIP_ACTIVE;
+  const chipInactive = CHIP_INACTIVE;
+
   return (
     <PageContainer maxWidth="normal">
-      {/* Header Banner */}
-      <GlassPanel variant="elevated" className="path-header-card">
-        <PageHeader
-          badge="Growth & Analytics"
-          title="Progres &amp; Riwayat Belajar"
-          description="Pantau pertumbuhan kompetensi, evaluasi skor dari waktu ke waktu, dan telusuri jejak bukti belajar riil Anda."
-          actions={
-            <>
-              <OutlineButton
-                size="sm"
-                onClick={loadProgressData}
-                icon={<IconRefresh size={14} />}
-              >
-                Segarkan
-              </OutlineButton>
-              <PrimaryButton
-                size="sm"
-                onClick={() => navigate("/learning-path")}
-                iconRight={<IconCompass size={14} />}
-              >
-                Buka Peta Pembelajaran
-              </PrimaryButton>
-            </>
-          }
-        />
+      <PageHeader
+        badge="Growth & Analytics"
+        title="Progres &amp; Riwayat Belajar"
+        description="Pantau pertumbuhan kompetensi, evaluasi skor dari waktu ke waktu, dan telusuri jejak bukti belajar riil Anda."
+        actions={
+          <>
+            <OutlineButton
+              size="sm"
+              onClick={loadProgressData}
+              icon={<IconRefresh size={14} />}
+            >
+              Segarkan
+            </OutlineButton>
+            <PrimaryButton
+              size="sm"
+              onClick={() => navigate("/learning-path")}
+              iconRight={<IconCompass size={14} />}
+            >
+              Buka Peta Pembelajaran
+            </PrimaryButton>
+          </>
+        }
+      />
 
-        {/* Tab Navigation */}
-        <div className="subject-tabs" style={{ marginTop: "1rem" }}>
-          <button
-            type="button"
-            className={`btn-subject-tab ${activeTab === "overview" ? "btn-subject-tab-active" : ""}`}
-            onClick={() => setActiveTab("overview")}
-          >
-            Ringkasan Progres ({overview.total_concepts || 0} Konsep)
-          </button>
-          <button
-            type="button"
-            className={`btn-subject-tab ${activeTab === "growth" ? "btn-subject-tab-active" : ""}`}
-            onClick={() => setActiveTab("growth")}
-          >
-            Pertumbuhan Skor ({growth.comparable_assessments?.length || 0})
-          </button>
-          <button
-            type="button"
-            className={`btn-subject-tab ${activeTab === "timeline" ? "btn-subject-tab-active" : ""}`}
-            onClick={() => setActiveTab("timeline")}
-          >
-            Linimasa Aktivitas ({historyData?.history?.total_events || 0})
-          </button>
-          <button
-            type="button"
-            className={`btn-subject-tab ${activeTab === "insights" ? "btn-subject-tab-active" : ""}`}
-            onClick={() => setActiveTab("insights")}
-          >
-            Langkah Rekomendasi
-          </button>
-        </div>
-      </GlassPanel>
+      {/* Tab Navigation */}
+      <div className="mt-8 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={cx(tabBase, activeTab === "overview" ? tabActive : tabInactive)}
+          onClick={() => setActiveTab("overview")}
+        >
+          Ringkasan Progres ({overview.total_concepts || 0} Konsep)
+        </button>
+        <button
+          type="button"
+          className={cx(tabBase, activeTab === "growth" ? tabActive : tabInactive)}
+          onClick={() => setActiveTab("growth")}
+        >
+          Pertumbuhan Skor ({growth.comparable_assessments?.length || 0})
+        </button>
+        <button
+          type="button"
+          className={cx(tabBase, activeTab === "timeline" ? tabActive : tabInactive)}
+          onClick={() => setActiveTab("timeline")}
+        >
+          Linimasa Aktivitas ({historyData?.history?.total_events || 0})
+        </button>
+        <button
+          type="button"
+          className={cx(tabBase, activeTab === "insights" ? tabActive : tabInactive)}
+          onClick={() => setActiveTab("insights")}
+        >
+          Langkah Rekomendasi
+        </button>
+      </div>
 
       {/* Error Alert */}
       {error && (
@@ -178,134 +205,121 @@ export default function ProgressPage() {
 
       {/* TAB 1: RINGKASAN PROGRES BELAJAR (OVERVIEW) */}
       {activeTab === "overview" && (
-        <div className="progress-content-section">
-          {/* Summary Metrics Bar */}
-          <div className="map-summary-bar">
+        <>
+          <SectionHeader
+            id="summary"
+            index="01"
+            title="Ringkasan Progres Belajar"
+            meta={`${overview.total_concepts || 0} KONSEP`}
+          />
+          <Grid cols={6}>
             <StatCard label="Total Konsep" value={overview.total_concepts || 0} />
             <StatCard label="Dikuasai" value={overview.mastered_concepts || 0} variant="success" />
             <StatCard label="Sedang Latihan" value={overview.in_practice_concepts || 0} variant="info" />
             <StatCard label="Kesenjangan Pasti" value={overview.confirmed_gap_concepts || 0} variant="error" />
             <StatCard label="Perlu Verifikasi" value={overview.possible_gap_concepts || 0} variant="warning" />
             <StatCard label="Belum Dinilai" value={overview.not_assessed_concepts || 0} variant="neutral" />
-          </div>
+          </Grid>
 
-          {/* Average Mastery Rate Card */}
-          <GlassPanel variant="default" style={{ marginBottom: "1.5rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-              <div>
-                <h3 style={{ fontSize: "1.15rem", fontWeight: 700, marginBottom: "0.25rem", color: "var(--color-text-main)" }}>
-                  Tingkat Penguasaan Rata-Rata (Assessed Concepts)
-                </h3>
-                <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
-                  Dihitung dari konsep yang memiliki bukti asesmen aktual ({overview.assessed_concepts_count || 0} dari {overview.total_concepts || 0} konsep).
-                </p>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: "2rem", fontWeight: 800, color: overview.average_mastery !== null ? "var(--color-primary)" : "var(--color-text-dim)" }}>
-                  {overview.average_mastery !== null ? `${overview.average_mastery}%` : "Belum Dinilai"}
-                </span>
-                <span style={{ display: "block", fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
-                  {overview.mastery_percentage}% dari kurikulum tuntas
-                </span>
-              </div>
+          {/* Average Mastery Rate */}
+          <SectionHeader id="mastery" index="02" title="Tingkat Penguasaan" />
+          <GlassPanel variant="subtle" className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+            <div className="min-w-0">
+              <h3 className={cx("text-[15px] font-extrabold tracking-tight", INK)}>
+                Tingkat Penguasaan Rata-Rata (Assessed Concepts)
+              </h3>
+              <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
+                Dihitung dari konsep yang memiliki bukti asesmen aktual ({overview.assessed_concepts_count || 0} dari {overview.total_concepts || 0} konsep).
+              </p>
+            </div>
+            <div className="shrink-0 md:text-right">
+              <span
+                className={cx(
+                  "tabular-nums text-3xl font-extrabold tracking-tight",
+                  overview.average_mastery !== null ? "text-brand" : MUTED
+                )}
+              >
+                {overview.average_mastery !== null ? `${overview.average_mastery}%` : "Belum Dinilai"}
+              </span>
+              <span className={cx("mt-1 block tabular-nums text-[11px]", MUTED)}>
+                {overview.mastery_percentage}% dari kurikulum tuntas
+              </span>
             </div>
           </GlassPanel>
 
-          {/* Concepts Breakdown Table / List */}
-          <GlassPanel variant="default">
-            <h3 style={{ fontSize: "1.15rem", fontWeight: 700, marginBottom: "1.25rem", color: "var(--color-text-main)" }}>
-              Rincian Penguasaan Seluruh Konsep
-            </h3>
-
-            {(!overview.concepts_detail || overview.concepts_detail.length === 0) ? (
-              <EmptyState
-                title="Belum Ada Konsep"
-                description="Belum ada data konsep kurikulum yang terhubung."
-              />
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                {overview.concepts_detail.map((c) => (
-                  <div
-                    key={c.id}
-                    className="metric-box"
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: "0.75rem",
-                      backgroundColor: "var(--color-surface-solid)",
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: "220px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                        <strong style={{ fontSize: "0.95rem", color: "var(--color-text-main)" }}>{c.name}</strong>
-                        <StatusBadge status={c.learning_status} dot />
-                      </div>
-                      {c.description && (
-                        <p style={{ color: "var(--color-text-muted)", fontSize: "0.825rem", marginTop: "0.25rem" }}>
-                          {c.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div style={{ minWidth: "160px", textAlign: "right" }}>
-                      <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--color-text-main)" }}>
-                        {c.mastery_score !== null ? `${c.mastery_score}%` : "Belum Dinilai"}
-                      </div>
-                      <div style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}>
-                        {c.evidence_count > 0 ? `${c.evidence_count} bukti terkumpul` : "Belum ada bukti asesmen"}
-                      </div>
-                      {c.mastery_score !== null && (
-                        <div className="progress-bar-track progress-bar-sm" style={{ width: "120px", marginLeft: "auto", marginTop: "0.35rem" }}>
-                          <div
-                            className="progress-bar-fill"
-                            style={{
-                              width: `${Math.min(100, Math.max(0, c.mastery_score))}%`,
-                              backgroundColor:
-                                c.mastery_score >= 70
-                                  ? "var(--color-success)"
-                                  : c.mastery_score >= 40
-                                  ? "var(--color-warning)"
-                                  : "var(--color-error)",
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
+          {/* Concepts Breakdown */}
+          <SectionHeader id="concepts" index="03" title="Rincian Penguasaan Seluruh Konsep" />
+          {(!overview.concepts_detail || overview.concepts_detail.length === 0) ? (
+            <EmptyState
+              title="Belum Ada Konsep"
+              description="Belum ada data konsep kurikulum yang terhubung."
+            />
+          ) : (
+            overview.concepts_detail.map((c) => (
+              <GlassPanel
+                key={c.id}
+                className={cx(
+                  "flex flex-col gap-3 border-t pt-5 md:flex-row md:items-center md:justify-between",
+                  HAIRLINE
+                )}
+              >
+                <div className="min-w-[220px] flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <strong className={cx("text-[14px] font-bold", INK)}>{c.name}</strong>
+                    <StatusBadge status={c.learning_status} dot />
                   </div>
-                ))}
-              </div>
-            )}
-          </GlassPanel>
-        </div>
+                  {c.description && (
+                    <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
+                      {c.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="shrink-0 md:min-w-[160px] md:text-right">
+                  <div className={cx("tabular-nums text-[13px] font-bold", INK)}>
+                    {c.mastery_score !== null ? `${c.mastery_score}%` : "Belum Dinilai"}
+                  </div>
+                  <div className={cx("text-[11px]", MUTED)}>
+                    {c.evidence_count > 0 ? `${c.evidence_count} bukti terkumpul` : "Belum ada bukti asesmen"}
+                  </div>
+                  {c.mastery_score !== null && (
+                    <div className="mt-1.5 w-[120px] md:ml-auto">
+                      <ProgressBar value={c.mastery_score} size="sm" showPercent={false} />
+                    </div>
+                  )}
+                </div>
+              </GlassPanel>
+            ))
+          )}
+        </>
       )}
 
       {/* TAB 2: PERTUMBUHAN SKOR & EVALUASI (MASTERY GROWTH) */}
       {activeTab === "growth" && (
-        <div className="progress-content-section">
+        <>
+          <SectionHeader id="growth" index="01" title="Perbandingan Pertumbuhan Skor" />
           {growth.has_comparisons ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              <div className="alert alert-success" style={{ borderRadius: "var(--radius-md)", fontSize: "0.875rem" }}>
-                <IconInfo size={16} />
+            <>
+              <Alert tone="success">
                 <span>
-                  <strong>Evaluasi Komparatif Objektif:</strong> {growth.note}
+                  <strong className={cx("font-bold", INK)}>Evaluasi Komparatif Objektif:</strong> {growth.note}
                 </span>
-              </div>
+              </Alert>
 
               {growth.comparable_assessments.map((comp) => (
-                <GlassPanel key={comp.assessment_id} variant="default" style={{ borderLeft: "4px solid var(--color-primary)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
-                    <div>
-                      <StatusBadge status={comp.assessment_type} style={{ marginBottom: "0.4rem" }} />
-                      <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-text-main)" }}>{comp.assessment_title}</h3>
-                      <p style={{ color: "var(--color-text-muted)", fontSize: "0.85rem" }}>
+                <GlassPanel key={comp.assessment_id} variant="elevated" className="mt-8 p-5 md:p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <StatusBadge status={comp.assessment_type} />
+                      <h3 className={cx("mt-1 text-[17px] font-extrabold tracking-tight", INK)}>
+                        {comp.assessment_title}
+                      </h3>
+                      <p className={cx("mt-1 text-[12px]", MUTED)}>
                         Total Pengerjaan: {comp.attempts_count} kali percobaan
                       </p>
                     </div>
 
-                    <div style={{ textAlign: "right" }}>
+                    <div className="shrink-0 sm:text-right">
                       <StatusBadge
                         variant={comp.improved ? "success" : comp.score_difference === 0 ? "warning" : "error"}
                         label={
@@ -320,57 +334,69 @@ export default function ProgressPage() {
                   </div>
 
                   {/* Before vs After Comparison */}
-                  <div className="detail-metrics-grid" style={{ marginBottom: "1.25rem" }}>
-                    <div className="metric-box">
-                      <span className="metric-lbl">Skor Awal (Percobaan #1)</span>
-                      <span className="metric-val">{comp.initial_score}%</span>
-                      <span className="metric-sub">{formatDate(comp.initial_completed_at)}</span>
-                    </div>
-                    <div className="metric-box">
-                      <span className="metric-lbl">Skor Terbaru (Percobaan #{comp.attempts_count})</span>
-                      <span className="metric-val" style={{ color: comp.improved ? "var(--color-success)" : "var(--color-text-main)" }}>
+                  <Grid cols={3} className="mt-4">
+                    <GridCell className="flex flex-col gap-1">
+                      <MicroMeta>Skor Awal (Percobaan #1)</MicroMeta>
+                      <span className={cx("tabular-nums text-2xl font-extrabold tracking-tight", INK)}>
+                        {comp.initial_score}%
+                      </span>
+                      <span className={cx("tabular-nums text-[11px]", MUTED)}>
+                        {formatDate(comp.initial_completed_at)}
+                      </span>
+                    </GridCell>
+                    <GridCell className="flex flex-col gap-1">
+                      <MicroMeta>Skor Terbaru (Percobaan #{comp.attempts_count})</MicroMeta>
+                      <span className={cx("tabular-nums text-2xl font-extrabold tracking-tight", INK)}>
                         {comp.latest_score}%
                       </span>
-                      <span className="metric-sub">{formatDate(comp.latest_completed_at)}</span>
-                    </div>
-                    <div className="metric-box">
-                      <span className="metric-lbl">Pertumbuhan Kompetensi</span>
-                      <span className="metric-val" style={{ color: comp.improved ? "var(--color-success)" : "var(--color-error)" }}>
+                      <span className={cx("tabular-nums text-[11px]", MUTED)}>
+                        {formatDate(comp.latest_completed_at)}
+                      </span>
+                    </GridCell>
+                    <GridCell className="flex flex-col gap-1">
+                      <MicroMeta>Pertumbuhan Kompetensi</MicroMeta>
+                      <span
+                        className={cx(
+                          "tabular-nums text-2xl font-extrabold tracking-tight",
+                          comp.improved ? INK : "text-brand"
+                        )}
+                      >
                         {comp.score_difference > 0 ? `+${comp.score_difference}%` : `${comp.score_difference}%`}
                       </span>
-                      <span className="metric-sub">
+                      <span className={cx("text-[11px] leading-snug", MUTED)}>
                         {comp.improved ? "Peningkatan kompetensi nyata" : "Perlu latihan pemantapan"}
                       </span>
-                    </div>
-                  </div>
+                    </GridCell>
+                  </Grid>
 
                   {/* History List of All Attempts */}
-                  <div style={{ backgroundColor: "var(--color-bg-subtle)", padding: "1rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)" }}>
-                    <h4 style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: "0.5rem", fontWeight: 700 }}>
-                      Riwayat Seluruh Percobaan
-                    </h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <div className="mt-4">
+                    <MicroMeta>Riwayat Seluruh Percobaan</MicroMeta>
+                    <div className="mt-2">
                       {comp.attempts.map((att) => (
                         <div
                           key={att.attempt_id}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontSize: "0.85rem",
-                            padding: "0.4rem 0.5rem",
-                            borderBottom: "1px solid var(--color-border)",
-                          }}
+                          className={cx(
+                            "flex flex-wrap items-center justify-between gap-2 border-b py-2",
+                            HAIRLINE
+                          )}
                         >
-                          <span style={{ fontWeight: 600 }}>Percobaan #{att.attempt_number}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>{formatDate(att.completed_at)}</span>
-                          <strong style={{ color: "var(--color-text-main)" }}>{att.score}%</strong>
+                          <span className={cx("text-[13px] font-bold", INK)}>
+                            Percobaan #{att.attempt_number}
+                          </span>
+                          <span className={cx("tabular-nums text-[12px]", MUTED)}>
+                            {formatDate(att.completed_at)}
+                          </span>
+                          <strong className={cx("tabular-nums text-[13px] font-bold", INK)}>
+                            {att.score}%
+                          </strong>
                         </div>
                       ))}
                     </div>
                   </div>
                 </GlassPanel>
               ))}
-            </div>
+            </>
           ) : (
             <EmptyState
               icon={<IconTrendingUp size={36} />}
@@ -386,48 +412,47 @@ export default function ProgressPage() {
               }
             />
           )}
-        </div>
+        </>
       )}
 
       {/* TAB 3: LINIMASA RIWAYAT BELAJAR (TIMELINE HISTORY) */}
       {activeTab === "timeline" && (
-        <div className="progress-content-section">
-          {/* Timeline Filter */}
-          <div className="map-filter-bar">
-            <span className="filter-label">Filter Aktivitas:</span>
-            <div className="filter-chips">
+        <>
+          <SectionHeader id="timeline" index="01" title="Linimasa Aktivitas" />
+          <GlassPanel className="mb-8 flex flex-col gap-3 md:flex-row md:items-center">
+            <MicroMeta>Filter Aktivitas</MicroMeta>
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className={`filter-chip ${timelineFilter === "ALL" ? "filter-chip-active" : ""}`}
+                className={cx(chipBase, timelineFilter === "ALL" ? chipActive : chipInactive)}
                 onClick={() => setTimelineFilter("ALL")}
               >
                 Semua ({historyData?.history?.timeline?.length || 0})
               </button>
               <button
                 type="button"
-                className={`filter-chip ${timelineFilter === "ASSESSMENT" ? "filter-chip-active" : ""}`}
+                className={cx(chipBase, timelineFilter === "ASSESSMENT" ? chipActive : chipInactive)}
                 onClick={() => setTimelineFilter("ASSESSMENT")}
               >
                 Asesmen
               </button>
               <button
                 type="button"
-                className={`filter-chip ${timelineFilter === "PRACTICE" ? "filter-chip-active" : ""}`}
+                className={cx(chipBase, timelineFilter === "PRACTICE" ? chipActive : chipInactive)}
                 onClick={() => setTimelineFilter("PRACTICE")}
               >
                 Latihan &amp; Remediasi
               </button>
               <button
                 type="button"
-                className={`filter-chip ${timelineFilter === "DIAGNOSTIC" ? "filter-chip-active" : ""}`}
+                className={cx(chipBase, timelineFilter === "DIAGNOSTIC" ? chipActive : chipInactive)}
                 onClick={() => setTimelineFilter("DIAGNOSTIC")}
               >
                 Verifikasi Diagnostik
               </button>
             </div>
-          </div>
+          </GlassPanel>
 
-          {/* Timeline List */}
           {filteredTimeline.length === 0 ? (
             <EmptyState
               icon={<IconClock size={36} />}
@@ -443,133 +468,115 @@ export default function ProgressPage() {
               }
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              {filteredTimeline.map((item) => (
-                <GlassPanel
-                  key={item.id}
-                  variant="default"
-                  style={{
-                    padding: "1rem 1.35rem",
-                    marginBottom: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "1rem",
-                    flexWrap: "wrap",
-                  }}
+            filteredTimeline.map((item) => (
+              <GlassPanel
+                key={item.id}
+                className={cx("flex flex-wrap items-center gap-4 border-t pt-5", HAIRLINE)}
+              >
+                <span
+                  className={cx(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-brand",
+                    HAIRLINE
+                  )}
                 >
-                  <div
-                    style={{
-                      width: "36px",
-                      height: "36px",
-                      borderRadius: "var(--radius-sm)",
-                      backgroundColor: "var(--color-primary-light)",
-                      color: "var(--color-primary)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {getEventIconComponent(item.event_type)}
-                  </div>
+                  {getEventIconComponent(item.event_type)}
+                </span>
 
-                  <div style={{ flex: 1, minWidth: "200px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
-                      <strong style={{ fontSize: "0.95rem", color: "var(--color-text-main)" }}>{item.title}</strong>
-                      <StatusBadge
-                        variant="neutral"
-                        label={item.event_type.replace(/_/g, " ")}
-                      />
+                <div className="min-w-[200px] flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <strong className={cx("text-[14px] font-bold", INK)}>{item.title}</strong>
+                    <StatusBadge
+                      variant="neutral"
+                      label={item.event_type.replace(/_/g, " ")}
+                    />
+                  </div>
+                  {item.subtitle && (
+                    <p className={cx("mt-0.5 text-[12px]", MUTED)}>
+                      {item.subtitle}
+                    </p>
+                  )}
+                </div>
+
+                <div className="shrink-0 text-right">
+                  {item.score !== null && (
+                    <div
+                      className={cx(
+                        "tabular-nums text-[13px] font-bold",
+                        item.score >= 70 ? INK : "text-brand"
+                      )}
+                    >
+                      Skor: {item.score}%
                     </div>
-                    {item.subtitle && (
-                      <p style={{ color: "var(--color-text-muted)", fontSize: "0.825rem", marginTop: "0.2rem" }}>
-                        {item.subtitle}
-                      </p>
-                    )}
-                  </div>
-
-                  <div style={{ textAlign: "right", minWidth: "140px" }}>
-                    {item.score !== null && (
-                      <div style={{ fontSize: "0.95rem", fontWeight: 700, color: item.score >= 70 ? "var(--color-success)" : "var(--color-error)" }}>
-                        Skor: {item.score}%
-                      </div>
-                    )}
-                    <span style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}>
-                      {formatDate(item.occurred_at)}
-                    </span>
-                  </div>
-                </GlassPanel>
-              ))}
-            </div>
+                  )}
+                  <span className={cx("tabular-nums text-[11px]", MUTED)}>
+                    {formatDate(item.occurred_at)}
+                  </span>
+                </div>
+              </GlassPanel>
+            ))
           )}
-        </div>
+        </>
       )}
 
       {/* TAB 4: LANGKAH BERIKUTNYA (ACTIONABLE INSIGHTS) */}
       {activeTab === "insights" && (
-        <div className="progress-content-section">
+        <>
+          <SectionHeader id="insights" index="01" title="Langkah Rekomendasi" />
           {insights.next_best_action ? (
-            <GlassPanel variant="elevated" style={{ borderLeft: "4px solid var(--color-success)", marginBottom: "1.5rem" }}>
-              <StatusBadge variant="success" label="Rekomendasi Prioritas Utama" style={{ marginBottom: "0.5rem" }} />
-              <h3 style={{ fontSize: "1.3rem", fontWeight: 700, marginBottom: "0.35rem", color: "var(--color-text-main)" }}>
+            <GlassPanel variant="elevated" className="p-5 md:p-6">
+              <StatusBadge variant="success" label="Rekomendasi Prioritas Utama" />
+              <h3 className={cx("mt-2 text-[18px] font-extrabold tracking-tight", INK)}>
                 Target Fokus: {insights.next_best_action.concept_name || insights.next_best_action.action_type}
               </h3>
-              <p style={{ color: "var(--color-text-secondary)", fontSize: "0.925rem", lineHeight: 1.5, marginBottom: "1.25rem" }}>
+              <p className={cx("mt-1 max-w-2xl text-[13px] leading-relaxed", MUTED)}>
                 {insights.next_best_action.reason}
               </p>
 
-              <PrimaryButton
-                onClick={() => navigate(insights.next_best_action.target_url)}
-                iconRight={<IconArrowRight size={16} />}
-              >
-                {insights.next_best_action.cta_text}
-              </PrimaryButton>
+              <div className="mt-5">
+                <PrimaryButton
+                  onClick={() => navigate(insights.next_best_action.target_url)}
+                  iconRight={<IconArrowRight size={16} />}
+                >
+                  {insights.next_best_action.cta_text}
+                </PrimaryButton>
+              </div>
             </GlassPanel>
           ) : (
-            <GlassPanel variant="default" style={{ marginBottom: "1.5rem", textAlign: "center", padding: "2.5rem 1.5rem" }}>
-              <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem", color: "var(--color-text-main)" }}>
+            <GlassPanel className={cx("flex flex-col items-center border-t pt-8 text-center", HAIRLINE)}>
+              <h3 className={cx("text-[18px] font-extrabold tracking-tight", INK)}>
                 Tidak Ada Kesenjangan Kritis yang Terbuka
               </h3>
-              <p style={{ maxWidth: "550px", margin: "0 auto 1.5rem auto", fontSize: "0.925rem", color: "var(--color-text-muted)" }}>
+              <p className={cx("mt-2 max-w-[550px] text-[13px] leading-relaxed", MUTED)}>
                 Seluruh materi yang telah Anda kerjakan berada dalam kondisi aman atau tidak memiliki gap aktif. Anda siap melanjutkan ke materi kurikulum berikutnya di Peta Pembelajaran.
               </p>
-              <PrimaryButton
-                onClick={() => navigate("/learning-path")}
-                iconRight={<IconArrowRight size={16} />}
-              >
-                Eksplorasi Peta Pembelajaran
-              </PrimaryButton>
+              <div className="mt-5">
+                <PrimaryButton
+                  onClick={() => navigate("/learning-path")}
+                  iconRight={<IconArrowRight size={16} />}
+                >
+                  Eksplorasi Peta Pembelajaran
+                </PrimaryButton>
+              </div>
             </GlassPanel>
           )}
 
           {/* Active Secondary Recommendations */}
           {insights.active_recommendations?.length > 0 && (
-            <GlassPanel variant="default">
-              <h4 style={{ fontSize: "1.05rem", fontWeight: 700, marginBottom: "0.85rem", color: "var(--color-text-main)" }}>
-                Rekomendasi Aktivitas Tambahan
-              </h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                {insights.active_recommendations.map((rec) => (
-                  <div
-                    key={rec.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "0.85rem 1.15rem",
-                      backgroundColor: "var(--color-bg-subtle)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "var(--radius-sm)",
-                      flexWrap: "wrap",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    <div>
-                      <strong style={{ fontSize: "0.925rem", color: "var(--color-text-main)" }}>{rec.concept_name}</strong>
-                      <p style={{ color: "var(--color-text-muted)", fontSize: "0.825rem", margin: "0.15rem 0 0 0" }}>
-                        {rec.reason}
-                      </p>
-                    </div>
+            <>
+              <SectionHeader id="recommendations" index="02" title="Rekomendasi Aktivitas Tambahan" />
+              {insights.active_recommendations.map((rec) => (
+                <GlassPanel
+                  key={rec.id}
+                  className={cx(
+                    "flex flex-col gap-3 border-t pt-5 md:flex-row md:items-center md:justify-between",
+                    HAIRLINE
+                  )}
+                >
+                  <div className="min-w-0">
+                    <strong className={cx("text-[13px] font-bold", INK)}>{rec.concept_name}</strong>
+                    <p className={cx("mt-0.5 text-[12px]", MUTED)}>{rec.reason}</p>
+                  </div>
+                  <div className="shrink-0">
                     <OutlineButton
                       size="sm"
                       onClick={() =>
@@ -579,16 +586,16 @@ export default function ProgressPage() {
                             : `/practice/${rec.id}`
                         )
                       }
-                      iconRight={<IconArrowRight size={14} />}
+                      iconRight={<IconArrowRight size={16} />}
                     >
                       Mulai
                     </OutlineButton>
                   </div>
-                ))}
-              </div>
-            </GlassPanel>
+                </GlassPanel>
+              ))}
+            </>
           )}
-        </div>
+        </>
       )}
     </PageContainer>
   );

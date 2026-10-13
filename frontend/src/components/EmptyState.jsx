@@ -1,10 +1,11 @@
 // ============================================================
-// XORA — EmptyState Component
+// XORA — EmptyState (Editorial System v2)
 // frontend/src/components/EmptyState.jsx
 // ============================================================
 
 import React from "react";
 import { IconInfo } from "./Icons";
+import { INK, MUTED, cx } from "./ui";
 
 export default function EmptyState({
   icon,
@@ -15,13 +16,22 @@ export default function EmptyState({
   style,
 }) {
   return (
-    <div className={`empty-state-card glass-panel ${className}`} style={style}>
-      <div className="empty-state-icon-wrap">
-        {icon || <IconInfo size={32} className="empty-state-icon" />}
-      </div>
-      <h3 className="empty-state-title">{title}</h3>
-      {description && <p className="empty-state-desc">{description}</p>}
-      {action && <div className="empty-state-action">{action}</div>}
+    <div
+      className={cx("flex flex-col items-start gap-3 py-10", className)}
+      style={style}
+    >
+      <span className={cx("text-muted dark:text-muted-dark")}>
+        {icon || <IconInfo size={28} />}
+      </span>
+      <h3 className={cx("text-lg font-bold tracking-tight md:text-xl", INK)}>
+        {title}
+      </h3>
+      {description ? (
+        <p className={cx("max-w-xl text-[13px] leading-relaxed", MUTED)}>
+          {description}
+        </p>
+      ) : null}
+      {action ? <div className="mt-1 flex flex-wrap gap-2">{action}</div> : null}
     </div>
   );
 }

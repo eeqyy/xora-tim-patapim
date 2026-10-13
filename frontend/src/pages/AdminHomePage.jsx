@@ -1,8 +1,8 @@
 // ============================================================
-// XORA — Admin: Beranda (landing)
+// XORA — Admin: Beranda (landing) — Editorial Grid System
 // frontend/src/pages/AdminHomePage.jsx
 // ============================================================
-// Pintu masuk area admin. Berisi tiga kartu menuju:
+// Pintu masuk area admin. Berisi tiga sel menuju:
 //   - Kelola Asesmen (/admin/assessments)
 //   - Kelola Pengguna (/admin/users)
 //   - Kesehatan Sistem (/admin/system)
@@ -11,11 +11,19 @@
 
 import React from "react";
 import { useRouter } from "../context/RouterContext";
+import {
+  PageContainer,
+  PageHeader,
+  Grid,
+  GlassPanel,
+  INK,
+  MUTED,
+  cx,
+} from "../components";
 
 const MENU = [
   {
     to: "/admin/assessments",
-    icon: "📝",
     title: "Kelola Asesmen",
     description:
       "Buat dan ubah asesmen, atur soal, serta kelola bank soal yang dipakai peserta.",
@@ -23,7 +31,6 @@ const MENU = [
   },
   {
     to: "/admin/users",
-    icon: "👥",
     title: "Kelola Pengguna",
     description:
       "Lihat daftar akun, ubah status (aktif/nonaktif), atur role, dan reset password bila diperlukan.",
@@ -31,7 +38,6 @@ const MENU = [
   },
   {
     to: "/admin/system",
-    icon: "📊",
     title: "Kesehatan Sistem",
     description:
       "Pantau status database, statistik data, aktivitas terbaru, dan ringkasan analytics.",
@@ -43,37 +49,30 @@ export default function AdminHomePage() {
   const { navigate } = useRouter();
 
   return (
-    <div className="assessment-container">
-      <div className="card assessment-header-card">
-        <div className="assessment-header-badge">ADMIN</div>
-        <div className="admin-title-row">
-          <div>
-            <h1 className="assessment-title">Panel Admin</h1>
-            <p className="assessment-subtitle">
-              Pusat kendali untuk mengelola konten asesmen, akun pengguna, dan
-              memantau kesehatan sistem Xora.
-            </p>
-          </div>
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeader
+        badge="ADMIN"
+        title="Panel Admin"
+        description="Pusat kendali untuk mengelola konten asesmen, akun pengguna, dan memantau kesehatan sistem Xora."
+      />
 
-      <div className="admin-menu-grid">
+      <Grid cols={3} className="mt-12">
         {MENU.map((item) => (
-          <button
+          <GlassPanel
             key={item.to}
-            type="button"
-            className="card admin-menu-card"
+            className="group flex cursor-pointer flex-col gap-3 border-t border-hairline pt-6 dark:border-hairline-dark"
             onClick={() => navigate(item.to)}
           >
-            <span className="admin-menu-card-icon" aria-hidden="true">
-              {item.icon}
+            <h2 className={cx("text-lg font-bold tracking-tight md:text-xl", INK)}>
+              {item.title}
+            </h2>
+            <p className={cx("text-[13px] leading-relaxed", MUTED)}>{item.description}</p>
+            <span className="mt-auto pt-2 text-[12px] font-semibold tracking-[0.02em] text-brand">
+              {item.cta}
             </span>
-            <h2 className="admin-menu-card-title">{item.title}</h2>
-            <p className="admin-menu-card-desc">{item.description}</p>
-            <span className="admin-menu-card-cta">{item.cta}</span>
-          </button>
+          </GlassPanel>
         ))}
-      </div>
-    </div>
+      </Grid>
+    </PageContainer>
   );
 }

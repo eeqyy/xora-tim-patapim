@@ -6,6 +6,7 @@
 import React from "react";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { DashboardFilterProvider } from "./context/DashboardFilterContext";
 import { RouterProvider, useRouter, ProtectedRoute, AdminRoute } from "./context/RouterContext";
 import Navbar from "./components/Navbar";
 import BottomNav from "./components/BottomNav";
@@ -145,9 +146,9 @@ function AppContent() {
   }
 
   return (
-    <div className="app-layout">
+    <div className="flex min-h-dvh flex-col bg-canvas text-ink dark:bg-canvas-dark dark:text-ink-dark">
       <Navbar />
-      <main className="main-content">{pageContent}</main>
+      <main className="flex-1 pb-20 md:pb-0">{pageContent}</main>
       <BottomNav />
     </div>
   );
@@ -158,7 +159,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <RouterProvider>
-          <AppContent />
+          <DashboardFilterProvider>
+            <AppContent />
+          </DashboardFilterProvider>
         </RouterProvider>
       </AuthProvider>
     </ThemeProvider>

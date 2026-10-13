@@ -1,7 +1,11 @@
 // ============================================================
 // XORA — Assessment Page (Pengerjaan Asesmen)
-// Premium Light Glassmorphism · Minimal · Reusable
+// Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/AssessmentPage.jsx
+// ------------------------------------------------------------
+// Logika data (state, useEffect, timer, API, pemilihan jawaban,
+// submit/validasi, aria, dan teks) tidak berubah — hanya
+// markup/className/struktur visual yang dimigrasi.
 // ============================================================
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -9,14 +13,23 @@ import { assessmentsApi, diagnosticsApi, recommendationsApi } from "../services/
 import { useRouter } from "../context/RouterContext";
 import {
   PageContainer,
+  PageHeader,
   GlassPanel,
+  Grid,
+  GridCell,
   StatusBadge,
   PrimaryButton,
   OutlineButton,
   Button,
   ProgressBar,
+  Alert,
   LoadingState,
   ErrorState,
+  MicroMeta,
+  HAIRLINE,
+  INK,
+  MUTED,
+  cx,
 } from "../components";
 import {
   IconArrowRight,
@@ -444,92 +457,100 @@ export default function AssessmentPage({
 
     return (
       <PageContainer maxWidth="narrow">
-        <GlassPanel variant="elevated" className="quiz-start-card">
-          {/* Header Metadata */}
-          <div className="quiz-start-meta">
-            <span className="quiz-start-subject">{assessment.subject_name || "Materi Pembelajaran"}</span>
-            <span className="quiz-start-dot">•</span>
-            <StatusBadge status={assessment.level_difficulty || "EASY"} label={`Tingkat ${difficultyLabel}`} />
-            {typeLabel && (
-              <>
-                <span className="quiz-start-dot">•</span>
-                <span className="quiz-start-type">{typeLabel}</span>
-              </>
-            )}
-          </div>
+        <PageHeader
+          badge={
+            <div className="flex flex-wrap items-center gap-3">
+              <MicroMeta>{assessment.subject_name || "Materi Pembelajaran"}</MicroMeta>
+              <span className={MUTED} aria-hidden="true">•</span>
+              <StatusBadge status={assessment.level_difficulty || "EASY"} label={`Tingkat ${difficultyLabel}`} />
+              {typeLabel && (
+                <>
+                  <span className={MUTED} aria-hidden="true">•</span>
+                  <MicroMeta>{typeLabel}</MicroMeta>
+                </>
+              )}
+            </div>
+          }
+          title={assessment.title}
+          description="Pilihlah satu jawaban yang paling tepat untuk setiap soal. Anda dapat berpindah nomor soal kapan saja dan meninjau kelengkapan jawaban sebelum mengumpulkan hasil akhir."
+        />
 
-          <h1 className="quiz-start-title">{assessment.title}</h1>
+        {/* Quick Metrics (Only if available) */}
+        <Grid cols={3} className="mt-8">
+          {questions.length > 0 && (
+            <GridCell className="flex flex-col gap-2">
+              <MicroMeta className="flex items-center gap-1.5">
+                <IconBook size={13} />
+                Jumlah Soal
+              </MicroMeta>
+              <span className={cx("text-sm font-bold", INK)}>{questions.length} Soal</span>
+            </GridCell>
+          )}
+          {assessment.duration_minutes ? (
+            <GridCell className="flex flex-col gap-2">
+              <MicroMeta className="flex items-center gap-1.5">
+                <IconClock size={13} />
+                Durasi Waktu
+              </MicroMeta>
+              <span className={cx("text-sm font-bold", INK)}>{assessment.duration_minutes} Menit</span>
+            </GridCell>
+          ) : null}
+          {assessment.passing_score ? (
+            <GridCell className="flex flex-col gap-2">
+              <MicroMeta className="flex items-center gap-1.5">
+                <IconTarget size={13} />
+                Standar Kelulusan
+              </MicroMeta>
+              <span className={cx("text-sm font-bold", INK)}>{Math.round(assessment.passing_score)}%</span>
+            </GridCell>
+          ) : null}
+        </Grid>
 
-          {/* Quick Metrics (Only if available) */}
-          <div className="quiz-start-specs">
-            {questions.length > 0 && (
-              <div className="quiz-start-spec-item">
-                <span className="spec-label">Jumlah Soal</span>
-                <span className="spec-val">{questions.length} Soal</span>
-              </div>
-            )}
-            {assessment.duration_minutes ? (
-              <div className="quiz-start-spec-item">
-                <span className="spec-label">Durasi Waktu</span>
-                <span className="spec-val">{assessment.duration_minutes} Menit</span>
-              </div>
-            ) : null}
-            {assessment.passing_score ? (
-              <div className="quiz-start-spec-item">
-                <span className="spec-label">Standar Kelulusan</span>
-                <span className="spec-val">{Math.round(assessment.passing_score)}%</span>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Brief Context & Instruction (Max 2-3 lines) */}
-          <p className="quiz-start-instruction">
-            Pilihlah satu jawaban yang paling tepat untuk setiap soal. Anda dapat berpindah nomor soal kapan saja dan meninjau kelengkapan jawaban sebelum mengumpulkan hasil akhir.
-          </p>
-
-          {isLocked && (
-            <div className="alert alert-warning" style={{ marginBottom: "1rem" }}>
-              <IconLock size={16} />
+        {isLocked && (
+          <Alert tone="info">
+            <span className="flex items-start gap-2">
+              <IconLock size={16} className="mt-0.5 shrink-0" />
               <span>
                 <strong>Asesmen Terkunci:</strong>{" "}
                 {assessment.learner_status?.lock_reason || "Selesaikan asesmen tingkat sebelumnya terlebih dahulu."}
               </span>
-            </div>
+            </span>
+          </Alert>
+        )}
+
+        {submitError && <Alert tone="error">{submitError}</Alert>}
+
+        <GlassPanel
+          className={cx(
+            "mt-8 flex flex-col gap-3 border-t pt-6 md:flex-row md:items-center md:justify-between",
+            HAIRLINE
           )}
+        >
+          <OutlineButton onClick={() => navigate("/assessments")}>
+            Kembali ke Daftar
+          </OutlineButton>
 
-          {submitError && (
-            <div className="alert alert-error" style={{ marginBottom: "1rem" }}>
-              <span>{submitError}</span>
-            </div>
+          {isLocked ? (
+            <Button disabled variant="outline" icon={<IconLock size={16} />}>
+              Belum Terbuka
+            </Button>
+          ) : (
+            <PrimaryButton
+              size="lg"
+              onClick={
+                isVerification
+                  ? handleStartVerificationSession
+                  : isPractice || isReassessment
+                  ? handleStartPracticeSession
+                  : handleStartAttempt
+              }
+              disabled={isSubmitting}
+              loading={isSubmitting}
+              iconRight={<IconArrowRight size={16} />}
+            >
+              {hasActiveSession ? "Lanjutkan Mengerjakan" : "Mulai Mengerjakan"}
+            </PrimaryButton>
           )}
-
-          <div className="quiz-start-actions">
-            <OutlineButton onClick={() => navigate("/assessments")}>
-              Kembali ke Daftar
-            </OutlineButton>
-
-            {isLocked ? (
-              <Button disabled variant="outline" iconLeft={<IconLock size={16} />}>
-                Belum Terbuka
-              </Button>
-            ) : (
-              <PrimaryButton
-                size="lg"
-                onClick={
-                  isVerification
-                    ? handleStartVerificationSession
-                    : isPractice || isReassessment
-                    ? handleStartPracticeSession
-                    : handleStartAttempt
-                }
-                disabled={isSubmitting}
-                loading={isSubmitting}
-                iconRight={<IconArrowRight size={16} />}
-              >
-                {hasActiveSession ? "Lanjutkan Mengerjakan" : "Mulai Mengerjakan"}
-              </PrimaryButton>
-            )}
-          </div>
         </GlassPanel>
       </PageContainer>
     );
@@ -541,168 +562,181 @@ export default function AssessmentPage({
   if (isReviewing) {
     return (
       <PageContainer maxWidth="normal">
-        <div className="quiz-review-container">
-          <GlassPanel variant="elevated">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-              <div>
-                <h2 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--color-text-main)", marginBottom: "0.25rem" }}>
-                  Tinjau Jawaban Asesmen
-                </h2>
-                <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
-                  {assessment.title} • Periksa kembali jawaban Anda sebelum mengirimkan hasil akhir.
-                </p>
-              </div>
-              <StatusBadge status={assessment.level_difficulty || "EASY"} />
+        <GlassPanel variant="subtle" className="p-5 md:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className={cx("text-xl font-extrabold tracking-tight md:text-2xl", INK)}>
+                Tinjau Jawaban Asesmen
+              </h2>
+              <p className={cx("mt-1 text-[13px] leading-relaxed", MUTED)}>
+                {assessment.title} • Periksa kembali jawaban Anda sebelum mengirimkan hasil akhir.
+              </p>
             </div>
+            <StatusBadge status={assessment.level_difficulty || "EASY"} />
+          </div>
+        </GlassPanel>
 
-            {/* Stat Summary Box */}
-            <div className="quiz-review-stats" style={{ marginBottom: "1.5rem" }}>
-              <div className="quiz-review-stat-box stat-answered">
-                <div>
-                  <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
-                    Sudah Dijawab
-                  </span>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--color-success)" }}>
-                    {answeredTotal} Soal
-                  </div>
-                </div>
-                <StatusBadge variant="success" label="Lengkap" dot />
-              </div>
-
-              <div className="quiz-review-stat-box stat-unanswered">
-                <div>
-                  <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
-                    Belum Dijawab
-                  </span>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: unansweredTotal > 0 ? "var(--color-warning)" : "var(--color-text-muted)" }}>
-                    {unansweredTotal} Soal
-                  </div>
-                </div>
-                <StatusBadge
-                  variant={unansweredTotal > 0 ? "warning" : "success"}
-                  label={unansweredTotal > 0 ? "Belum Selesai" : "Semua Terjawab"}
-                />
-              </div>
+        {/* Stat Summary Box */}
+        <Grid cols={2} className="mt-8">
+          <GridCell className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <MicroMeta>Sudah Dijawab</MicroMeta>
+              <span className={cx("text-2xl font-extrabold tracking-tight md:text-3xl", INK)}>
+                {answeredTotal} Soal
+              </span>
             </div>
+            <StatusBadge variant="success" label="Lengkap" dot />
+          </GridCell>
 
-            {/* Unanswered Alert Warning */}
-            {unansweredTotal > 0 && (
-              <div className="alert alert-warning" style={{ marginBottom: "1.5rem" }}>
-                <IconAlertTriangle size={18} />
-                <span>
-                  <strong>Perhatian:</strong> Masih terdapat <strong>{unansweredTotal} soal</strong> yang belum Anda jawab. Soal yang kosong tidak akan mendapatkan poin.
-                </span>
-              </div>
-            )}
-
-            {submitError && (
-              <div className="alert alert-error" style={{ marginBottom: "1.5rem" }}>
-                <span>{submitError}</span>
-              </div>
-            )}
-
-            {/* Questions Grid Overview */}
-            <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--color-text-main)", marginBottom: "0.85rem" }}>
-              Daftar Soal &amp; Jawaban Anda:
-            </h3>
-
-            <div className="quiz-review-grid" style={{ marginBottom: "2rem" }}>
-              {questions.map((q, idx) => {
-                const ans = answers[q.id];
-                const isAnswered = ans && typeof ans === "object" ? Object.keys(ans).length > 0 : Boolean(ans);
-                let answerDisplay = "Belum dijawab";
-
-                if (isAnswered) {
-                  if (q.type === "DRAG_DROP") {
-                    answerDisplay = `${Object.keys(ans).length} item terpasang`;
-                  } else {
-                    answerDisplay = `Pilihan: ${ans}`;
-                  }
-                }
-
-                return (
-                  <div
-                    key={q.id}
-                    className="quiz-review-card"
-                    onClick={() => handleJumpToQuestion(idx)}
-                    role="button"
-                    tabIndex={0}
-                    title="Klik untuk membuka soal ini"
-                  >
-                    <div className="quiz-review-card-header">
-                      <span className="quiz-review-card-num">Soal #{idx + 1}</span>
-                      <StatusBadge
-                        variant={isAnswered ? "success" : "neutral"}
-                        label={isAnswered ? "Terjawab" : "Kosong"}
-                        dot={isAnswered}
-                      />
-                    </div>
-                    <div className="quiz-review-card-ans">
-                      <strong>Jawaban:</strong> {answerDisplay}
-                    </div>
-                    <div style={{ marginTop: "auto", textAlign: "right", fontSize: "0.78rem", color: "var(--color-primary)", fontWeight: 600 }}>
-                      Buka Soal →
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Review Bottom Actions */}
-            <div className="quiz-review-actions-bar">
-              <OutlineButton
-                onClick={() => setIsReviewing(false)}
-                icon={<IconArrowLeft size={16} />}
+          <GridCell className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <MicroMeta>Belum Dijawab</MicroMeta>
+              <span
+                className={cx(
+                  "text-2xl font-extrabold tracking-tight md:text-3xl",
+                  unansweredTotal > 0 ? "text-brand" : MUTED
+                )}
               >
-                Kembali Mengerjakan
-              </OutlineButton>
-
-              <PrimaryButton
-                size="lg"
-                onClick={() => setShowConfirmModal(true)}
-                disabled={isSubmitting}
-                loading={isSubmitting}
-                iconRight={<IconCheck size={16} />}
-              >
-                Kumpulkan Jawaban
-              </PrimaryButton>
+                {unansweredTotal} Soal
+              </span>
             </div>
-          </GlassPanel>
+            <StatusBadge
+              variant={unansweredTotal > 0 ? "warning" : "success"}
+              label={unansweredTotal > 0 ? "Belum Selesai" : "Semua Terjawab"}
+            />
+          </GridCell>
+        </Grid>
+
+        {/* Unanswered Alert Warning */}
+        {unansweredTotal > 0 && (
+          <Alert tone="info">
+            <span className="flex items-start gap-2">
+              <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-brand" />
+              <span>
+                <strong>Perhatian:</strong> Masih terdapat <strong>{unansweredTotal} soal</strong> yang belum Anda jawab. Soal yang kosong tidak akan mendapatkan poin.
+              </span>
+            </span>
+          </Alert>
+        )}
+
+        {submitError && <Alert tone="error">{submitError}</Alert>}
+
+        {/* Questions Grid Overview */}
+        <div className={cx("mt-12 flex items-center justify-between gap-3 border-t pt-6", HAIRLINE)}>
+          <h3 className={cx("text-[13px] font-extrabold uppercase tracking-[0.14em]", INK)}>
+            Daftar Soal &amp; Jawaban Anda:
+          </h3>
+          <MicroMeta>{questions.length} SOAL</MicroMeta>
         </div>
+
+        <Grid cols={3}>
+          {questions.map((q, idx) => {
+            const ans = answers[q.id];
+            const isAnswered = ans && typeof ans === "object" ? Object.keys(ans).length > 0 : Boolean(ans);
+            let answerDisplay = "Belum dijawab";
+
+            if (isAnswered) {
+              if (q.type === "DRAG_DROP") {
+                answerDisplay = `${Object.keys(ans).length} item terpasang`;
+              } else {
+                answerDisplay = `Pilihan: ${ans}`;
+              }
+            }
+
+            return (
+              <GridCell
+                key={q.id}
+                className="flex cursor-pointer flex-col gap-3 hover:bg-cell dark:hover:bg-cell-dark"
+                onClick={() => handleJumpToQuestion(idx)}
+                role="button"
+                tabIndex={0}
+                title="Klik untuk membuka soal ini"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className={cx("tabular-nums text-[11px] font-bold uppercase tracking-widest", MUTED)}>
+                    Soal #{idx + 1}
+                  </span>
+                  <StatusBadge
+                    variant={isAnswered ? "success" : "neutral"}
+                    label={isAnswered ? "Terjawab" : "Kosong"}
+                    dot={isAnswered}
+                  />
+                </div>
+                <p className={cx("text-[13px] leading-relaxed", INK)}>
+                  <strong>Jawaban:</strong> {answerDisplay}
+                </p>
+                <span className="mt-auto text-right text-[12px] font-bold text-brand">
+                  Buka Soal →
+                </span>
+              </GridCell>
+            );
+          })}
+        </Grid>
+
+        {/* Review Bottom Actions */}
+        <GlassPanel
+          className={cx(
+            "mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-6",
+            HAIRLINE
+          )}
+        >
+          <OutlineButton
+            onClick={() => setIsReviewing(false)}
+            icon={<IconArrowLeft size={16} />}
+          >
+            Kembali Mengerjakan
+          </OutlineButton>
+
+          <PrimaryButton
+            size="lg"
+            onClick={() => setShowConfirmModal(true)}
+            disabled={isSubmitting}
+            loading={isSubmitting}
+            iconRight={<IconCheck size={16} />}
+          >
+            Kumpulkan Jawaban
+          </PrimaryButton>
+        </GlassPanel>
 
         {/* Confirmation Modal */}
         {showConfirmModal && (
-          <div className="quiz-modal-backdrop" onClick={() => setShowConfirmModal(false)}>
-            <div className="quiz-modal-content" onClick={(e) => e.stopPropagation()}>
-              <h3 className="quiz-modal-title">Konfirmasi Pengumpulan Jawaban</h3>
-              <p className="quiz-modal-desc">
-                Apakah Anda yakin ingin mengumpulkan asesmen ini sekarang? Setelah dikumpulkan, hasil akan langsung dihitung dan jawaban tidak dapat diubah kembali.
-              </p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4" onClick={() => setShowConfirmModal(false)}>
+            <div className={cx("w-full max-w-lg overflow-hidden rounded-3xl border bg-canvas dark:bg-canvas-dark", HAIRLINE)} onClick={(e) => e.stopPropagation()}>
+              <h3 className={cx("border-b px-4 py-3 text-[13px] font-extrabold uppercase tracking-[0.14em] md:px-6", HAIRLINE, INK)}>
+                Konfirmasi Pengumpulan Jawaban
+              </h3>
+              <div className="flex flex-col gap-4 p-4 md:px-6">
+                <p className={cx("text-[13px] leading-relaxed", MUTED)}>
+                  Apakah Anda yakin ingin mengumpulkan asesmen ini sekarang? Setelah dikumpulkan, hasil akan langsung dihitung dan jawaban tidak dapat diubah kembali.
+                </p>
 
-              {unansweredTotal > 0 && (
-                <div className="alert alert-warning" style={{ fontSize: "0.85rem" }}>
-                  <IconAlertTriangle size={16} />
-                  <span>
-                    Masih ada <strong>{unansweredTotal} soal belum dijawab</strong>. Jawaban yang kosong akan dihitung bernilai 0.
-                  </span>
+                {unansweredTotal > 0 && (
+                  <Alert tone="info" className="border">
+                    <span className="flex items-start gap-2">
+                      <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-brand" />
+                      <span>
+                        Masih ada <strong>{unansweredTotal} soal belum dijawab</strong>. Jawaban yang kosong akan dihitung bernilai 0.
+                      </span>
+                    </span>
+                  </Alert>
+                )}
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <OutlineButton
+                    onClick={() => setShowConfirmModal(false)}
+                    disabled={isSubmitting}
+                  >
+                    Periksa Kembali
+                  </OutlineButton>
+                  <PrimaryButton
+                    onClick={handleConfirmSubmit}
+                    disabled={isSubmitting}
+                    loading={isSubmitting}
+                    iconRight={<IconCheck size={16} />}
+                  >
+                    Ya, Kumpulkan Sekarang
+                  </PrimaryButton>
                 </div>
-              )}
-
-              <div className="quiz-modal-actions">
-                <OutlineButton
-                  onClick={() => setShowConfirmModal(false)}
-                  disabled={isSubmitting}
-                >
-                  Periksa Kembali
-                </OutlineButton>
-                <PrimaryButton
-                  onClick={handleConfirmSubmit}
-                  disabled={isSubmitting}
-                  loading={isSubmitting}
-                  iconRight={<IconCheck size={16} />}
-                >
-                  Ya, Kumpulkan Sekarang
-                </PrimaryButton>
               </div>
             </div>
           </div>
@@ -729,11 +763,15 @@ export default function AssessmentPage({
   const renderQuestionText = (text) => {
     if (!text) return null;
     if (!text.includes("```")) {
-      return <h2 className="quiz-question-text">{text}</h2>;
+      return (
+        <h2 className={cx("text-lg font-extrabold leading-snug tracking-tight md:text-xl", INK)}>
+          {text}
+        </h2>
+      );
     }
     const parts = text.split(/(```[\s\S]*?```)/g);
     return (
-      <div className="quiz-question-formatted">
+      <div className="flex flex-col gap-3">
         {parts.map((part, idx) => {
           if (part.startsWith("```") && part.endsWith("```")) {
             const raw = part.slice(3, -3).trim();
@@ -746,7 +784,13 @@ export default function AssessmentPage({
               }
             }
             return (
-              <pre key={idx} className="quiz-code-snippet">
+              <pre
+                key={idx}
+                className={cx(
+                  "overflow-x-auto rounded-2xl border p-3 font-mono text-[12px] leading-relaxed bg-cell text-ink dark:bg-cell-dark dark:text-ink-dark",
+                  HAIRLINE
+                )}
+              >
                 <code>{code}</code>
               </pre>
             );
@@ -754,7 +798,10 @@ export default function AssessmentPage({
           const trimmed = part.trim();
           if (!trimmed) return null;
           return (
-            <h2 key={idx} className="quiz-question-text" style={{ marginBottom: "0.75rem" }}>
+            <h2
+              key={idx}
+              className={cx("text-lg font-extrabold leading-snug tracking-tight md:text-xl", INK)}
+            >
               {trimmed}
             </h2>
           );
@@ -773,14 +820,7 @@ export default function AssessmentPage({
         return (
           <code
             key={idx}
-            style={{
-              backgroundColor: "var(--color-bg-subtle)",
-              padding: "0.15rem 0.35rem",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono, monospace)",
-              fontSize: "0.92em",
-              color: "var(--color-primary)",
-            }}
+            className="rounded-md bg-cell px-1 py-0.5 font-mono text-[0.92em] text-brand dark:bg-cell-dark"
           >
             {part.slice(1, -1)}
           </code>
@@ -793,31 +833,23 @@ export default function AssessmentPage({
   return (
     <PageContainer maxWidth="normal">
       {/* Top Header Bar Progress */}
-      <div className="assessment-quiz-header">
-        <div className="quiz-header-info">
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
-            <span className="quiz-title-tag">{assessment.title}</span>
+      <GlassPanel variant="subtle" className="p-5 md:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <span className={cx("truncate text-sm font-bold", INK)}>{assessment.title}</span>
             <StatusBadge status={assessment.level_difficulty || "EASY"} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <span className="quiz-progress-text">
-              Soal {currentIndex + 1} dari {questions.length}
-            </span>
-          </div>
+          <MicroMeta>
+            Soal {currentIndex + 1} dari {questions.length}
+          </MicroMeta>
         </div>
+        <ProgressBar value={progressPercent} showPercent={false} className="mt-3" />
+      </GlassPanel>
 
-        <div className="quiz-progress-bar">
-          <div
-            className="quiz-progress-fill"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="quiz-layout">
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         {/* Main Question Card */}
-        <GlassPanel variant="elevated" className="quiz-main-card">
-          <div className="quiz-question-meta">
+        <GlassPanel className="flex flex-col gap-5">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge variant="primary" label={`Soal #${currentIndex + 1}`} />
             <StatusBadge variant="neutral" label={`${currentQ.points} Poin`} />
             {currentQ.type === "DRAG_DROP" && (
@@ -829,14 +861,19 @@ export default function AssessmentPage({
 
           {/* Multiple Choice Options */}
           {currentQ.type === "MULTIPLE_CHOICE" && Array.isArray(currentQ.options) && (
-            <div className="quiz-options-list">
+            <div className="flex flex-col gap-2">
               {currentQ.options.map((optText, optIdx) => {
                 const letter = String.fromCharCode(65 + optIdx);
                 const isSelected = selectedChoice === letter;
                 return (
                   <div
                     key={letter}
-                    className={`quiz-option-item ${isSelected ? "quiz-option-selected" : ""}`}
+                    className={cx(
+                      "flex min-h-[44px] w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
+                      isSelected
+                        ? "border-brand text-brand"
+                        : "border-hairline text-ink hover:bg-cell dark:border-hairline-dark dark:text-ink-dark dark:hover:bg-cell-dark"
+                    )}
                     onClick={() => handleSelectOption(currentQ.id, letter)}
                     role="button"
                     tabIndex={0}
@@ -854,10 +891,21 @@ export default function AssessmentPage({
                       checked={isSelected}
                       readOnly
                       tabIndex={-1}
-                      className="quiz-radio"
+                      className="sr-only"
                     />
-                    <span className="quiz-option-letter">{letter}</span>
-                    <span className="quiz-option-label">{renderOptionText(optText)}</span>
+                    <span
+                      className={cx(
+                        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border tabular-nums text-[11px] font-bold uppercase",
+                        isSelected
+                          ? "border-brand bg-brand text-white"
+                          : "border-hairline text-ink dark:border-hairline-dark dark:text-ink-dark"
+                      )}
+                    >
+                      {letter}
+                    </span>
+                    <span className="min-w-0 flex-1 text-[13px] leading-relaxed">
+                      {renderOptionText(optText)}
+                    </span>
                   </div>
                 );
               })}
@@ -866,27 +914,29 @@ export default function AssessmentPage({
 
           {/* Drag & Drop Interactive Question */}
           {currentQ.type === "DRAG_DROP" && (
-            <div className="quiz-drag-drop-container">
-              <div className="drag-instructions-banner">
-                <IconInfo size={16} />
-                <p>
+            <div className="flex flex-col gap-5">
+              <div className={cx("flex items-start gap-2 rounded-2xl border p-4", HAIRLINE)}>
+                <IconInfo size={16} className="mt-0.5 shrink-0 text-brand" />
+                <p className={cx("text-[13px] leading-relaxed", INK)}>
                   <strong>Petunjuk:</strong> Klik atau tarik kartu item yang tersedia, lalu letakkan di kotak target yang sesuai.
                 </p>
               </div>
 
               {/* Pool of Available Items */}
-              <div className="drag-source-section">
-                <div className="drag-section-header">
-                  <h4 className="drag-section-title">Item yang Tersedia:</h4>
-                  <span className="badge badge-subtle">
-                    {availableItems.length} belum terpasang
-                  </span>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className={cx("text-[13px] font-extrabold uppercase tracking-[0.14em]", INK)}>
+                    Item yang Tersedia:
+                  </h4>
+                  <StatusBadge variant="neutral" label={`${availableItems.length} belum terpasang`} />
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
+                <div className="flex flex-wrap gap-2">
                   {availableItems.length === 0 ? (
-                    <div style={{ fontSize: "0.85rem", color: "var(--color-success)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                      <IconCheck size={14} />
-                      Semua item telah dipasangkan. Tekan tombol lepas pada kotak target jika ingin mengubah pasangan.
+                    <div className="flex items-center gap-2 text-[13px] text-ink dark:text-ink-dark">
+                      <IconCheck size={14} className="shrink-0 text-brand" />
+                      <span>
+                        Semua item telah dipasangkan. Tekan tombol lepas pada kotak target jika ingin mengubah pasangan.
+                      </span>
                     </div>
                   ) : (
                     availableItems.map((item) => (
@@ -898,7 +948,12 @@ export default function AssessmentPage({
                           setSelectedDragItemId(item.id);
                         }}
                         onClick={() => setSelectedDragItemId(selectedDragItemId === item.id ? null : item.id)}
-                        className={`drag-chip ${selectedDragItemId === item.id ? "drag-chip-selected" : ""}`}
+                        className={cx(
+                          "inline-flex min-h-[44px] cursor-pointer select-none items-center rounded-full border px-4 py-2 text-[13px] font-bold transition-colors",
+                          selectedDragItemId === item.id
+                            ? "border-brand text-brand"
+                            : "border-hairline text-ink hover:bg-cell dark:border-hairline-dark dark:text-ink-dark dark:hover:bg-cell-dark"
+                        )}
                         title="Klik untuk memilih lalu klik target"
                       >
                         <span>{item.label}</span>
@@ -909,8 +964,8 @@ export default function AssessmentPage({
               </div>
 
               {/* Target Drop Zones */}
-              <div className="drag-targets-list">
-                <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--color-text-main)" }}>
+              <div className="flex flex-col gap-3">
+                <h4 className={cx("text-[13px] font-extrabold uppercase tracking-[0.14em]", INK)}>
                   Kotak Target Pasangan:
                 </h4>
                 {currentTargets.map((tg) => {
@@ -920,7 +975,15 @@ export default function AssessmentPage({
                   return (
                     <div
                       key={tg.id}
-                      className={`drag-target-slot ${assignedItem ? "drag-target-filled" : ""}`}
+                      className={cx(
+                        "flex min-h-[44px] flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3",
+                        assignedItem
+                          ? "border-brand"
+                          : cx(
+                              "border-hairline dark:border-hairline-dark",
+                              selectedDragItemId ? "cursor-pointer hover:bg-cell dark:hover:bg-cell-dark" : ""
+                            )
+                      )}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
                         e.preventDefault();
@@ -937,36 +1000,39 @@ export default function AssessmentPage({
                         }
                       }}
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <strong style={{ fontSize: "0.9rem", color: "var(--color-text-main)" }}>{tg.label}</strong>
-                        {assignedItem ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <span className="badge badge-success">{assignedItem.label}</span>
-                            <button
-                              type="button"
-                              className="drag-remove-btn"
-                              title="Lepaskan item"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveDragItem(currentQ.id, assignedItem.id);
-                              }}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: "0.8rem", color: "var(--color-text-dim)" }}>
-                            {selectedDragItemId ? "Klik untuk pasang item terpilih" : "Letakkan item di sini"}
+                      <strong className={cx("text-[13px] font-bold", INK)}>{tg.label}</strong>
+                      {assignedItem ? (
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand px-3 py-1 tabular-nums text-[10px] font-bold uppercase tracking-widest text-brand md:text-[11px]">
+                            {assignedItem.label}
                           </span>
-                        )}
-                      </div>
+                          <button
+                            type="button"
+                            className={cx(
+                              "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-ink transition-colors hover:border-brand hover:text-brand dark:text-ink-dark",
+                              HAIRLINE
+                            )}
+                            title="Lepaskan item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveDragItem(currentQ.id, assignedItem.id);
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <span className={cx("text-[12px]", MUTED)}>
+                          {selectedDragItemId ? "Klik untuk pasang item terpilih" : "Letakkan item di sini"}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
               </div>
 
               {Object.keys(currentMatches).length > 0 && (
-                <div style={{ textAlign: "right" }}>
+                <div className="flex justify-end">
                   <OutlineButton
                     size="sm"
                     onClick={() => handleResetDragItems(currentQ.id)}
@@ -978,14 +1044,10 @@ export default function AssessmentPage({
             </div>
           )}
 
-          {submitError && (
-            <div className="alert alert-error" style={{ marginTop: "1.5rem" }}>
-              <span>{submitError}</span>
-            </div>
-          )}
+          {submitError && <Alert tone="error" className="border">{submitError}</Alert>}
 
           {/* Navigation Controls Footer */}
-          <div className="quiz-controls">
+          <div className={cx("flex flex-wrap items-center justify-between gap-3 border-t pt-4", HAIRLINE)}>
             <OutlineButton
               onClick={handlePrev}
               disabled={currentIndex === 0}
@@ -994,7 +1056,7 @@ export default function AssessmentPage({
               Sebelumnya
             </OutlineButton>
 
-            <div className="quiz-controls-right">
+            <div className="flex flex-wrap items-center gap-3">
               {currentIndex < questions.length - 1 ? (
                 <PrimaryButton
                   onClick={handleNext}
@@ -1015,11 +1077,17 @@ export default function AssessmentPage({
         </GlassPanel>
 
         {/* Sidebar Question Palette */}
-        <GlassPanel variant="default" className="quiz-sidebar-card">
-          <h3 className="palette-title">Navigasi Soal</h3>
-          <p className="palette-subtitle">Klik nomor untuk melompat ke soal</p>
+        <GlassPanel variant="subtle" className="flex flex-col gap-4 p-5 md:p-6">
+          <div className="flex flex-col gap-1">
+            <h3 className={cx("text-[13px] font-extrabold uppercase tracking-[0.14em]", INK)}>
+              Navigasi Soal
+            </h3>
+            <p className={cx("text-[12px] leading-relaxed", MUTED)}>
+              Klik nomor untuk melompat ke soal
+            </p>
+          </div>
 
-          <div className="palette-grid">
+          <div className="grid grid-cols-5 gap-2">
             {questions.map((q, idx) => {
               const ans = answers[q.id];
               const isAnswered = ans && typeof ans === "object" ? Object.keys(ans).length > 0 : Boolean(ans);
@@ -1028,9 +1096,14 @@ export default function AssessmentPage({
                 <button
                   key={q.id}
                   type="button"
-                  className={`palette-num-btn ${isCurrent ? "palette-active" : ""} ${
-                    isAnswered ? "palette-answered" : ""
-                  }`}
+                  className={cx(
+                    "inline-flex h-11 w-11 items-center justify-center rounded-full border tabular-nums text-[11px] font-bold transition-colors",
+                    isCurrent
+                      ? "border-brand bg-brand text-white"
+                      : isAnswered
+                      ? "border-brand text-brand hover:bg-cell dark:hover:bg-cell-dark"
+                      : "border-hairline text-ink hover:bg-cell dark:border-hairline-dark dark:text-ink-dark dark:hover:bg-cell-dark"
+                  )}
                   onClick={() => handleJumpToQuestion(idx)}
                 >
                   {idx + 1}
@@ -1039,18 +1112,18 @@ export default function AssessmentPage({
             })}
           </div>
 
-          <div className="palette-legend">
-            <div className="legend-item">
-              <span className="legend-dot legend-dot-answered" />
-              <span>Sudah dijawab ({answeredTotal})</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-brand" aria-hidden="true" />
+              <MicroMeta>Sudah dijawab ({answeredTotal})</MicroMeta>
             </div>
-            <div className="legend-item">
-              <span className="legend-dot legend-dot-unanswered" />
-              <span>Belum dijawab ({questions.length - answeredTotal})</span>
+            <div className="flex items-center gap-2">
+              <span className={cx("h-2.5 w-2.5 shrink-0 rounded-full border", HAIRLINE)} aria-hidden="true" />
+              <MicroMeta>Belum dijawab ({questions.length - answeredTotal})</MicroMeta>
             </div>
           </div>
 
-          <div className="palette-submit-section">
+          <div className="mt-auto pt-2">
             <PrimaryButton
               fullWidth
               onClick={() => setIsReviewing(true)}

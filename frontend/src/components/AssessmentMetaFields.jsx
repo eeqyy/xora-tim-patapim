@@ -1,13 +1,14 @@
 // ============================================================
 // XORA — Form fields untuk meta asesmen (dipakai admin)
 // frontend/src/components/AssessmentMetaFields.jsx
-// ============================================================
+// ------------------------------------------------------------
 // Menyediakan: judul, tipe, subjek, level, topik, durasi, passing score.
 // Cascading: subjek -> level -> topik, dan tipe menentukan field wajib
 // (TOPIC butuh topik, LEVEL_FINAL butuh level — aturan CHECK di schema).
 // ============================================================
 
 import React from "react";
+import { Field, Input, Select } from "./ui";
 
 export const ASSESSMENT_TYPES = [
   { value: "PRACTICE", label: "Latihan" },
@@ -27,7 +28,6 @@ export default function AssessmentMetaFields({
   idPrefix = "meta",
 }) {
   const id = (key) => `${idPrefix}-${key}`;
-  const errId = (key) => `${id(key)}-err`;
 
   // Filter bertingkat sesuai pilihan saat ini
   const subjectLevels = levels.filter((l) => !form.subjectId || l.subject_id === form.subjectId);
@@ -38,55 +38,50 @@ export default function AssessmentMetaFields({
   // Saat level diganti, topik di-reset
   const handleLevel = (value) => onChange({ levelId: value, topicId: "" });
 
-  const invalid = (key) => (errors[key] ? "true" : undefined);
-  const describedBy = (key, hintId) =>
-    [errors[key] ? errId(key) : null, hintId || null].filter(Boolean).join(" ") || undefined;
-
   return (
-    <div className="admin-form-grid">
-      <div className="form-group">
-        <label htmlFor={id("title")}>Judul Asesmen *</label>
-        <input
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Field label="Judul Asesmen" htmlFor={id("title")} required error={errors.title}>
+        <Input
           id={id("title")}
           type="text"
           value={form.title}
           onChange={(e) => onChange({ title: e.target.value })}
           placeholder="Mis. Latihan: Struktur Dokumen"
-          aria-invalid={invalid("title")}
-          aria-describedby={errors.title ? errId("title") : undefined}
+          aria-invalid={errors.title ? "true" : undefined}
         />
-        {errors.title && (
-          <p id={errId("title")} className="field-error" role="alert">
-            {errors.title}
-          </p>
-        )}
-      </div>
+      </Field>
 
-      <div className="form-group">
-        <label htmlFor={id("type")}>Tipe *</label>
-        <select id={id("type")} value={form.type} onChange={(e) => onChange({ type: e.target.value })}>
+      <Field
+        label="Tipe"
+        htmlFor={id("type")}
+        required
+        hint={
+          form.type === "TOPIC"
+            ? "Tipe Topik mewajibkan pemilihan topik di bawah."
+            : form.type === "LEVEL_FINAL"
+              ? "Tipe Ujian Level mewajibkan pemilihan level di bawah."
+              : undefined
+        }
+      >
+        <Select
+          id={id("type")}
+          value={form.type}
+          onChange={(e) => onChange({ type: e.target.value })}
+        >
           {ASSESSMENT_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
               {t.label}
             </option>
           ))}
-        </select>
-        {form.type === "TOPIC" && (
-          <p className="field-hint">Tipe Topik mewajibkan pemilihan topik di bawah.</p>
-        )}
-        {form.type === "LEVEL_FINAL" && (
-          <p className="field-hint">Tipe Ujian Level mewajibkan pemilihan level di bawah.</p>
-        )}
-      </div>
+        </Select>
+      </Field>
 
-      <div className="form-group">
-        <label htmlFor={id("subject")}>Subjek *</label>
-        <select
+      <Field label="Subjek" htmlFor={id("subject")} required error={errors.subjectId}>
+        <Select
           id={id("subject")}
           value={form.subjectId}
           onChange={(e) => handleSubject(e.target.value)}
-          aria-invalid={invalid("subjectId")}
-          aria-describedby={describedBy("subjectId")}
+          aria-invalid={errors.subjectId ? "true" : undefined}
         >
           <option value="">— Pilih subjek —</option>
           {subjects.map((s) => (
@@ -94,24 +89,20 @@ export default function AssessmentMetaFields({
               {s.name}
             </option>
           ))}
-        </select>
-        {errors.subjectId && (
-          <p id={errId("subjectId")} className="field-error" role="alert">
-            {errors.subjectId}
-          </p>
-        )}
-      </div>
+        </Select>
+      </Field>
 
-      <div className="form-group">
-        <label htmlFor={id("level")}>
-          Level {form.type === "LEVEL_FINAL" ? "*" : "(opsional)"}
-        </label>
-        <select
+      <Field
+        label={`Level ${form.type === "LEVEL_FINAL" ? "" : "(opsional)"}`}
+        htmlFor={id("level")}
+        required={form.type === "LEVEL_FINAL"}
+        error={errors.levelId}
+      >
+        <Select
           id={id("level")}
           value={form.levelId}
           onChange={(e) => handleLevel(e.target.value)}
-          aria-invalid={invalid("levelId")}
-          aria-describedby={describedBy("levelId")}
+          aria-invalid={errors.levelId ? "true" : undefined}
         >
           <option value="">— Pilih level —</option>
           {subjectLevels.map((l) => (
@@ -119,24 +110,21 @@ export default function AssessmentMetaFields({
               {l.name}
             </option>
           ))}
-        </select>
-        {errors.levelId && (
-          <p id={errId("levelId")} className="field-error" role="alert">
-            {errors.levelId}
-          </p>
-        )}
-      </div>
+        </Select>
+      </Field>
 
-      <div className="form-group">
-        <label htmlFor={id("topic")}>
-          Topik {form.type === "TOPIC" ? "*" : "(opsional)"}
-        </label>
-        <select
+      <Field
+        label={`Topik ${form.type === "TOPIC" ? "" : "(opsional)"}`}
+        htmlFor={id("topic")}
+        required={form.type === "TOPIC"}
+        hint="Pilih level dulu agar daftar topik sesuai."
+        error={errors.topicId}
+      >
+        <Select
           id={id("topic")}
           value={form.topicId}
           onChange={(e) => onChange({ topicId: e.target.value })}
-          aria-invalid={invalid("topicId")}
-          aria-describedby={describedBy("topicId", `${id("topic")}-hint`)}
+          aria-invalid={errors.topicId ? "true" : undefined}
         >
           <option value="">— Pilih topik —</option>
           {levelTopics.map((t) => (
@@ -144,41 +132,31 @@ export default function AssessmentMetaFields({
               {t.name}
             </option>
           ))}
-        </select>
-        <p id={`${id("topic")}-hint`} className="field-hint">
-          Pilih level dulu agar daftar topik sesuai.
-        </p>
-        {errors.topicId && (
-          <p id={errId("topicId")} className="field-error" role="alert">
-            {errors.topicId}
-          </p>
-        )}
-      </div>
+        </Select>
+      </Field>
 
-      <div className="form-group">
-        <label htmlFor={id("duration")}>Durasi (menit, opsional)</label>
-        <input
+      <Field
+        label="Durasi (menit, opsional)"
+        htmlFor={id("duration")}
+        hint="Kosongkan bila tanpa batas waktu."
+        error={errors.durationMinutes}
+      >
+        <Input
           id={id("duration")}
           type="number"
           min="1"
           inputMode="numeric"
           value={form.durationMinutes}
           onChange={(e) => onChange({ durationMinutes: e.target.value })}
-          aria-describedby={describedBy("durationMinutes", `${id("duration")}-hint`)}
         />
-        <p id={`${id("duration")}-hint`} className="field-hint">
-          Kosongkan bila tanpa batas waktu.
-        </p>
-        {errors.durationMinutes && (
-          <p id={errId("durationMinutes")} className="field-error" role="alert">
-            {errors.durationMinutes}
-          </p>
-        )}
-      </div>
+      </Field>
 
-      <div className="form-group">
-        <label htmlFor={id("passing")}>Passing score (% , opsional)</label>
-        <input
+      <Field
+        label="Passing score (%, opsional)"
+        htmlFor={id("passing")}
+        error={errors.passingScore}
+      >
+        <Input
           id={id("passing")}
           type="number"
           min="0"
@@ -186,14 +164,8 @@ export default function AssessmentMetaFields({
           inputMode="numeric"
           value={form.passingScore}
           onChange={(e) => onChange({ passingScore: e.target.value })}
-          aria-describedby={describedBy("passingScore")}
         />
-        {errors.passingScore && (
-          <p id={errId("passingScore")} className="field-error" role="alert">
-            {errors.passingScore}
-          </p>
-        )}
-      </div>
+      </Field>
     </div>
   );
 }

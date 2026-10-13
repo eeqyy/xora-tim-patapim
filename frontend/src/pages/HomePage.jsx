@@ -1,13 +1,26 @@
 // ============================================================
-// XORA — Home Page
-// Premium Light Glassmorphism · Minimal · Reusable
+// XORA — Home Page (Editorial Grid System)
 // frontend/src/pages/HomePage.jsx
+// ------------------------------------------------------------
+// Hero (PageHeader) + grid fitur + akses cepat.
+// Pemisah = garis horizontal + ruang kosong (tanpa grid kotak).
 // ============================================================
 
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, useRouter } from "../context/RouterContext";
-import { PageContainer, GlassPanel, PrimaryButton, OutlineButton } from "../components";
+import {
+  PageContainer,
+  PageHeader,
+  GlassPanel,
+  PrimaryButton,
+  OutlineButton,
+  Grid,
+  HAIRLINE,
+  INK,
+  MUTED,
+  cx,
+} from "../components";
 import {
   IconBook,
   IconCompass,
@@ -46,147 +59,148 @@ export default function HomePage() {
     },
   ];
 
+  const quickAccessClass = cx(
+    "flex min-h-[72px] items-center gap-4 rounded-3xl bg-cell p-5 transition-colors",
+    "dark:bg-cell-dark hover:bg-brand-soft"
+  );
+
   return (
     <PageContainer maxWidth="normal">
-      <div className="home-container">
-        {/* Hero Section */}
-        <GlassPanel variant="elevated" className="hero-card">
-          <div className="hero-badge-row">
-            <span className="hero-badge">Evidence-Based Learning Platform</span>
-          </div>
-
-          <h1 className="hero-title">
-            Navigasi Presisi untuk{" "}
-            <span className="hero-title-highlight">Penguasaan Konsep</span> Belajar
-          </h1>
-
-          <p className="hero-description">
-            Xora menganalisis bukti belajar aktual dari asesmen untuk mengidentifikasi
-            kesenjangan pemahaman dan merekomendasikan remedi yang tepat sasaran.
-          </p>
-
-          <div className="hero-actions">
-            {isAuthenticated ? (
-              isAdmin ? (
-                <PrimaryButton
-                  size="lg"
-                  onClick={() => navigate("/admin/assessments")}
-                  iconRight={<IconArrowRight size={16} />}
-                >
-                  Kelola Konten &amp; Bank Soal
-                </PrimaryButton>
-              ) : (
-                <div className="hero-learner-cta">
-                  <div className="hero-welcome">
-                    Selamat datang kembali, <strong>{user?.name}</strong>
-                  </div>
-                  <div className="hero-cta-group">
-                    <PrimaryButton
-                      size="lg"
-                      onClick={() => navigate("/assessments")}
-                      iconRight={<IconArrowRight size={16} />}
-                    >
-                      Mulai Asesmen
-                    </PrimaryButton>
-                    <OutlineButton
-                      size="lg"
-                      onClick={() => navigate("/learning-path")}
-                      icon={<IconCompass size={16} />}
-                    >
-                      Peta Pembelajaran
-                    </OutlineButton>
-                    <OutlineButton
-                      size="lg"
-                      onClick={() => navigate("/progress")}
-                      icon={<IconChart size={16} />}
-                    >
-                      Progres Belajar
-                    </OutlineButton>
-                  </div>
-                </div>
-              )
+      {/* Hero */}
+      <PageHeader
+        badge="Evidence-Based Learning Platform"
+        title="Navigasi Presisi untuk Penguasaan Konsep Belajar"
+        description="Xora menganalisis bukti belajar aktual dari asesmen untuk mengidentifikasi kesenjangan pemahaman dan merekomendasikan remedi yang tepat sasaran."
+        actions={
+          isAuthenticated ? (
+            isAdmin ? (
+              <PrimaryButton
+                size="lg"
+                onClick={() => navigate("/admin/assessments")}
+                iconRight={<IconArrowRight size={16} />}
+              >
+                Kelola Konten &amp; Bank Soal
+              </PrimaryButton>
             ) : (
-              <div className="hero-cta-group">
+              <>
+                <span className={cx("w-full text-[12px] leading-relaxed", MUTED)}>
+                  Selamat datang kembali, <strong className={INK}>{user?.name}</strong>
+                </span>
                 <PrimaryButton
                   size="lg"
-                  onClick={() => navigate("/register")}
+                  onClick={() => navigate("/assessments")}
                   iconRight={<IconArrowRight size={16} />}
                 >
-                  Mulai Sekarang
+                  Mulai Asesmen
                 </PrimaryButton>
                 <OutlineButton
                   size="lg"
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate("/learning-path")}
+                  icon={<IconCompass size={16} />}
                 >
-                  Masuk ke Akun
+                  Peta Pembelajaran
                 </OutlineButton>
-              </div>
-            )}
-          </div>
-        </GlassPanel>
+                <OutlineButton
+                  size="lg"
+                  onClick={() => navigate("/progress")}
+                  icon={<IconChart size={16} />}
+                >
+                  Progres Belajar
+                </OutlineButton>
+              </>
+            )
+          ) : (
+            <>
+              <PrimaryButton
+                size="lg"
+                onClick={() => navigate("/register")}
+                iconRight={<IconArrowRight size={16} />}
+              >
+                Mulai Sekarang
+              </PrimaryButton>
+              <OutlineButton size="lg" onClick={() => navigate("/login")}>
+                Masuk ke Akun
+              </OutlineButton>
+            </>
+          )
+        }
+      />
 
-        {/* Feature Cards (Visitor View) */}
-        {!isAuthenticated && (
-          <div className="home-features-grid">
-            {features.map((f) => (
-              <GlassPanel key={f.title} variant="default" className="home-feature-card">
-                <div className="feature-icon-wrap">{f.icon}</div>
-                <h3 className="feature-title">{f.title}</h3>
-                <p className="feature-desc">{f.desc}</p>
-              </GlassPanel>
-            ))}
-          </div>
-        )}
+      {/* Feature Cards (Visitor View) */}
+      {!isAuthenticated && (
+        <Grid cols={4} className="mt-8">
+          {features.map((f) => (
+            <GlassPanel key={f.title} className={cx("flex flex-col gap-3 border-t pt-6", HAIRLINE)}>
+              <span className={INK}>{f.icon}</span>
+              <h3 className={cx("text-sm font-bold", INK)}>{f.title}</h3>
+              <p className={cx("text-[12px] leading-relaxed", MUTED)}>{f.desc}</p>
+            </GlassPanel>
+          ))}
+        </Grid>
+      )}
 
-        {/* Quick-access Cards (Authenticated Learner View) */}
-        {isAuthenticated && !isAdmin && (
-          <div className="home-quickaccess-grid">
-            <Link to="/assessments" className="glass-panel glass-panel-interactive home-quickaccess-card">
-              <div className="qa-icon-wrap">
-                <IconBook size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <strong className="qa-title">Asesmen Diagnostik</strong>
-                <p className="qa-desc">Kerjakan soal dan kumpulkan bukti penguasaan konsep</p>
-              </div>
-              <IconArrowRight size={16} className="qa-arrow" />
-            </Link>
+      {/* Quick-access Cards (Authenticated Learner View) */}
+      {isAuthenticated && !isAdmin && (
+        <Grid cols={2} className="mt-8">
+          <Link to="/assessments" className={quickAccessClass}>
+            <span className={cx("shrink-0", INK)}>
+              <IconBook size={20} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <strong className={cx("block text-sm font-bold", INK)}>
+                Asesmen Diagnostik
+              </strong>
+              <span className={cx("mt-0.5 block text-[12px] leading-relaxed", MUTED)}>
+                Kerjakan soal dan kumpulkan bukti penguasaan konsep
+              </span>
+            </span>
+            <IconArrowRight size={16} className={cx("shrink-0", MUTED)} />
+          </Link>
 
-            <Link to="/learning-path" className="glass-panel glass-panel-interactive home-quickaccess-card">
-              <div className="qa-icon-wrap">
-                <IconCompass size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <strong className="qa-title">Peta Pembelajaran</strong>
-                <p className="qa-desc">Lihat status kompetensi kurikulum dan prasyarat materi</p>
-              </div>
-              <IconArrowRight size={16} className="qa-arrow" />
-            </Link>
+          <Link to="/learning-path" className={quickAccessClass}>
+            <span className={cx("shrink-0", INK)}>
+              <IconCompass size={20} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <strong className={cx("block text-sm font-bold", INK)}>
+                Peta Pembelajaran
+              </strong>
+              <span className={cx("mt-0.5 block text-[12px] leading-relaxed", MUTED)}>
+                Lihat status kompetensi kurikulum dan prasyarat materi
+              </span>
+            </span>
+            <IconArrowRight size={16} className={cx("shrink-0", MUTED)} />
+          </Link>
 
-            <Link to="/progress" className="glass-panel glass-panel-interactive home-quickaccess-card">
-              <div className="qa-icon-wrap">
-                <IconChart size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <strong className="qa-title">Progres &amp; Riwayat</strong>
-                <p className="qa-desc">Telusuri pertumbuhan penguasaan materi dan histori sesi</p>
-              </div>
-              <IconArrowRight size={16} className="qa-arrow" />
-            </Link>
+          <Link to="/progress" className={quickAccessClass}>
+            <span className={cx("shrink-0", INK)}>
+              <IconChart size={20} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <strong className={cx("block text-sm font-bold", INK)}>
+                Progres &amp; Riwayat
+              </strong>
+              <span className={cx("mt-0.5 block text-[12px] leading-relaxed", MUTED)}>
+                Telusuri pertumbuhan penguasaan materi dan histori sesi
+              </span>
+            </span>
+            <IconArrowRight size={16} className={cx("shrink-0", MUTED)} />
+          </Link>
 
-            <Link to="/profile" className="glass-panel glass-panel-interactive home-quickaccess-card">
-              <div className="qa-icon-wrap">
-                <IconUser size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <strong className="qa-title">Profil Saya</strong>
-                <p className="qa-desc">Kelola identitas akun dan preferensi pembelajaran</p>
-              </div>
-              <IconArrowRight size={16} className="qa-arrow" />
-            </Link>
-          </div>
-        )}
-      </div>
+          <Link to="/profile" className={quickAccessClass}>
+            <span className={cx("shrink-0", INK)}>
+              <IconUser size={20} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <strong className={cx("block text-sm font-bold", INK)}>Profil Saya</strong>
+              <span className={cx("mt-0.5 block text-[12px] leading-relaxed", MUTED)}>
+                Kelola identitas akun dan preferensi pembelajaran
+              </span>
+            </span>
+            <IconArrowRight size={16} className={cx("shrink-0", MUTED)} />
+          </Link>
+        </Grid>
+      )}
     </PageContainer>
   );
 }

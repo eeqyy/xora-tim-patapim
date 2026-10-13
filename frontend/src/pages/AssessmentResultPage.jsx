@@ -1,6 +1,6 @@
 // ============================================================
 // XORA — Assessment Result & Diagnostic Breakdown Page
-// Premium Light Glassmorphism · Minimal · Reusable
+// Editorial Grid System · Flat · Hairline grid
 // frontend/src/pages/AssessmentResultPage.jsx
 // ============================================================
 
@@ -9,13 +9,26 @@ import { assessmentsApi, recommendationsApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
 import {
   PageContainer,
+  PageHeader,
   GlassPanel,
+  Grid,
+  GridCell,
   StatCard,
   StatusBadge,
+  SectionHeader,
+  SectionLede,
+  MicroMeta,
+  Alert,
+  EmptyState,
+  ProgressBar,
   PrimaryButton,
   OutlineButton,
   LoadingState,
   ErrorState,
+  cx,
+  HAIRLINE,
+  INK,
+  MUTED,
 } from "../components";
 import {
   IconArrowRight,
@@ -281,267 +294,227 @@ export default function AssessmentResultPage({ attemptId }) {
 
   return (
     <PageContainer maxWidth="normal">
-      <GlassPanel variant="elevated" className="result-card">
-        {/* Context Banners for Verification / Practice Sittings */}
-        {result.verification_context && (
-          <div className="alert alert-success result-context-banner">
-            <IconInfo size={18} />
-            <div>
-              <strong>Sesi Verifikasi Selesai:</strong> Asesmen ini menguji pemahaman konsep prasyarat{" "}
-              <em>"{result.verification_context.candidate_root_cause_name}"</em> untuk memverifikasi akar masalah pada konsep{" "}
-              <em>"{result.verification_context.concept_name}"</em>.
-            </div>
-          </div>
-        )}
+      <PageHeader
+        badge="Rekapitulasi Pembelajaran"
+        title={result.assessment_title || "Hasil Asesmen"}
+        description={
+          <>
+            Mata Pelajaran: <strong className={cx("font-bold", INK)}>{result.subject_name}</strong>
+          </>
+        }
+      />
 
-        {result.action_context && (
-          <div className="alert alert-success result-context-banner">
-            <IconInfo size={18} />
-            <div>
-              <strong>Sesi Latihan Remediasi Selesai:</strong> Asesmen ini ditujukan untuk memperkuat penguasaan konsep{" "}
-              <em>"{result.action_context.concept_name}"</em>.
-            </div>
-          </div>
-        )}
+      {/* Context Banners for Verification / Practice Sittings */}
+      {result.verification_context && (
+        <Alert tone="success" className="mt-5">
+          <strong className={cx("font-bold", INK)}>Sesi Verifikasi Selesai:</strong> Asesmen ini menguji pemahaman konsep prasyarat{" "}
+          <em>"{result.verification_context.candidate_root_cause_name}"</em> untuk memverifikasi akar masalah pada konsep{" "}
+          <em>"{result.verification_context.concept_name}"</em>.
+        </Alert>
+      )}
 
-        {/* Header */}
-        <div className="result-header">
-          <div className="result-status-badge">Rekapitulasi Pembelajaran</div>
-          <h1 className="result-title">{result.assessment_title || "Hasil Asesmen"}</h1>
-          <p className="result-subject">
-            Mata Pelajaran: <strong>{result.subject_name}</strong>
+      {result.action_context && (
+        <Alert tone="success" className="mt-5">
+          <strong className={cx("font-bold", INK)}>Sesi Latihan Remediasi Selesai:</strong> Asesmen ini ditujukan untuk memperkuat penguasaan konsep{" "}
+          <em>"{result.action_context.concept_name}"</em>.
+        </Alert>
+      )}
+
+      {/* Primary Attempt Score Band */}
+      <GlassPanel
+        variant="elevated"
+        className="mt-8 flex flex-col gap-5 p-5 md:flex-row md:items-end md:justify-between md:p-6"
+      >
+        <div className="flex flex-col gap-2">
+          <MicroMeta>Skor Attempt</MicroMeta>
+          <span
+            className={cx(
+              "text-4xl font-extrabold leading-none tracking-tight md:text-6xl",
+              isPassed ? INK : "text-brand"
+            )}
+          >
+            {scoreNum}%
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <StatusBadge
+            variant={isPassed ? "success" : "error"}
+            label={isPassed ? "LULUS STANDAR KKM" : "BELUM MEMENUHI KKM"}
+            dot
+          />
+          <p className={cx("text-[12px]", MUTED)}>
+            Standar Kelulusan Minimum (KKM): <strong className={cx("font-bold", INK)}>{passingScoreNum}%</strong>
           </p>
         </div>
+      </GlassPanel>
 
-        {/* Primary Attempt Score Card */}
-        <div className={`result-score-banner ${isPassed ? "result-pass-bg" : "result-fail-bg"}`}>
-          <div className="result-score-circle">
-            <span className="result-score-number">{scoreNum}%</span>
-            <span className="result-score-label">Skor Attempt</span>
-          </div>
+      {/* Quantitative Metrics Grid */}
+      <Grid cols={4} className="mt-8">
+        <StatCard
+          label="Total Soal"
+          value={totalQ || result.total_questions}
+        />
+        <StatCard
+          label="Jawaban Benar"
+          value={result.correct_count ?? 0}
+          variant="success"
+        />
+        <StatCard
+          label="Jawaban Salah"
+          value={result.incorrect_count ?? 0}
+          variant="error"
+        />
+        <StatCard
+          label={unansweredQ > 0 ? "Tidak Dijawab" : "Status"}
+          value={unansweredQ > 0 ? unansweredQ : (isPassed ? "Lulus" : "Belum Lulus")}
+          variant={unansweredQ > 0 ? "warning" : (isPassed ? "success" : "error")}
+        />
+      </Grid>
 
-          <div className="result-verdict">
-            <StatusBadge
-              variant={isPassed ? "success" : "error"}
-              label={isPassed ? "LULUS STANDAR KKM" : "BELUM MEMENUHI KKM"}
-              dot
-              style={{ fontSize: "0.95rem", padding: "0.4rem 1.25rem" }}
-            />
-            <p className="result-verdict-note">
-              Standar Kelulusan Minimum (KKM): <strong>{passingScoreNum}%</strong>
-            </p>
-          </div>
-        </div>
+      {/* SECTION 01: Performa Berbasis Materi Utama (HTML, CSS, JavaScript) */}
+      {result.material_scores && Object.keys(result.material_scores).length > 0 && (
+        <>
+          <SectionHeader index="01" title="Performa Berbasis Materi Utama" meta="Cakupan Materi Evaluasi" />
+          <SectionLede>
+            Distribusi pemahaman pada materi HTML, CSS, dan JavaScript dari attempt ini.
+          </SectionLede>
 
-        {/* Quantitative Metrics Grid */}
-        <div className="result-stats-grid">
-          <StatCard
-            label="Total Soal"
-            value={totalQ || result.total_questions}
-          />
-          <StatCard
-            label="Jawaban Benar"
-            value={result.correct_count ?? 0}
-            variant="success"
-          />
-          <StatCard
-            label="Jawaban Salah"
-            value={result.incorrect_count ?? 0}
-            variant="error"
-          />
-          <StatCard
-            label={unansweredQ > 0 ? "Tidak Dijawab" : "Status"}
-            value={unansweredQ > 0 ? unansweredQ : (isPassed ? "Lulus" : "Belum Lulus")}
-            variant={unansweredQ > 0 ? "warning" : (isPassed ? "success" : "error")}
-          />
-        </div>
+          <Grid cols={3} className="mt-8">
+            {Object.entries(result.material_scores).map(([mat, data]) => {
+              const score = Math.round(data.score_percent ?? (data.total > 0 ? (data.correct / data.total) * 100 : 0));
+              const isLimited = data.sample_status === "DATA_TERBATAS" || data.total < 3;
+              let badgeVariant = "error";
+              let badgeLabel = "Perlu Penguatan";
 
-        {/* SECTION: Performa Berbasis Materi Utama (HTML, CSS, JavaScript) */}
-        {result.material_scores && Object.keys(result.material_scores).length > 0 && (
-          <div className="result-diagnostic-section" style={{ marginTop: "2rem" }}>
-            <div className="section-title-row">
-              <div>
-                <h2 className="result-section-heading">Performa Berbasis Materi Utama</h2>
-                <p className="result-section-sub">
-                  Distribusi pemahaman pada materi HTML, CSS, dan JavaScript dari attempt ini.
-                </p>
-              </div>
-              <StatusBadge variant="primary" label="Cakupan Materi Evaluasi" />
-            </div>
+              if (isLimited) {
+                badgeVariant = "neutral";
+                badgeLabel = "Data Terbatas (< 3)";
+              } else if (score >= 85) {
+                badgeVariant = "success";
+                badgeLabel = "Menguasai";
+              } else if (score >= 70) {
+                badgeVariant = "info";
+                badgeLabel = "Berkembang";
+              }
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem", marginTop: "1rem" }}>
-              {Object.entries(result.material_scores).map(([mat, data]) => {
-                const score = Math.round(data.score_percent ?? (data.total > 0 ? (data.correct / data.total) * 100 : 0));
-                const isLimited = data.sample_status === "DATA_TERBATAS" || data.total < 3;
-                let badgeVariant = "error";
-                let badgeLabel = "Perlu Penguatan";
-
-                if (isLimited) {
-                  badgeVariant = "neutral";
-                  badgeLabel = "Data Terbatas (< 3)";
-                } else if (score >= 85) {
-                  badgeVariant = "success";
-                  badgeLabel = "Menguasai";
-                } else if (score >= 70) {
-                  badgeVariant = "info";
-                  badgeLabel = "Berkembang";
-                }
-
-                return (
-                  <GlassPanel key={mat} variant="subtle" style={{ padding: "1.25rem", borderRadius: "var(--radius-sm)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-                      <strong style={{ fontSize: "1.05rem", color: "var(--color-text-main)" }}>
-                        {mat === "BELUM_TERPETAKAN" ? "Materi Lain (Belum Terpetakan)" : mat}
-                      </strong>
-                      <StatusBadge variant={badgeVariant} label={badgeLabel} />
-                    </div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", marginBottom: "0.4rem" }}>
-                      <span style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--color-text-main)" }}>{score}%</span>
-                      <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
-                        ({data.correct || 0} benar, {data.incorrect || 0} salah{data.unanswered ? `, ${data.unanswered} kosong` : ""})
-                      </span>
-                    </div>
-                    <div style={{ width: "100%", height: "6px", background: "var(--color-bg-subtle)", borderRadius: "3px", overflow: "hidden", marginBottom: "0.5rem" }}>
-                      <div
-                        style={{
-                          width: `${Math.min(100, Math.max(0, score))}%`,
-                          height: "100%",
-                          background: score >= 70 ? "var(--color-success)" : "var(--color-error)",
-                          transition: "width 0.4s ease",
-                        }}
-                      />
-                    </div>
-                    {isLimited ? (
-                      <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontStyle: "italic", display: "block" }}>
-                        Sampel {data.total} soal belum mencukupi untuk menyimpulkan penguasaan.
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", display: "block" }}>
-                        Sampel terverifikasi ({data.total} soal dinilai).
-                      </span>
-                    )}
-                  </GlassPanel>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* SECTION: Distribusi Topik Teruji */}
-        {Array.isArray(result.topic_scores) && result.topic_scores.length > 0 && (
-          <div className="result-diagnostic-section" style={{ marginTop: "1.75rem" }}>
-            <div className="section-title-row">
-              <div>
-                <h2 className="result-section-heading">Distribusi Pemahaman per Topik</h2>
-                <p className="result-section-sub">
-                  Rincian akurasi dan kecukupan sampel per topik pembelajaran.
-                </p>
-              </div>
-              <StatusBadge variant="neutral" label={`${result.topic_scores.length} Topik`} />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.85rem", marginTop: "1rem" }}>
-              {result.topic_scores.map((ts, idx) => {
-                const tScore = Math.round(ts.score_percent ?? (ts.total > 0 ? (ts.correct / ts.total) * 100 : 0));
-                const isLimited = ts.total < 3;
-                let tBadgeVariant = "error";
-                let tBadgeLabel = "Perlu Penguatan";
-
-                if (isLimited) {
-                  tBadgeVariant = "neutral";
-                  tBadgeLabel = "Data Terbatas";
-                } else if (tScore >= 85) {
-                  tBadgeVariant = "success";
-                  tBadgeLabel = "Menguasai";
-                } else if (tScore >= 70) {
-                  tBadgeVariant = "info";
-                  tBadgeLabel = "Berkembang";
-                }
-
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      background: "var(--color-surface-solid)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "var(--radius-sm)",
-                      padding: "0.9rem 1rem",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem", marginBottom: "0.4rem" }}>
-                      <strong style={{ fontSize: "0.925rem", color: "var(--color-text-main)" }}>
-                        {ts.topic_name}
-                      </strong>
-                      <StatusBadge variant={tBadgeVariant} label={tBadgeLabel} style={{ fontSize: "0.725rem", padding: "0.2rem 0.5rem" }} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: "0.825rem", color: "var(--color-text-muted)" }}>
-                      <span>{ts.correct || 0} dari {ts.total || 0} soal benar</span>
-                      <strong style={{ fontSize: "1.1rem", color: "var(--color-text-main)" }}>{tScore}%</strong>
-                    </div>
+              return (
+                <GridCell key={mat}>
+                  <div className="flex items-start justify-between gap-3">
+                    <strong className={cx("text-[14px] font-bold leading-snug", INK)}>
+                      {mat === "BELUM_TERPETAKAN" ? "Materi Lain (Belum Terpetakan)" : mat}
+                    </strong>
+                    <StatusBadge variant={badgeVariant} label={badgeLabel} />
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
-        {/* SECTION: Research Gap Analysis & Rekomendasi Remedial */}
-        {result.primary_gap && (
-          <GlassPanel
-            variant="elevated"
-            style={{
-              marginTop: "2rem",
-              padding: "1.5rem",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--color-error-border)",
-              background: "var(--color-error-bg)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <IconAlertTriangle size={20} style={{ color: "var(--color-error)" }} />
-                <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "var(--color-text-main)" }}>
-                  Research Gap Teridentifikasi: {result.primary_gap.material}
-                </h3>
-              </div>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className={cx("text-4xl font-extrabold leading-none tracking-tight", INK)}>{score}%</span>
+                    <span className={cx("text-[11px]", MUTED)}>
+                      ({data.correct || 0} benar, {data.incorrect || 0} salah{data.unanswered ? `, ${data.unanswered} kosong` : ""})
+                    </span>
+                  </div>
+
+                  <ProgressBar value={score} variant={score >= 70 ? "success" : "error"} className="mt-3" />
+
+                  {isLimited ? (
+                    <span className={cx("mt-2 block text-[11px] italic leading-snug", MUTED)}>
+                      Sampel {data.total} soal belum mencukupi untuk menyimpulkan penguasaan.
+                    </span>
+                  ) : (
+                    <span className={cx("mt-2 block text-[11px] leading-snug", MUTED)}>
+                      Sampel terverifikasi ({data.total} soal dinilai).
+                    </span>
+                  )}
+                </GridCell>
+              );
+            })}
+          </Grid>
+        </>
+      )}
+
+      {/* SECTION 02: Distribusi Topik Teruji */}
+      {Array.isArray(result.topic_scores) && result.topic_scores.length > 0 && (
+        <>
+          <SectionHeader
+            index="02"
+            title="Distribusi Pemahaman per Topik"
+            meta={`${result.topic_scores.length} Topik`}
+          />
+          <SectionLede>
+            Rincian akurasi dan kecukupan sampel per topik pembelajaran.
+          </SectionLede>
+
+          <Grid cols={3} className="mt-8">
+            {result.topic_scores.map((ts, idx) => {
+              const tScore = Math.round(ts.score_percent ?? (ts.total > 0 ? (ts.correct / ts.total) * 100 : 0));
+              const isLimited = ts.total < 3;
+              let tBadgeVariant = "error";
+              let tBadgeLabel = "Perlu Penguatan";
+
+              if (isLimited) {
+                tBadgeVariant = "neutral";
+                tBadgeLabel = "Data Terbatas";
+              } else if (tScore >= 85) {
+                tBadgeVariant = "success";
+                tBadgeLabel = "Menguasai";
+              } else if (tScore >= 70) {
+                tBadgeVariant = "info";
+                tBadgeLabel = "Berkembang";
+              }
+
+              return (
+                <GridCell key={idx}>
+                  <div className="flex items-start justify-between gap-2">
+                    <strong className={cx("text-[13px] font-bold leading-snug", INK)}>
+                      {ts.topic_name}
+                    </strong>
+                    <StatusBadge variant={tBadgeVariant} label={tBadgeLabel} />
+                  </div>
+                  <div className={cx("mt-3 flex items-baseline justify-between gap-2 text-[11px]", MUTED)}>
+                    <span>{ts.correct || 0} dari {ts.total || 0} soal benar</span>
+                    <strong className={cx("text-xl font-extrabold leading-none tracking-tight", INK)}>{tScore}%</strong>
+                  </div>
+                </GridCell>
+              );
+            })}
+          </Grid>
+        </>
+      )}
+
+      {/* SECTION 03: Research Gap Analysis & Rekomendasi Remedial */}
+      {result.primary_gap && (
+        <>
+          <SectionHeader
+            index="03"
+            title={`Research Gap Teridentifikasi: ${result.primary_gap.material}`}
+          />
+          <GlassPanel variant="elevated" className="mt-8 p-5 md:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-brand">
+                <IconAlertTriangle size={20} />
+              </span>
               <StatusBadge
                 variant={result.primary_gap.confidence === "HIGH" ? "error" : "warning"}
                 label={`Tingkat Kepastian: ${result.primary_gap.confidence || "MEDIUM"}`}
               />
             </div>
 
-            <p style={{ margin: "0 0 1rem", fontSize: "0.925rem", color: "var(--color-text-main)", lineHeight: 1.6 }}>
-              Akurasi materi <strong>{result.primary_gap.material}</strong> tercatat sebesar{" "}
-              <strong>{Math.round(result.primary_gap.score_percent)}%</strong> ({result.primary_gap.correct_count} dari {result.primary_gap.total_questions} soal benar),
+            <p className={cx("mt-3 text-[13px] leading-relaxed", INK)}>
+              Akurasi materi <strong className={cx("font-bold", INK)}>{result.primary_gap.material}</strong> tercatat sebesar{" "}
+              <strong className={cx("font-bold", INK)}>{Math.round(result.primary_gap.score_percent)}%</strong> ({result.primary_gap.correct_count} dari {result.primary_gap.total_questions} soal benar),
               merupakan titik kesenjangan utama pada asesmen ini.
             </p>
 
             {result.remedial_recommendation && (
-              <div
-                style={{
-                  padding: "1rem 1.25rem",
-                  borderRadius: "var(--radius-sm)",
-                  background: "var(--color-surface-solid)",
-                  border: "1px solid var(--color-primary-border)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: "1rem",
-                  marginTop: "1rem",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.2rem" }}>
+              <div className={cx("mt-4 flex flex-wrap items-center justify-between gap-4 border-t pt-4", HAIRLINE)}>
+                <div className="min-w-0">
+                  <span className="tabular-nums text-[10px] font-bold uppercase tracking-widest text-brand md:text-[11px]">
                     Rekomendasi Remedial Terarah
-                  </div>
-                  <strong style={{ fontSize: "1rem", color: "var(--color-text-main)", display: "block" }}>
+                  </span>
+                  <strong className={cx("mt-1 block text-[14px]", INK)}>
                     {result.remedial_recommendation.title}
                   </strong>
-                  <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
+                  <span className={cx("text-[12px]", MUTED)}>
                     {result.remedial_recommendation.reason}
                   </span>
                 </div>
@@ -554,106 +527,66 @@ export default function AssessmentResultPage({ attemptId }) {
               </div>
             )}
           </GlassPanel>
-        )}
+        </>
+      )}
 
-        {/* SECTION: AI Research Insights */}
-        {result.ai_analysis && (
-          <GlassPanel
-            variant="subtle"
-            style={{
-              marginTop: "2rem",
-              padding: "1.5rem",
-              borderRadius: "var(--radius-md)",
-              border: `1px solid ${aiStatus === "COMPLETED" && !isFallback ? "var(--color-primary-border)" : "var(--color-warning-border)"}`,
-              background: aiStatus === "COMPLETED" && !isFallback
-                ? "var(--color-primary-light)"
-                : "var(--color-warning-bg)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <IconSparkles size={20} style={{ color: aiStatus === "COMPLETED" && !isFallback ? "var(--color-primary)" : "var(--color-warning)" }} />
-                <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "var(--color-text-main)" }}>
-                  Analisis Gap &amp; Insight Pembelajaran
-                </h3>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <StatusBadge
-                  variant={aiBadgeVariant}
-                  label={aiLabel}
-                />
-                {aiStatus === "FAILED" && (
-                  <OutlineButton
-                    size="sm"
-                    loading={isRetryingAi}
-                    disabled={isRetryingAi}
-                    onClick={handleRetryAi}
-                    icon={<IconRefresh size={14} />}
-                  >
-                    Coba Ulang AI
-                  </OutlineButton>
-                )}
-              </div>
+      {/* SECTION 04: AI Research Insights */}
+      {result.ai_analysis && (
+        <>
+          <SectionHeader index="04" title="Analisis Gap &amp; Insight Pembelajaran" meta={aiLabel} />
+          <GlassPanel variant="subtle" className="mt-8 p-5 md:p-6">
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <StatusBadge variant={aiBadgeVariant} label={aiLabel} />
+              {aiStatus === "FAILED" && (
+                <OutlineButton
+                  size="sm"
+                  loading={isRetryingAi}
+                  disabled={isRetryingAi}
+                  onClick={handleRetryAi}
+                  icon={<IconRefresh size={14} />}
+                >
+                  Coba Ulang AI
+                </OutlineButton>
+              )}
             </div>
 
             {(isFallback || aiStatus === "FAILED") && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.5rem",
-                  padding: "0.65rem 0.85rem",
-                  borderRadius: "var(--radius-sm)",
-                  background: "var(--color-warning-bg)",
-                  border: "1px solid var(--color-warning-border)",
-                  marginBottom: "0.85rem",
-                  fontSize: "0.825rem",
-                  color: "var(--color-warning-text)",
-                  lineHeight: 1.5,
-                }}
-              >
-                <IconAlertTriangle size={15} style={{ flexShrink: 0, marginTop: "1px" }} />
+              <Alert tone="info" className="mt-3">
+                <span className="shrink-0 text-brand"><IconAlertTriangle size={15} /></span>
                 <span>
                   {result.ai_analysis?.notice ||
                     "Analisis dihasilkan oleh engine deterministik berbasis data tersimpan. Layanan AI kualitatif sedang tidak tersedia."}
                 </span>
-              </div>
+              </Alert>
             )}
 
             {aiRetryMessage && (
-              <div className="alert alert-info" style={{ marginBottom: "1rem", fontSize: "0.85rem" }}>
-                <IconInfo size={16} />
+              <Alert tone="info" className="mt-3">
+                <span className="shrink-0 text-brand"><IconInfo size={16} /></span>
                 <span>{aiRetryMessage}</span>
-              </div>
+              </Alert>
             )}
 
-            <div style={{ fontSize: "0.95rem", lineHeight: 1.6, color: "var(--color-text-main)", marginBottom: "1rem" }}>
-              <p style={{ margin: "0 0 0.75rem", fontWeight: 500 }}>{result.ai_analysis.summary}</p>
+            <div className={cx("mt-3 text-[13px] leading-relaxed", INK)}>
+              <p className="mb-2 font-medium">{result.ai_analysis.summary}</p>
               {result.ai_analysis.gap_explanation && (
-                <p style={{ margin: "0 0 0.75rem", color: "var(--color-text-main)" }}>
-                  <strong>Evaluasi Gap:</strong> {result.ai_analysis.gap_explanation}
+                <p className="mb-2">
+                  <strong className={cx("font-bold", INK)}>Evaluasi Gap:</strong> {result.ai_analysis.gap_explanation}
                 </p>
               )}
               {result.ai_analysis.study_advice && (
-                <p style={{ margin: "0", color: "var(--color-text-main)" }}>
-                  <strong>Saran Pembelajaran:</strong> {result.ai_analysis.study_advice}
+                <p>
+                  <strong className={cx("font-bold", INK)}>Saran Pembelajaran:</strong> {result.ai_analysis.study_advice}
                 </p>
               )}
             </div>
 
             {Array.isArray(result.ai_analysis.strengths) && result.ai_analysis.strengths.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+              <div className="mt-3 flex flex-wrap gap-2">
                 {result.ai_analysis.strengths.map((str, idx) => (
                   <span
                     key={idx}
-                    style={{
-                      background: "var(--color-success-bg)",
-                      color: "var(--color-success)",
-                      padding: "0.25rem 0.65rem",
-                      borderRadius: "999px",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                    }}
+                    className={cx("inline-flex items-center rounded-full border px-3 py-1.5 tabular-nums text-[10px] font-bold uppercase tracking-widest md:text-[11px]", HAIRLINE, INK)}
                   >
                     ✓ {str}
                   </span>
@@ -661,388 +594,355 @@ export default function AssessmentResultPage({ attemptId }) {
               </div>
             )}
           </GlassPanel>
-        )}
+        </>
+      )}
 
-        {/* SECTION 0: Re-Assessment Comparative Evaluation */}
-        {result.comparison?.is_comparable && (
-          <GlassPanel
-            variant="subtle"
-            style={{
-              margin: "1.75rem 0",
-              textAlign: "left",
-              borderColor: "var(--color-primary-border)",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1.25rem" }}>
-              <div>
-                <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0, color: "var(--color-text-main)" }}>
-                  Evaluasi Komparatif Re-Assessment
-                </h3>
-                <p style={{ margin: "0.3rem 0 0", fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
-                  Perbandingan performa terhadap attempt sebelumnya pada instrumen asesmen yang sama.
-                </p>
-              </div>
-              <StatusBadge
-                variant={result.comparison.improved ? "success" : result.comparison.score_difference === 0 ? "neutral" : "error"}
-                label={
-                  result.comparison.score_difference > 0
-                    ? `Peningkatan +${result.comparison.score_difference}%`
-                    : result.comparison.score_difference === 0
-                    ? `Skor Tetap (0%)`
-                    : `Selisih ${result.comparison.score_difference}%`
-                }
-              />
-            </div>
+      {/* SECTION 05: Re-Assessment Comparative Evaluation */}
+      {result.comparison?.is_comparable && (
+        <>
+          <SectionHeader
+            index="05"
+            title="Evaluasi Komparatif Re-Assessment"
+            meta={
+              result.comparison.score_difference > 0
+                ? `Peningkatan +${result.comparison.score_difference}%`
+                : result.comparison.score_difference === 0
+                ? `Skor Tetap (0%)`
+                : `Selisih ${result.comparison.score_difference}%`
+            }
+          />
+          <SectionLede>
+            Perbandingan performa terhadap attempt sebelumnya pada instrumen asesmen yang sama.
+          </SectionLede>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
-              <div className="result-stat-box">
-                <span className="stat-label">Skor Sebelumnya</span>
-                <span className="stat-val" style={{ color: "var(--color-text-muted)" }}>
-                  {result.comparison.previous_score ?? 0}%
-                </span>
-              </div>
-              <div className="result-stat-box">
-                <span className="stat-label">Skor Re-Assessment</span>
-                <span className={`stat-val ${result.comparison.improved ? "text-success" : ""}`}>
-                  {result.comparison.current_score ?? 0}%
-                </span>
-              </div>
-              <div className="result-stat-box">
-                <span className="stat-label">Diferensiasi Skor</span>
-                <span className={`stat-val ${result.comparison.score_difference >= 0 ? "text-success" : "text-danger"}`}>
-                  {result.comparison.score_difference > 0 ? `+${result.comparison.score_difference}%` : `${result.comparison.score_difference}%`}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", lineHeight: 1.5, display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <IconCheck size={14} style={{ color: "var(--color-success)" }} />
-              <span>
-                <strong>Instrumen Terverifikasi:</strong> Perbandingan dihitung murni terhadap upaya pengerjaan sebelumnya pada instrumen yang sama.
+          <Grid cols={3} className="mt-8">
+            <GridCell>
+              <MicroMeta>Skor Sebelumnya</MicroMeta>
+              <span className={cx("mt-2 block text-4xl font-extrabold leading-none tracking-tight", MUTED)}>
+                {result.comparison.previous_score ?? 0}%
               </span>
-            </div>
-          </GlassPanel>
-        )}
+            </GridCell>
+            <GridCell>
+              <MicroMeta>Skor Re-Assessment</MicroMeta>
+              <span className={cx("mt-2 block text-4xl font-extrabold leading-none tracking-tight", INK)}>
+                {result.comparison.current_score ?? 0}%
+              </span>
+            </GridCell>
+            <GridCell>
+              <MicroMeta>Diferensiasi Skor</MicroMeta>
+              <span
+                className={cx(
+                  "mt-2 block text-4xl font-extrabold leading-none tracking-tight",
+                  result.comparison.score_difference >= 0 ? INK : "text-brand"
+                )}
+              >
+                {result.comparison.score_difference > 0 ? `+${result.comparison.score_difference}%` : `${result.comparison.score_difference}%`}
+              </span>
+            </GridCell>
+          </Grid>
 
-        {/* SECTION 1: Concept-Level Breakdown */}
-        <div className="result-diagnostic-section">
-          <div className="section-title-row">
-            <div>
-              <h2 className="result-section-heading">Performa Berbasis Konsep</h2>
-              <p className="result-section-sub">
-                Evaluasi penguasaan setiap konsep kompetensi yang diuji dalam asesmen ini.
-              </p>
-            </div>
-            <StatusBadge variant="primary" label={`${concepts.length} Konsep Diuji`} />
+          <div className={cx("mt-8 flex items-start gap-2 border-t pt-5 text-[12px]", HAIRLINE, MUTED)}>
+            <span className="shrink-0"><IconCheck size={14} /></span>
+            <span>
+              <strong className={cx("font-bold", INK)}>Instrumen Terverifikasi:</strong> Perbandingan dihitung murni terhadap upaya pengerjaan sebelumnya pada instrumen yang sama.
+            </span>
           </div>
+        </>
+      )}
 
-          {concepts.length === 0 ? (
-            <div className="empty-box">
-              <p>Belum ada data konsep granular yang dipetakan pada soal asesmen ini.</p>
-            </div>
-          ) : (
-            <div className="concept-cards-grid">
-              {concepts.map((concept) => {
-                const gapBadge = getGapStatusBadge(concept.gap_status);
-                const hasEnoughEvidence = concept.evidence_count >= 3;
+      {/* SECTION 06: Concept-Level Breakdown */}
+      <SectionHeader
+        index="06"
+        title="Performa Berbasis Konsep"
+        meta={`${concepts.length} Konsep Diuji`}
+      />
+      <SectionLede>
+        Evaluasi penguasaan setiap konsep kompetensi yang diuji dalam asesmen ini.
+      </SectionLede>
 
-                return (
-                  <div key={concept.concept_id} className="concept-result-card">
-                    <div className="concept-result-header">
-                      <div>
-                        <h3 className="concept-result-title">{concept.concept_name}</h3>
-                        <span className="concept-result-answered">
-                          Benar {concept.correct_count} dari {concept.total_questions} soal pada attempt ini
-                        </span>
-                      </div>
-                      <StatusBadge variant={gapBadge.variant} label={gapBadge.text} />
-                    </div>
+      {concepts.length === 0 ? (
+        <EmptyState
+          title="Belum ada data konsep granular yang dipetakan pada soal asesmen ini."
+          description=""
+        />
+      ) : (
+        <Grid cols={3} className="mt-8">
+          {concepts.map((concept) => {
+            const gapBadge = getGapStatusBadge(concept.gap_status);
+            const hasEnoughEvidence = concept.evidence_count >= 3;
 
-                    <div className="concept-metrics-row">
-                      <div className="metric-box">
-                        <span className="metric-label">Skor Attempt Ini</span>
-                        <span className="metric-value">
-                          {concept.attempt_score != null ? `${Math.round(concept.attempt_score)}%` : "N/A"}
-                        </span>
-                        <span className="metric-hint">Performa sesi ini</span>
-                      </div>
-
-                      <div className="metric-box">
-                        <span className="metric-label">Mastery Score</span>
-                        <span className="metric-value" style={{ color: "var(--color-primary)" }}>
-                          {concept.mastery_score != null ? `${Math.round(concept.mastery_score)}%` : "Belum Dinilai"}
-                        </span>
-                        <span className="metric-hint">Akumulasi berbobot</span>
-                      </div>
-
-                      <div className="metric-box">
-                        <span className="metric-label">Confidence</span>
-                        <span className="metric-value">
-                          {concept.evidence_confidence != null ? `${Math.round(concept.evidence_confidence)}%` : "0%"}
-                        </span>
-                        <span className="metric-hint">
-                          {hasEnoughEvidence ? `${concept.evidence_count} bukti terkumpul` : "Bukti masih sedikit"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {!hasEnoughEvidence && (
-                      <div className="evidence-warning-notice">
-                        <IconInfo size={14} style={{ display: "inline-block", marginRight: "0.35rem" }} />
-                        <strong>Bukti Masih Terbatas ({concept.evidence_count}/3):</strong> Skor penguasaan konsep ini belum definitif. Diperlukan minimal 3 bukti asesmen untuk memvalidasi pemahaman.
-                      </div>
-                    )}
-
-                    <div className="concept-error-row">
-                      <span className="error-pattern-label">Pola Galat Terdeteksi:</span>
-                      <span className="error-pattern-value">
-                        {formatErrorPattern(concept.primary_error_pattern)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* SECTION 2: Diagnostic & Root-Cause Hypotheses */}
-        <div className="result-diagnostic-section">
-          <div className="section-title-row">
-            <div>
-              <h2 className="result-section-heading">Analisis Diagnostik &amp; Akar Masalah</h2>
-              <p className="result-section-sub">
-                Hasil penelusuran relasi prasyarat (prerequisite chain) untuk mengidentifikasi kemungkinan akar kendala konseptual.
-              </p>
-            </div>
-          </div>
-
-          {diagnostics.length === 0 ? (
-            <div className="diagnostic-success-box">
-              <div className="success-icon">
-                <IconCheck size={20} />
-              </div>
-              <div>
-                <h3 className="success-title">Tidak Terdeteksi Kesenjangan Pemahaman Signifikan</h3>
-                <p className="success-desc">
-                  Seluruh konsep yang diuji berada di atas ambang batas kesenjangan, atau bukti pemahaman Anda telah mencukupi standar kompetensi.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="diagnostics-list">
-              {diagnostics.map((diag) => {
-                const effectiveStatus = diag.verification_result || diag.diagnostic_status;
-                const statusBadge = getDiagnosticStatusBadge(effectiveStatus);
-                const isHypothesis = effectiveStatus === "HYPOTHESIS";
-                const isConfirmed = effectiveStatus === "CONFIRMED";
-                const isRejected = effectiveStatus === "REJECTED";
-                const isInconclusive = effectiveStatus === "INCONCLUSIVE";
-
-                return (
-                  <div key={diag.id} className="diagnostic-item-card">
-                    <div className="diagnostic-card-header">
-                      <div>
-                        <span className="diagnostic-concept-context">
-                          Konsep yang Mengalami Kendala: <strong>{diag.concept_name}</strong>
-                        </span>
-                      </div>
-                      <StatusBadge variant={statusBadge.variant} label={statusBadge.text} />
-                    </div>
-
-                    <div className="diagnostic-hypothesis-body">
-                      {diag.candidate_root_cause_name ? (
-                        <div className="root-cause-lead">
-                          <span className="root-cause-lead-label">Dugaan Akar Masalah:</span>
-                          <span className="root-cause-lead-target">{diag.candidate_root_cause_name}</span>
-                        </div>
-                      ) : (
-                        <div className="root-cause-lead">
-                          <span className="root-cause-lead-label">Analisis:</span>
-                          <span className="root-cause-lead-target">
-                            Konsep ini tidak memiliki prasyarat lanjutan. Kesenjangan berada langsung pada materi konsep ini.
-                          </span>
-                        </div>
-                      )}
-
-                      {diag.candidate_root_cause_name && (
-                        <div className="root-cause-evidence-note">
-                          <span>Bukti Pendukung: </span>
-                          Penguasaan konsep prasyarat <em>"{diag.candidate_root_cause_name}"</em> tercatat berada pada tingkat mastery{" "}
-                          <strong>
-                            {diag.candidate_mastery_score != null ? `${Math.round(diag.candidate_mastery_score)}%` : "0%"}
-                          </strong>{" "}
-                          (di bawah batas kelulusan kompetensi 70%).
-                        </div>
-                      )}
-
-                      <div className="diagnostic-status-explanation">
-                        {isHypothesis && (
-                          <p>
-                            <strong>Status Hipotesis:</strong> Ini adalah dugaan analitis sistem, bukan simpulan pasti. Diperlukan sesi verifikasi asesmen prasyarat untuk membuktikan kebenaran dugaan ini.
-                          </p>
-                        )}
-                        {isConfirmed && (
-                          <p>
-                            <strong>Akar Masalah Terkonfirmasi:</strong> Dugaan terbukti benar berdasarkan bukti pengerjaan soal prasyarat. Remediasi harus diprioritaskan pada konsep prasyarat tersebut.
-                          </p>
-                        )}
-                        {isRejected && (
-                          <p>
-                            <strong>Dugaan Gugur:</strong> Penguasaan konsep prasyarat terbukti baik. Kesenjangan bukan disebabkan oleh prasyarat, melainkan pemahaman konsep target itu sendiri.
-                          </p>
-                        )}
-                        {isInconclusive && (
-                          <p>
-                            <strong>Belum Konklusif:</strong> Bukti verifikasi belum cukup kuat untuk membuktikan atau menggugurkan dugaan. Dianjurkan memperbanyak latihan.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* SECTION 3: Next Best Action Recommendation */}
-        {nextAction && (
-          <div className="result-diagnostic-section">
-            <div className="section-title-row">
-              <div>
-                <h2 className="result-section-heading">Rekomendasi Tindakan Belajar (Next Best Action)</h2>
-                <p className="result-section-sub">
-                  Langkah yang disarankan oleh sistem untuk menyelesaikan kesenjangan pemahaman secara terarah.
-                </p>
-              </div>
-              <StatusBadge variant="info" label={`Prioritas #${nextAction.priority || 1}`} />
-            </div>
-
-            <div className="next-action-card">
-              <div className="action-type-badge">
-                {getActionTypeLabel(nextAction.action_type)}
-              </div>
-              <h3 className="next-action-concept">
-                Target Fokus: {nextAction.concept_name || "Konsep Terkait"}
-              </h3>
-              <p className="next-action-reason">{nextAction.reason}</p>
-
-              {actionError && (
-                <div className="alert alert-error" style={{ margin: "0.5rem 0", fontSize: "0.85rem" }}>
-                  <IconAlertTriangle size={16} />
-                  <span>{actionError}</span>
-                </div>
-              )}
-
-              <div className="next-action-cta-row" style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-                {nextAction.action_type === "RUN_DIAGNOSTIC" && (
-                  <PrimaryButton
-                    disabled={isStartingAction}
-                    loading={isStartingAction}
-                    onClick={() => handleStartAction(nextAction)}
-                    iconRight={<IconArrowRight size={16} />}
-                  >
-                    Mulai Verifikasi Diagnosis
-                  </PrimaryButton>
-                )}
-
-                {nextAction.action_type === "PREREQUISITE_PRACTICE" && (
-                  <PrimaryButton
-                    disabled={isStartingAction}
-                    loading={isStartingAction}
-                    onClick={() => handleStartAction(nextAction)}
-                    iconRight={<IconArrowRight size={16} />}
-                  >
-                    Mulai Remediasi Prasyarat
-                  </PrimaryButton>
-                )}
-
-                {nextAction.action_type === "TARGETED_PRACTICE" && (
-                  <PrimaryButton
-                    disabled={isStartingAction}
-                    loading={isStartingAction}
-                    onClick={() => handleStartAction(nextAction)}
-                    iconRight={<IconArrowRight size={16} />}
-                  >
-                    Mulai Latihan Terarah
-                  </PrimaryButton>
-                )}
-
-                {(nextAction.action_type === "COLLECT_MORE_EVIDENCE" || nextAction.action_type === "ADVANCE") && (
-                  <PrimaryButton
-                    disabled={isStartingAction}
-                    loading={isStartingAction}
-                    onClick={() => handleStartAction(nextAction)}
-                    iconRight={<IconArrowRight size={16} />}
-                  >
-                    Mulai Sesi Latihan
-                  </PrimaryButton>
-                )}
-              </div>
-
-              {/* Re-Assessment Opportunity Card */}
-              {result.reassessment_eligible && result.reassessment_assessment_id && (
-                <div
-                  style={{
-                    marginTop: "1.25rem",
-                    padding: "1rem 1.25rem",
-                    borderRadius: "var(--radius-sm)",
-                    background: "var(--color-surface-solid)",
-                    border: "1px solid var(--color-primary-border)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "0.75rem",
-                  }}
-                >
-                  <div>
-                    <strong style={{ display: "block", color: "var(--color-text-main)", fontSize: "0.95rem" }}>
-                      Siap Menguji Ulang Pemahaman (Re-Assessment)?
-                    </strong>
-                    <span style={{ fontSize: "0.825rem", color: "var(--color-text-muted)" }}>
-                      Ambil sesi re-assessment untuk membuktikan peningkatan pemahaman dan memperbarui tingkat mastery Anda.
+            return (
+              <GridCell key={concept.concept_id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className={cx("text-[14px] font-bold leading-snug", INK)}>{concept.concept_name}</h3>
+                    <span className={cx("mt-1 block text-[11px]", MUTED)}>
+                      Benar {concept.correct_count} dari {concept.total_questions} soal pada attempt ini
                     </span>
                   </div>
-                  <PrimaryButton
-                    size="sm"
-                    disabled={isStartingAction}
-                    onClick={() => handleStartReassessment(result.reassessment_assessment_id)}
-                    iconRight={<IconArrowRight size={14} />}
-                  >
-                    Mulai Re-Assessment
-                  </PrimaryButton>
+                  <StatusBadge variant={gapBadge.variant} label={gapBadge.text} />
                 </div>
+
+                <div className={cx("mt-4 grid grid-cols-3 gap-x-4 border-t pt-4", HAIRLINE)}>
+                  <div className="min-w-0">
+                    <MicroMeta>Skor Attempt Ini</MicroMeta>
+                    <span className={cx("mt-1 block text-xl font-extrabold leading-none tracking-tight", INK)}>
+                      {concept.attempt_score != null ? `${Math.round(concept.attempt_score)}%` : "N/A"}
+                    </span>
+                    <span className={cx("mt-1 block text-[10px] leading-snug", MUTED)}>Performa sesi ini</span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <MicroMeta>Mastery Score</MicroMeta>
+                    <span className={cx("mt-1 block text-[14px] font-extrabold leading-none tracking-tight", INK)}>
+                      {concept.mastery_score != null ? `${Math.round(concept.mastery_score)}%` : "Belum Dinilai"}
+                    </span>
+                    <span className={cx("mt-1 block text-[10px] leading-snug", MUTED)}>Akumulasi berbobot</span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <MicroMeta>Confidence</MicroMeta>
+                    <span className={cx("mt-1 block text-[14px] font-extrabold leading-none tracking-tight", INK)}>
+                      {concept.evidence_confidence != null ? `${Math.round(concept.evidence_confidence)}%` : "0%"}
+                    </span>
+                    <span className={cx("mt-1 block text-[10px] leading-snug", MUTED)}>
+                      {hasEnoughEvidence ? `${concept.evidence_count} bukti terkumpul` : "Bukti masih sedikit"}
+                    </span>
+                  </div>
+                </div>
+
+                {!hasEnoughEvidence && (
+                  <p className={cx("mt-3 flex items-start gap-1.5 text-[11px] leading-snug", MUTED)}>
+                    <span className="shrink-0"><IconInfo size={14} /></span>
+                    <span>
+                      <strong className={cx("font-bold", INK)}>Bukti Masih Terbatas ({concept.evidence_count}/3):</strong> Skor penguasaan konsep ini belum definitif. Diperlukan minimal 3 bukti asesmen untuk memvalidasi pemahaman.
+                    </span>
+                  </p>
+                )}
+
+                <div className={cx("mt-4 border-t pt-4", HAIRLINE)}>
+                  <MicroMeta>Pola Galat Terdeteksi:</MicroMeta>
+                  <p className={cx("mt-1 text-[12px] leading-snug", INK)}>
+                    {formatErrorPattern(concept.primary_error_pattern)}
+                  </p>
+                </div>
+              </GridCell>
+            );
+          })}
+        </Grid>
+      )}
+
+      {/* SECTION 07: Diagnostic & Root-Cause Hypotheses */}
+      <SectionHeader
+        index="07"
+        title="Analisis Diagnostik &amp; Akar Masalah"
+      />
+      <SectionLede>
+        Hasil penelusuran relasi prasyarat (prerequisite chain) untuk mengidentifikasi kemungkinan akar kendala konseptual.
+      </SectionLede>
+
+      {diagnostics.length === 0 ? (
+        <GlassPanel variant="subtle" className="mt-8 flex items-start gap-3 p-5 md:p-6">
+          <span className="shrink-0 text-brand"><IconCheck size={20} /></span>
+          <div className="min-w-0">
+            <h3 className={cx("text-sm font-bold", INK)}>Tidak Terdeteksi Kesenjangan Pemahaman Signifikan</h3>
+            <p className={cx("mt-1 text-[13px] leading-relaxed", MUTED)}>
+              Seluruh konsep yang diuji berada di atas ambang batas kesenjangan, atau bukti pemahaman Anda telah mencukupi standar kompetensi.
+            </p>
+          </div>
+        </GlassPanel>
+      ) : (
+        diagnostics.map((diag) => {
+          const effectiveStatus = diag.verification_result || diag.diagnostic_status;
+          const statusBadge = getDiagnosticStatusBadge(effectiveStatus);
+          const isHypothesis = effectiveStatus === "HYPOTHESIS";
+          const isConfirmed = effectiveStatus === "CONFIRMED";
+          const isRejected = effectiveStatus === "REJECTED";
+          const isInconclusive = effectiveStatus === "INCONCLUSIVE";
+
+          return (
+            <GlassPanel key={diag.id} className={cx("border-t pt-5 md:pt-6", HAIRLINE)}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <span className={cx("text-[13px]", MUTED)}>
+                  Konsep yang Mengalami Kendala: <strong className={cx("font-bold", INK)}>{diag.concept_name}</strong>
+                </span>
+                <StatusBadge variant={statusBadge.variant} label={statusBadge.text} />
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3">
+                {diag.candidate_root_cause_name ? (
+                  <div>
+                    <MicroMeta>Dugaan Akar Masalah:</MicroMeta>
+                    <p className={cx("mt-1 text-[14px] font-bold leading-snug", INK)}>{diag.candidate_root_cause_name}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <MicroMeta>Analisis:</MicroMeta>
+                    <p className={cx("mt-1 text-[13px] leading-relaxed", INK)}>
+                      Konsep ini tidak memiliki prasyarat lanjutan. Kesenjangan berada langsung pada materi konsep ini.
+                    </p>
+                  </div>
+                )}
+
+                {diag.candidate_root_cause_name && (
+                  <p className={cx("text-[12px] leading-relaxed", MUTED)}>
+                    <span>Bukti Pendukung: </span>
+                    Penguasaan konsep prasyarat <em>"{diag.candidate_root_cause_name}"</em> tercatat berada pada tingkat mastery{" "}
+                    <strong className={cx("font-bold", INK)}>
+                      {diag.candidate_mastery_score != null ? `${Math.round(diag.candidate_mastery_score)}%` : "0%"}
+                    </strong>{" "}
+                    (di bawah batas kelulusan kompetensi 70%).
+                  </p>
+                )}
+
+                <div className={cx("flex flex-col gap-2 text-[12px] leading-relaxed", INK)}>
+                  {isHypothesis && (
+                    <p>
+                      <strong className={cx("font-bold", INK)}>Status Hipotesis:</strong> Ini adalah dugaan analitis sistem, bukan simpulan pasti. Diperlukan sesi verifikasi asesmen prasyarat untuk membuktikan kebenaran dugaan ini.
+                    </p>
+                  )}
+                  {isConfirmed && (
+                    <p>
+                      <strong className={cx("font-bold", INK)}>Akar Masalah Terkonfirmasi:</strong> Dugaan terbukti benar berdasarkan bukti pengerjaan soal prasyarat. Remediasi harus diprioritaskan pada konsep prasyarat tersebut.
+                    </p>
+                  )}
+                  {isRejected && (
+                    <p>
+                      <strong className={cx("font-bold", INK)}>Dugaan Gugur:</strong> Penguasaan konsep prasyarat terbukti baik. Kesenjangan bukan disebabkan oleh prasyarat, melainkan pemahaman konsep target itu sendiri.
+                    </p>
+                  )}
+                  {isInconclusive && (
+                    <p>
+                      <strong className={cx("font-bold", INK)}>Belum Konklusif:</strong> Bukti verifikasi belum cukup kuat untuk membuktikan atau menggugurkan dugaan. Dianjurkan memperbanyak latihan.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </GlassPanel>
+          );
+        })
+      )}
+
+      {/* SECTION 08: Next Best Action Recommendation */}
+      {nextAction && (
+        <>
+          <SectionHeader
+            index="08"
+            title="Rekomendasi Tindakan Belajar (Next Best Action)"
+            meta={`Prioritas #${nextAction.priority || 1}`}
+          />
+          <SectionLede>
+            Langkah yang disarankan oleh sistem untuk menyelesaikan kesenjangan pemahaman secara terarah.
+          </SectionLede>
+
+          <GlassPanel variant="subtle" className="mt-8 p-5 md:p-6">
+            <MicroMeta>{getActionTypeLabel(nextAction.action_type)}</MicroMeta>
+            <h3 className={cx("mt-2 text-lg font-extrabold leading-tight tracking-tight", INK)}>
+              Target Fokus: {nextAction.concept_name || "Konsep Terkait"}
+            </h3>
+            <p className={cx("mt-2 text-[13px] leading-relaxed", MUTED)}>{nextAction.reason}</p>
+
+            {actionError && (
+              <Alert tone="error" className="mt-3">
+                <span className="shrink-0"><IconAlertTriangle size={16} /></span>
+                <span>{actionError}</span>
+              </Alert>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {nextAction.action_type === "RUN_DIAGNOSTIC" && (
+                <PrimaryButton
+                  disabled={isStartingAction}
+                  loading={isStartingAction}
+                  onClick={() => handleStartAction(nextAction)}
+                  iconRight={<IconArrowRight size={16} />}
+                >
+                  Mulai Verifikasi Diagnosis
+                </PrimaryButton>
+              )}
+
+              {nextAction.action_type === "PREREQUISITE_PRACTICE" && (
+                <PrimaryButton
+                  disabled={isStartingAction}
+                  loading={isStartingAction}
+                  onClick={() => handleStartAction(nextAction)}
+                  iconRight={<IconArrowRight size={16} />}
+                >
+                  Mulai Remediasi Prasyarat
+                </PrimaryButton>
+              )}
+
+              {nextAction.action_type === "TARGETED_PRACTICE" && (
+                <PrimaryButton
+                  disabled={isStartingAction}
+                  loading={isStartingAction}
+                  onClick={() => handleStartAction(nextAction)}
+                  iconRight={<IconArrowRight size={16} />}
+                >
+                  Mulai Latihan Terarah
+                </PrimaryButton>
+              )}
+
+              {(nextAction.action_type === "COLLECT_MORE_EVIDENCE" || nextAction.action_type === "ADVANCE") && (
+                <PrimaryButton
+                  disabled={isStartingAction}
+                  loading={isStartingAction}
+                  onClick={() => handleStartAction(nextAction)}
+                  iconRight={<IconArrowRight size={16} />}
+                >
+                  Mulai Sesi Latihan
+                </PrimaryButton>
               )}
             </div>
-          </div>
-        )}
 
-        {/* Footer Actions */}
-        <div className="result-actions" style={{ marginTop: "2.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "space-between" }}>
+            {/* Re-Assessment Opportunity Card */}
+            {result.reassessment_eligible && result.reassessment_assessment_id && (
+              <div className={cx("mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4", HAIRLINE)}>
+                <div>
+                  <strong className={cx("block text-[13px]", INK)}>
+                    Siap Menguji Ulang Pemahaman (Re-Assessment)?
+                  </strong>
+                  <span className={cx("text-[12px]", MUTED)}>
+                    Ambil sesi re-assessment untuk membuktikan peningkatan pemahaman dan memperbarui tingkat mastery Anda.
+                  </span>
+                </div>
+                <PrimaryButton
+                  size="sm"
+                  disabled={isStartingAction}
+                  onClick={() => handleStartReassessment(result.reassessment_assessment_id)}
+                  iconRight={<IconArrowRight size={14} />}
+                >
+                  Mulai Re-Assessment
+                </PrimaryButton>
+              </div>
+            )}
+          </GlassPanel>
+        </>
+      )}
+
+      {/* Footer Actions */}
+      <div className={cx("mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-5", HAIRLINE)}>
+        <OutlineButton
+          onClick={() => navigate("/assessments")}
+          icon={<IconArrowLeft size={16} />}
+        >
+          Daftar Asesmen
+        </OutlineButton>
+        <div className="flex flex-wrap items-center gap-3">
           <OutlineButton
-            onClick={() => navigate("/assessments")}
-            icon={<IconArrowLeft size={16} />}
+            onClick={() => navigate("/progress")}
+            icon={<IconChart size={16} />}
           >
-            Daftar Asesmen
+            Lihat Riwayat &amp; Progres
           </OutlineButton>
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <OutlineButton
-              onClick={() => navigate("/progress")}
-              icon={<IconChart size={16} />}
-            >
-              Lihat Riwayat &amp; Progres
-            </OutlineButton>
-            <PrimaryButton
-              onClick={() => navigate("/learning-path")}
-              iconRight={<IconCompass size={16} />}
-            >
-              Peta Pembelajaran
-            </PrimaryButton>
-          </div>
+          <PrimaryButton
+            onClick={() => navigate("/learning-path")}
+            iconRight={<IconCompass size={16} />}
+          >
+            Peta Pembelajaran
+          </PrimaryButton>
         </div>
-      </GlassPanel>
+      </div>
     </PageContainer>
   );
 }

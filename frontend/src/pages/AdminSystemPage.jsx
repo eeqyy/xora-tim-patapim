@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Kesehatan Sistem & Data
+// XORA — Admin: Kesehatan Sistem & Data — Editorial Grid System
 // frontend/src/pages/AdminSystemPage.jsx
 // ============================================================
 // Memantau status database, statistik data, aktivitas terbaru
@@ -9,8 +9,27 @@
 
 import React, { useEffect, useState } from "react";
 import { adminSystemApi } from "../services/api";
-import StatusBadge from "../components/StatusBadge";
-import StatCard from "../components/StatCard";
+import {
+  PageContainer,
+  PageHeader,
+  Grid,
+  GridCell,
+  SectionHeader,
+  StatCard,
+  StatusBadge,
+  SecondaryButton,
+  LoadingState,
+  EmptyState,
+  Alert,
+  MicroMeta,
+  TABLE_CLASS,
+  TH_CLASS,
+  TD_CLASS,
+  HAIRLINE,
+  INK,
+  MUTED,
+  cx,
+} from "../components";
 
 function formatDateTime(value) {
   if (!value) return "—";
@@ -41,6 +60,8 @@ const ACTION_LABELS = {
   LOGOUT: "Keluar",
   VERIFY: "Verifikasi",
 };
+
+const VALUE_CLASS = cx("text-sm font-bold", INK);
 
 export default function AdminSystemPage() {
   const [health, setHealth] = useState(null);
@@ -83,89 +104,75 @@ export default function AdminSystemPage() {
   const topGaps = analytics?.top_gap_concepts || [];
 
   return (
-    <div className="assessment-container">
-      <div className="card assessment-header-card">
-        <div className="assessment-header-badge">ADMIN</div>
-        <div className="admin-title-row">
-          <div>
-            <h1 className="assessment-title">Kesehatan Sistem</h1>
-            <p className="assessment-subtitle">
-              Status database, statistik data, aktivitas terbaru, dan ringkasan
-              analytics platform Xora.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
+    <PageContainer>
+      <PageHeader
+        badge="ADMIN"
+        title="Kesehatan Sistem"
+        description="Status database, statistik data, aktivitas terbaru, dan ringkasan analytics platform Xora."
+        actions={
+          <SecondaryButton
+            size="sm"
             onClick={loadAll}
             disabled={isLoading}
           >
             {isLoading ? "Memuat..." : "Muat Ulang"}
-          </button>
-        </div>
-      </div>
+          </SecondaryButton>
+        }
+      />
 
-      {error && (
-        <div className="alert alert-error" role="alert">
-          <p>{error}</p>
-        </div>
-      )}
+      {error && <Alert tone="error">{error}</Alert>}
 
-      {isLoading && !health && (
-        <div className="card loading-card">
-          <p>Memuat data sistem...</p>
-        </div>
-      )}
+      {isLoading && !health && <LoadingState message="Memuat data sistem..." />}
 
       {health && (
-        <div className="card" style={{ marginBottom: "1.5rem" }}>
-          <h2 className="admin-section-heading">Status Sistem</h2>
-          <div className="admin-detail-grid">
-            <div className="admin-detail-item">
-              <span className="admin-detail-label">Database</span>
+        <>
+          <SectionHeader id="system-status" index="01" title="Status Sistem" />
+          <Grid cols={3} className="mt-8">
+            <GridCell className="flex flex-col justify-between gap-2">
+              <MicroMeta>Database</MicroMeta>
               <StatusBadge
                 status={health.database === "connected" ? "ACTIVE" : "SUSPENDED"}
                 label={health.database === "connected" ? "Terhubung" : "Terputus"}
                 variant={health.database === "connected" ? "success" : "error"}
                 dot
               />
-            </div>
-            <div className="admin-detail-item">
-              <span className="admin-detail-label">Latensi DB</span>
-              <span className="admin-detail-value">
+            </GridCell>
+            <GridCell className="flex flex-col justify-between gap-2">
+              <MicroMeta>Latensi DB</MicroMeta>
+              <span className={VALUE_CLASS}>
                 {health.db_latency_ms != null ? `${health.db_latency_ms} ms` : "—"}
               </span>
-            </div>
-            <div className="admin-detail-item">
-              <span className="admin-detail-label">Uptime</span>
-              <span className="admin-detail-value">{formatUptime(health.uptime_seconds)}</span>
-            </div>
-            <div className="admin-detail-item">
-              <span className="admin-detail-label">Node.js</span>
-              <span className="admin-detail-value">{health.node_version || "—"}</span>
-            </div>
-            <div className="admin-detail-item">
-              <span className="admin-detail-label">Dicek pada</span>
-              <span className="admin-detail-value">{formatDateTime(health.timestamp)}</span>
-            </div>
-          </div>
-        </div>
+            </GridCell>
+            <GridCell className="flex flex-col justify-between gap-2">
+              <MicroMeta>Uptime</MicroMeta>
+              <span className={VALUE_CLASS}>{formatUptime(health.uptime_seconds)}</span>
+            </GridCell>
+            <GridCell className="flex flex-col justify-between gap-2">
+              <MicroMeta>Node.js</MicroMeta>
+              <span className={VALUE_CLASS}>{health.node_version || "—"}</span>
+            </GridCell>
+            <GridCell className="flex flex-col justify-between gap-2">
+              <MicroMeta>Dicek pada</MicroMeta>
+              <span className={VALUE_CLASS}>{formatDateTime(health.timestamp)}</span>
+            </GridCell>
+          </Grid>
+        </>
       )}
 
       {stats && (
         <>
-          <h2 className="admin-section-heading">Statistik Pengguna</h2>
-          <div className="map-summary-bar">
+          <SectionHeader id="user-stats" index="02" title="Statistik Pengguna" />
+          <Grid cols={3} className="mt-8">
             <StatCard label="Total Pengguna" value={stats.total_users} />
             <StatCard label="Aktif" value={stats.active_users} variant="success" />
             <StatCard label="Nonaktif" value={stats.inactive_users} variant="neutral" />
             <StatCard label="Suspend" value={stats.suspended_users} variant="error" />
             <StatCard label="Admin" value={stats.admin_users} variant="info" />
             <StatCard label="Sesi Aktif" value={stats.active_sessions} variant="info" />
-          </div>
+          </Grid>
 
-          <h2 className="admin-section-heading">Statistik Konten & Aktivitas</h2>
-          <div className="map-summary-bar">
+          <SectionHeader id="content-stats" index="03" title="Statistik Konten & Aktivitas" />
+          <Grid cols={3} className="mt-8">
             <StatCard
               label="Subjek"
               value={stats.subjects}
@@ -187,130 +194,156 @@ export default function AdminSystemPage() {
             />
             <StatCard label="Event Belajar" value={stats.learning_events} />
             <StatCard label="Audit Log" value={stats.audit_logs} />
-          </div>
+          </Grid>
         </>
       )}
 
       {analytics && (
         <>
-          <h2 className="admin-section-heading">Ringkasan Analytics</h2>
-          <div className="map-summary-bar">
+          <SectionHeader id="analytics" index="04" title="Ringkasan Analytics" />
+          <Grid cols={3} className="mt-8">
             <StatCard label="Learner Terlacak" value={summary.learners_tracked ?? 0} />
             <StatCard
               label="Rata-rata Mastery"
               value={summary.average_mastery != null ? `${summary.average_mastery}` : "—"}
               variant="info"
             />
-            <StatCard label="Konsep Dikuasai" value={summary.total_mastered_concepts ?? 0} variant="success" />
+            <StatCard
+              label="Konsep Dikuasai"
+              value={summary.total_mastered_concepts ?? 0}
+              variant="success"
+            />
             <StatCard label="Gap Aktif" value={summary.total_active_gaps ?? 0} variant="error" />
             <StatCard label="Aksi Selesai" value={summary.total_completed_actions ?? 0} />
             <StatCard
               label="Total Waktu Belajar"
               value={`${summary.total_learning_minutes ?? 0} mnt`}
             />
-          </div>
+          </Grid>
 
-          <div className="card admin-table-card" style={{ marginBottom: "1.5rem" }}>
-            <h2 className="admin-section-heading" style={{ marginTop: 0 }}>
-              Konsep dengan Gap Terbanyak
-            </h2>
-            {topGaps.length === 0 ? (
-              <p className="admin-cell-muted">
-                Belum ada data analytics konsep. Data akan terisi seiring peserta
-                mengerjakan asesmen.
-              </p>
-            ) : (
-              <div className="table-scroll">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Konsep</th>
-                      <th scope="col">Jumlah Gap</th>
-                      <th scope="col">Jumlah Error</th>
-                      <th scope="col">Rata-rata Mastery</th>
+          <SectionHeader id="top-gaps" index="05" title="Konsep dengan Gap Terbanyak" />
+          {topGaps.length === 0 ? (
+            <EmptyState
+              title="Belum Ada Data Analytics"
+              description="Belum ada data analytics konsep. Data akan terisi seiring peserta mengerjakan asesmen."
+            />
+          ) : (
+            <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+              <table className={TABLE_CLASS}>
+                <thead>
+                  <tr>
+                    <th scope="col" className={TH_CLASS}>
+                      Konsep
+                    </th>
+                    <th scope="col" className={TH_CLASS}>
+                      Jumlah Gap
+                    </th>
+                    <th scope="col" className={TH_CLASS}>
+                      Jumlah Error
+                    </th>
+                    <th scope="col" className={TH_CLASS}>
+                      Rata-rata Mastery
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topGaps.map((g) => (
+                    <tr key={g.concept_name}>
+                      <th scope="row" className={cx(TD_CLASS, "font-bold")}>
+                        {g.concept_name}
+                      </th>
+                      <td className={cx(TD_CLASS, "tabular-nums")}>{g.gap_count}</td>
+                      <td className={cx(TD_CLASS, "tabular-nums")}>{g.error_count}</td>
+                      <td className={cx(TD_CLASS, "tabular-nums")}>{g.average_mastery ?? "—"}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {topGaps.map((g) => (
-                      <tr key={g.concept_name}>
-                        <th scope="row" className="admin-cell-title">
-                          {g.concept_name}
-                        </th>
-                        <td className="admin-cell-num">{g.gap_count}</td>
-                        <td className="admin-cell-num">{g.error_count}</td>
-                        <td className="admin-cell-num">{g.average_mastery ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
 
-      <h2 className="admin-section-heading">Aktivitas Terbaru</h2>
-      <div className="card admin-table-card" style={{ marginBottom: "1.5rem" }}>
-        <h3 className="admin-subheading">Event Belajar (learning_events)</h3>
-        {activity.events.length === 0 ? (
-          <p className="admin-cell-muted">Belum ada event belajar.</p>
-        ) : (
-          <div className="table-scroll">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th scope="col">Waktu</th>
-                  <th scope="col">Event</th>
-                  <th scope="col">Pelaku</th>
-                  <th scope="col">Entitas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activity.events.map((ev) => (
-                  <tr key={ev.id}>
-                    <td className="admin-cell-muted">{formatDateTime(ev.occurred_at)}</td>
-                    <td>{ev.event_type}</td>
-                    <td className="admin-cell-title">{ev.actor_name || "—"}</td>
-                    <td className="admin-cell-muted">{ev.entity_type}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <SectionHeader id="activity" index="06" title="Aktivitas Terbaru" />
 
-      <div className="card admin-table-card">
-        <h3 className="admin-subheading">Audit Log (aksi penting)</h3>
-        {activity.audits.length === 0 ? (
-          <p className="admin-cell-muted">Belum ada catatan audit.</p>
-        ) : (
-          <div className="table-scroll">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th scope="col">Waktu</th>
-                  <th scope="col">Aksi</th>
-                  <th scope="col">Pelaku</th>
-                  <th scope="col">Tipe Pelaku</th>
-                  <th scope="col">Entitas</th>
+      <SectionHeader id="learning-events" index="07" title="Event Belajar (learning_events)" />
+      {activity.events.length === 0 ? (
+        <EmptyState
+          title="Belum Ada Event Belajar"
+          description="Belum ada event belajar."
+        />
+      ) : (
+        <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+          <table className={TABLE_CLASS}>
+            <thead>
+              <tr>
+                <th scope="col" className={TH_CLASS}>
+                  Waktu
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Event
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Pelaku
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Entitas
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {activity.events.map((ev) => (
+                <tr key={ev.id}>
+                  <td className={cx(TD_CLASS, MUTED)}>{formatDateTime(ev.occurred_at)}</td>
+                  <td className={TD_CLASS}>{ev.event_type}</td>
+                  <td className={cx(TD_CLASS, "font-bold")}>{ev.actor_name || "—"}</td>
+                  <td className={cx(TD_CLASS, MUTED)}>{ev.entity_type}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {activity.audits.map((a) => (
-                  <tr key={a.id}>
-                    <td className="admin-cell-muted">{formatDateTime(a.occurred_at)}</td>
-                    <td>{ACTION_LABELS[a.action] || a.action}</td>
-                    <td className="admin-cell-title">{a.actor_name || "—"}</td>
-                    <td className="admin-cell-muted">{a.actor_type}</td>
-                    <td className="admin-cell-muted">{a.entity_type}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <SectionHeader id="audit-log" index="08" title="Audit Log (aksi penting)" />
+      {activity.audits.length === 0 ? (
+        <EmptyState title="Belum Ada Catatan Audit" description="Belum ada catatan audit." />
+      ) : (
+        <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+          <table className={TABLE_CLASS}>
+            <thead>
+              <tr>
+                <th scope="col" className={TH_CLASS}>
+                  Waktu
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Aksi
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Pelaku
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Tipe Pelaku
+                </th>
+                <th scope="col" className={TH_CLASS}>
+                  Entitas
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {activity.audits.map((a) => (
+                <tr key={a.id}>
+                  <td className={cx(TD_CLASS, MUTED)}>{formatDateTime(a.occurred_at)}</td>
+                  <td className={TD_CLASS}>{ACTION_LABELS[a.action] || a.action}</td>
+                  <td className={cx(TD_CLASS, "font-bold")}>{a.actor_name || "—"}</td>
+                  <td className={cx(TD_CLASS, MUTED)}>{a.actor_type}</td>
+                  <td className={cx(TD_CLASS, MUTED)}>{a.entity_type}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </PageContainer>
   );
 }

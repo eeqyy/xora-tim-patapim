@@ -18,4 +18,45 @@ export { default as ProgressBar } from "./ProgressBar";
 export { default as EmptyState } from "./EmptyState";
 export { default as LoadingState } from "./LoadingState";
 export { default as ErrorState } from "./ErrorState";
+export { default as AssessmentMetaFields } from "./AssessmentMetaFields";
 export * from "./Icons";
+
+// Primitif sistem editorial v2 (dipakai langsung oleh halaman).
+export {
+  Eyebrow,
+  MicroMeta,
+  DisplayHeading,
+  SectionHeader,
+  SectionLede,
+  Panel,
+  Grid,
+  GridCell,
+  MetricCell,
+  SeverityBadge,
+  PrimaryButton as EditorialPrimaryButton,
+  GhostButton,
+  AccordionRow,
+  ChecklistRow,
+  DataRow,
+  Field,
+  Input,
+  Select,
+  Textarea,
+  Alert,
+  Avatar,
+  FilterChips,
+  Reveal,
+  INPUT_CLASS,
+  TH_CLASS,
+  TD_CLASS,
+  TABLE_CLASS,
+  CHIP_CLASS,
+  CHIP_ACTIVE,
+  CHIP_INACTIVE,
+  cx,
+  HAIRLINE,
+  SURFACE,
+  CELL,
+  INK,
+  MUTED,
+} from "./ui";

@@ -1,11 +1,22 @@
 // ============================================================
-// XORA — Register Page
+// XORA — Register Page (Editorial Grid System)
 // frontend/src/pages/RegisterPage.jsx
 // ============================================================
 
 import React, { useEffect, useState } from "react";
 import { useAuth, homePathFor } from "../context/AuthContext";
 import { useRouter, Link } from "../context/RouterContext";
+import {
+  PageContainer,
+  GlassPanel,
+  Field,
+  Input,
+  PrimaryButton,
+  Alert,
+  INK,
+  MUTED,
+  cx,
+} from "../components";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -96,18 +107,29 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2 className="auth-title">Daftar Akun Xora</h2>
-        <p className="auth-subtitle">Mulai perjalanan belajar terarah Anda hari ini</p>
+    <PageContainer maxWidth="narrow" className="flex min-h-[70vh] flex-col justify-center">
+      <GlassPanel variant="elevated" className="p-8 md:p-10">
+        <h1 className={cx("text-2xl font-extrabold leading-tight tracking-tight md:text-3xl", INK)}>
+          Daftar Akun Xora
+        </h1>
+        <p className={cx("mt-2 text-[13px] leading-relaxed", MUTED)}>
+          Mulai perjalanan belajar terarah Anda hari ini
+        </p>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
+        {error ? (
+          <Alert tone="error" className="mt-6">
+            {error}
+          </Alert>
+        ) : null}
+        {success ? (
+          <Alert tone="success" className="mt-6">
+            {success}
+          </Alert>
+        ) : null}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="reg-name">Nama Lengkap</label>
-            <input
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+          <Field label="Nama Lengkap" htmlFor="reg-name">
+            <Input
               id="reg-name"
               name="name"
               type="text"
@@ -118,11 +140,10 @@ export default function RegisterPage() {
               autoComplete="name"
               required
             />
-          </div>
+          </Field>
 
-          <div className="form-group">
-            <label htmlFor="reg-email">Alamat Email</label>
-            <input
+          <Field label="Alamat Email" htmlFor="reg-email">
+            <Input
               id="reg-email"
               name="email"
               type="email"
@@ -133,11 +154,10 @@ export default function RegisterPage() {
               autoComplete="email"
               required
             />
-          </div>
+          </Field>
 
-          <div className="form-group">
-            <label htmlFor="reg-password">Password</label>
-            <input
+          <Field label="Password" htmlFor="reg-password">
+            <Input
               id="reg-password"
               name="password"
               type="password"
@@ -148,11 +168,10 @@ export default function RegisterPage() {
               autoComplete="new-password"
               required
             />
-          </div>
+          </Field>
 
-          <div className="form-group">
-            <label htmlFor="reg-confirm-password">Konfirmasi Password</label>
-            <input
+          <Field label="Konfirmasi Password" htmlFor="reg-confirm-password">
+            <Input
               id="reg-confirm-password"
               name="confirmPassword"
               type="password"
@@ -163,21 +182,23 @@ export default function RegisterPage() {
               autoComplete="new-password"
               required
             />
-          </div>
+          </Field>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-block"
-            disabled={isSubmitting}
-          >
+          <PrimaryButton type="submit" fullWidth disabled={isSubmitting}>
             {isSubmitting ? "Mendaftarkan..." : "Daftar Akun"}
-          </button>
+          </PrimaryButton>
         </form>
 
-        <p className="auth-footer">
-          Sudah memiliki akun? <Link to="/login" className="text-link">Masuk di sini</Link>
+        <p className={cx("mt-6 flex flex-wrap items-center gap-2 text-[12px] leading-relaxed", MUTED)}>
+          <span>Sudah memiliki akun?</span>
+          <Link
+            to="/login"
+            className="inline-flex min-h-[44px] items-center font-bold text-brand underline underline-offset-2 hover:text-brand-hover"
+          >
+            Masuk di sini
+          </Link>
         </p>
-      </div>
-    </div>
+      </GlassPanel>
+    </PageContainer>
   );
 }

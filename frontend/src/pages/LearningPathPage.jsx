@@ -1,7 +1,14 @@
 // ============================================================
 // XORA — Interactive Learning Path Page (Jalur Belajar)
-// Premium Light Glassmorphism · Minimal · Reusable
+// Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/LearningPathPage.jsx
+// ------------------------------------------------------------
+// Struktur editorial bernomor:
+//   01 / FILTER MATERI           -> chips kesiapan + reset
+//   ·  Inspector konsep (id="concept-inspector")
+//   02 / STRUKTUR LEVEL & TOPIK  -> band level + grid topik/konsep
+//
+// Logika data (state, useEffect, API, handler, URL, teks) tidak berubah.
 // ============================================================
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
@@ -11,12 +18,24 @@ import {
   PageContainer,
   PageHeader,
   GlassPanel,
+  Grid,
+  GridCell,
+  SectionHeader,
   StatusBadge,
+  ProgressBar,
   PrimaryButton,
   OutlineButton,
+  EmptyState,
   LoadingState,
   ErrorState,
-  EmptyState,
+  MicroMeta,
+  HAIRLINE,
+  CHIP_CLASS,
+  CHIP_ACTIVE,
+  CHIP_INACTIVE,
+  INK,
+  MUTED,
+  cx,
 } from "../components";
 import {
   IconArrowRight,
@@ -33,6 +52,23 @@ const FILTER_OPTIONS = [
   { key: "LOCKED", label: "Menunggu Prasyarat" },
 ];
 
+// Kerangka CTA kontekstual (editorial, flat).
+const ACTION_BOX = cx(
+  "flex flex-col gap-3 border-t pt-4 md:flex-row md:items-center md:justify-between",
+  HAIRLINE
+);
+
+// Indikator titik status konsep -> token warna (presentasi saja).
+function conceptDotTone(concept) {
+  if (concept.is_locked) return "bg-muted dark:bg-muted-dark";
+  if (concept.is_mastered) return "bg-ink dark:bg-ink-dark";
+  const s = String(concept.learning_status || "").toUpperCase();
+  if (s === "CONFIRMED_GAP" || s === "POSSIBLE_GAP" || s === "IN_PRACTICE") {
+    return "bg-brand";
+  }
+  return "bg-muted dark:bg-muted-dark";
+}
+
 export default function LearningPathPage() {
   const { navigate } = useRouter();
   const [subjects, setSubjects] = useState([]);
@@ -40,7 +76,6 @@ export default function LearningPathPage() {
   const [learningPath, setLearningPath] = useState(null);
   const [selectedConcept, setSelectedConcept] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
-
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [isLoadingPath, setIsLoadingPath] = useState(false);
   const [error, setError] = useState(null);
@@ -251,10 +286,10 @@ export default function LearningPathPage() {
     if (concept.is_locked) {
       const unsatisfied = (concept.prerequisites || []).filter((p) => !p.satisfied);
       return (
-        <div className="map-action-box map-action-box-locked">
+        <div className={ACTION_BOX}>
           <div>
-            <p className="map-action-title">Materi Masih Terkunci</p>
-            <p className="map-action-desc">
+            <p className={cx("text-sm font-bold", INK)}>Materi Masih Terkunci</p>
+            <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
               Selesaikan materi prasyarat terlebih dahulu untuk membuka materi ini.
             </p>
           </div>
@@ -274,10 +309,10 @@ export default function LearningPathPage() {
     if (concept.active_action) {
       const act = concept.active_action;
       return (
-        <div className="map-action-box map-action-box-active">
+        <div className={ACTION_BOX}>
           <div>
-            <p className="map-action-title">Latihan Remediasi Aktif:</p>
-            <p className="map-action-desc">
+            <p className={cx("text-sm font-bold", INK)}>Latihan Remediasi Aktif:</p>
+            <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
               {act.action_type === "PREREQUISITE_PRACTICE"
                 ? "Latihan penguatan konsep prasyarat direkomendasikan untuk memperkuat pondasi."
                 : "Latihan terarah (Targeted Practice) tersedia untuk konsep ini."}
@@ -296,10 +331,10 @@ export default function LearningPathPage() {
 
     if (concept.learning_status === "POSSIBLE_GAP" && concept.active_diagnostic) {
       return (
-        <div className="map-action-box map-action-box-verify">
+        <div className={ACTION_BOX}>
           <div>
-            <p className="map-action-title">Verifikasi Diagnostik Diperlukan:</p>
-            <p className="map-action-desc">
+            <p className={cx("text-sm font-bold", INK)}>Verifikasi Diagnostik Diperlukan:</p>
+            <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
               Terdapat hipotesis akar kendala belajar yang perlu dibuktikan melalui verifikasi singkat.
             </p>
           </div>
@@ -316,10 +351,10 @@ export default function LearningPathPage() {
 
     if (concept.learning_status === "IN_PRACTICE" && concept.assessment_id) {
       return (
-        <div className="map-action-box map-action-box-reassess">
+        <div className={ACTION_BOX}>
           <div>
-            <p className="map-action-title">Siap untuk Uji Ulang (Re-assessment):</p>
-            <p className="map-action-desc">
+            <p className={cx("text-sm font-bold", INK)}>Siap untuk Uji Ulang (Re-assessment):</p>
+            <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
               Ukur peningkatan penguasaan materi setelah menyelesaikan sesi latihan terarah.
             </p>
           </div>
@@ -336,10 +371,10 @@ export default function LearningPathPage() {
 
     if (concept.assessment_id) {
       return (
-        <div className="map-action-box">
+        <div className={ACTION_BOX}>
           <div>
-            <p className="map-action-title">Asesmen Tersedia:</p>
-            <p className="map-action-desc">
+            <p className={cx("text-sm font-bold", INK)}>Asesmen Tersedia:</p>
+            <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
               {concept.is_assessed
                 ? "Evaluasi ulang pemahaman Anda terhadap konsep materi ini."
                 : "Ikuti asesmen diagnostik untuk membangun profil penguasaan konsep awal."}
@@ -357,10 +392,10 @@ export default function LearningPathPage() {
     }
 
     return (
-      <div className="map-action-box">
+      <div className={ACTION_BOX}>
         <div>
-          <p className="map-action-title">Asesmen Pembelajaran</p>
-          <p className="map-action-desc">
+          <p className={cx("text-sm font-bold", INK)}>Asesmen Pembelajaran</p>
+          <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
             Buka daftar asesmen untuk menguji pemahaman konsep pada mata pelajaran ini.
           </p>
         </div>
@@ -386,60 +421,62 @@ export default function LearningPathPage() {
   const selectedStatusInfo = selectedConcept ? getConceptStatusInfo(selectedConcept) : null;
   const currentFilterLabel = FILTER_OPTIONS.find((f) => f.key === statusFilter)?.label || "Semua Materi";
 
+  const chipInactive = CHIP_INACTIVE;
+  const chipActive = CHIP_ACTIVE;
+
   return (
     <PageContainer maxWidth="normal">
       {/* 1. Header & Subject Selector */}
-      <GlassPanel variant="elevated" className="path-header-card">
-        <PageHeader
-          badge="Struktur Pembelajaran"
-          title="Jalur Belajar"
-          description="Pahami susunan topik, relasi prasyarat antar-materi, dan tentukan materi yang siap dipelajari berikutnya."
-          actions={
-            <>
-              <OutlineButton
-                size="sm"
-                onClick={() => (selectedSubjectId ? fetchPath(selectedSubjectId) : fetchSubjects())}
-                icon={<IconRefresh size={14} />}
-              >
-                Segarkan
-              </OutlineButton>
-              <PrimaryButton
-                size="sm"
-                onClick={() => navigate("/progress")}
-                iconRight={<IconChart size={14} />}
-              >
-                Lihat Riwayat &amp; Progres
-              </PrimaryButton>
-            </>
-          }
-        />
+      <PageHeader
+        badge="Struktur Pembelajaran"
+        title="Jalur Belajar"
+        description="Pahami susunan topik, relasi prasyarat antar-materi, dan tentukan materi yang siap dipelajari berikutnya."
+        actions={
+          <>
+            <OutlineButton
+              size="sm"
+              onClick={() => (selectedSubjectId ? fetchPath(selectedSubjectId) : fetchSubjects())}
+              icon={<IconRefresh size={14} />}
+            >
+              Segarkan
+            </OutlineButton>
+            <PrimaryButton
+              size="sm"
+              onClick={() => navigate("/progress")}
+              iconRight={<IconChart size={14} />}
+            >
+              Lihat Riwayat &amp; Progres
+            </PrimaryButton>
+          </>
+        }
+      />
 
-        {/* Subjects Selector */}
-        {subjects.length === 0 ? (
-          <EmptyState
-            title="Belum Ada Mata Pelajaran"
-            description="Belum ada data mata pelajaran yang tersedia di database."
-          />
-        ) : (
-          <div className="subject-tabs-container">
-            <span className="subject-tabs-label">Pilih Mata Pelajaran:</span>
-            <div className="subject-tabs">
-              {subjects.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => handleSelectSubject(s.id)}
-                  className={`btn-subject-tab ${
-                    selectedSubjectId === s.id ? "btn-subject-tab-active" : ""
-                  }`}
-                >
-                  {s.name}
-                </button>
-              ))}
-            </div>
+      {/* Subjects Selector */}
+      {subjects.length === 0 ? (
+        <EmptyState
+          title="Belum Ada Mata Pelajaran"
+          description="Belum ada data mata pelajaran yang tersedia di database."
+        />
+      ) : (
+        <GlassPanel className="mt-8 flex flex-col gap-3">
+          <MicroMeta>Pilih Mata Pelajaran:</MicroMeta>
+          <div className="flex flex-wrap gap-2">
+            {subjects.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => handleSelectSubject(s.id)}
+                className={cx(
+                  CHIP_CLASS,
+                  selectedSubjectId === s.id ? chipActive : chipInactive
+                )}
+              >
+                {s.name}
+              </button>
+            ))}
           </div>
-        )}
-      </GlassPanel>
+        </GlassPanel>
+      )}
 
       {/* Error Alert */}
       {error && (
@@ -457,22 +494,28 @@ export default function LearningPathPage() {
 
       {/* 2. Path Content */}
       {!isLoadingPath && learningPath && (
-        <div className="learning-path-content">
+        <>
           {/* Filter Bar */}
-          <div className="map-filter-bar">
-            <div className="filter-bar-header">
-              <span className="filter-label">Filter Materi Berdasarkan Kesiapan:</span>
+          <SectionHeader
+            id="filter"
+            index="01"
+            title="Filter Materi"
+            meta={currentFilterLabel}
+          />
+          <GlassPanel className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <MicroMeta>Filter Materi Berdasarkan Kesiapan:</MicroMeta>
               {statusFilter !== "ALL" && (
                 <button
                   type="button"
-                  className="filter-reset-link"
+                  className="min-h-[44px] tabular-nums text-[11px] font-bold uppercase tracking-widest text-brand hover:underline"
                   onClick={() => setStatusFilter("ALL")}
                 >
                   Reset Filter (Tampilkan Semua)
                 </button>
               )}
             </div>
-            <div className="filter-chips">
+            <div className="flex flex-wrap gap-2">
               {FILTER_OPTIONS.map((opt) => {
                 const count =
                   opt.key === "ALL"
@@ -489,7 +532,10 @@ export default function LearningPathPage() {
                   <button
                     key={opt.key}
                     type="button"
-                    className={`filter-chip ${statusFilter === opt.key ? "filter-chip-active" : ""}`}
+                    className={cx(
+                      CHIP_CLASS,
+                      statusFilter === opt.key ? chipActive : chipInactive
+                    )}
                     onClick={() => setStatusFilter(opt.key)}
                   >
                     {opt.label} ({count})
@@ -497,20 +543,22 @@ export default function LearningPathPage() {
                 );
               })}
             </div>
-          </div>
+          </GlassPanel>
 
           {/* Interactive Concept Detail Panel (when concept selected) */}
           {selectedConcept && (
-            <GlassPanel variant="elevated" className="concept-detail-drawer" id="concept-inspector">
-              <div className="detail-drawer-header">
-                <div>
-                  <div className="detail-drawer-breadcrumbs">
-                    <span>{selectedConcept.levelName || "Level"}</span> ›{" "}
-                    <span>{selectedConcept.topicName || "Topik"}</span>
-                  </div>
-                  <h3 className="detail-drawer-title">{selectedConcept.name}</h3>
+            <GlassPanel id="concept-inspector" variant="subtle" className="mt-6 flex flex-col gap-4 p-5 md:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <MicroMeta>
+                    {selectedConcept.levelName || "Level"} ›{" "}
+                    {selectedConcept.topicName || "Topik"}
+                  </MicroMeta>
+                  <h3 className={cx("mt-1 text-xl font-extrabold leading-snug tracking-tight md:text-2xl", INK)}>
+                    {selectedConcept.name}
+                  </h3>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge
                     status={selectedStatusInfo.badgeStatus}
                     label={selectedStatusInfo.title}
@@ -527,92 +575,98 @@ export default function LearningPathPage() {
               </div>
 
               {selectedConcept.description && (
-                <p className="detail-drawer-desc">{selectedConcept.description}</p>
+                <p className={cx("text-[13px] leading-relaxed", MUTED)}>
+                  {selectedConcept.description}
+                </p>
               )}
 
               {/* Metrics Grid */}
-              <div className="detail-metrics-grid">
-                <div className="metric-box">
-                  <span className="metric-lbl">Tingkat Penguasaan</span>
-                  <span className="metric-val">
+              <Grid cols={3}>
+                <GridCell className="flex flex-col gap-1">
+                  <MicroMeta>Tingkat Penguasaan</MicroMeta>
+                  <span className={cx("text-2xl font-extrabold tracking-tight", INK)}>
                     {selectedConcept.mastery_score !== null
                       ? `${selectedConcept.mastery_score}%`
                       : "Belum Dinilai"}
                   </span>
                   {selectedConcept.mastery_score !== null && (
-                    <div className="progress-bar-track progress-bar-sm" style={{ marginTop: "0.4rem" }}>
-                      <div
-                        className="progress-bar-fill"
-                        style={{
-                          width: `${Math.min(100, Math.max(0, selectedConcept.mastery_score))}%`,
-                          backgroundColor:
-                            selectedConcept.mastery_score >= 70
-                              ? "var(--color-success)"
-                              : selectedConcept.mastery_score >= 40
-                              ? "var(--color-warning)"
-                              : "var(--color-error)",
-                        }}
-                      />
-                    </div>
+                    <ProgressBar
+                      value={Math.min(100, Math.max(0, selectedConcept.mastery_score))}
+                      showPercent={false}
+                      size="sm"
+                      variant={
+                        selectedConcept.mastery_score >= 70
+                          ? "primary"
+                          : selectedConcept.mastery_score >= 40
+                          ? "warning"
+                          : "error"
+                      }
+                      className="mt-1"
+                    />
                   )}
-                </div>
+                </GridCell>
 
-                <div className="metric-box">
-                  <span className="metric-lbl">Bukti Asesmen Terkumpul</span>
-                  <span className="metric-val">
+                <GridCell className="flex flex-col gap-1">
+                  <MicroMeta>Bukti Asesmen Terkumpul</MicroMeta>
+                  <span className={cx("text-2xl font-extrabold tracking-tight", INK)}>
                     {selectedConcept.evidence_count > 0
                       ? `${selectedConcept.evidence_count} bukti`
                       : "0 bukti"}
                   </span>
-                  <span className="metric-sub">
+                  <span className={cx("text-[11px] leading-snug", MUTED)}>
                     {selectedConcept.evidence_confidence !== null
                       ? `Tingkat keyakinan: ${selectedConcept.evidence_confidence}%`
                       : "Belum ada keyakinan bukti"}
                   </span>
-                </div>
+                </GridCell>
 
-                <div className="metric-box">
-                  <span className="metric-lbl">Status Pembelajaran</span>
-                  <span className="metric-val">{selectedStatusInfo.title}</span>
-                  <span className="metric-sub">{selectedStatusInfo.desc}</span>
-                </div>
-              </div>
+                <GridCell className="flex flex-col gap-1">
+                  <MicroMeta>Status Pembelajaran</MicroMeta>
+                  <span className={cx("text-base font-bold", INK)}>{selectedStatusInfo.title}</span>
+                  <span className={cx("text-[11px] leading-snug", MUTED)}>
+                    {selectedStatusInfo.desc}
+                  </span>
+                </GridCell>
+              </Grid>
 
               {/* Prerequisites Chain */}
-              <div className="detail-prereq-section">
-                <h4 className="detail-prereq-title">Relasi Prasyarat:</h4>
-                {(!selectedConcept.prerequisites || selectedConcept.prerequisites.length === 0) ? (
-                  <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+              <div className={cx("flex flex-col gap-3 border-t pt-4", HAIRLINE)}>
+                <h4 className={cx("text-sm font-bold", INK)}>Relasi Prasyarat:</h4>
+                {!selectedConcept.prerequisites || selectedConcept.prerequisites.length === 0 ? (
+                  <p className={cx("text-[13px] leading-relaxed", MUTED)}>
                     Materi pondasi dasar — tidak membutuhkan materi prasyarat sebelumnya.
                   </p>
                 ) : (
-                  <div className="prereq-items-grid">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {selectedConcept.prerequisites.map((p) => (
                       <div
                         key={p.id}
-                        className={`prereq-item-card ${
-                          p.satisfied ? "prereq-satisfied" : "prereq-unsatisfied"
-                        }`}
+                        className={cx(
+                          "flex min-h-[44px] cursor-pointer flex-col gap-2 rounded-2xl border p-4 transition-colors",
+                          p.satisfied
+                            ? "border-transparent bg-cell dark:bg-cell-dark"
+                            : "border-hairline hover:bg-cell dark:border-hairline-dark dark:hover:bg-cell-dark"
+                        )}
                         onClick={() => handlePrerequisiteClick(p.id)}
                         role="button"
                         tabIndex={0}
                         title="Klik untuk melihat materi prasyarat ini"
                       >
-                        <div className="prereq-header-row">
-                          <span className="prereq-name">{p.name}</span>
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <span className={cx("text-sm font-bold", INK)}>{p.name}</span>
                           <StatusBadge
                             variant={p.satisfied ? "success" : "error"}
                             label={p.satisfied ? "Terpenuhi" : "Belum Terpenuhi"}
                           />
                         </div>
-                        <div className="prereq-score-row">
-                          <span>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className={cx("text-[12px]", MUTED)}>
                             Penguasaan:{" "}
-                            <strong>
+                            <strong className={cx("font-bold", INK)}>
                               {p.mastery_score !== null ? `${p.mastery_score}%` : "Belum Dinilai"}
                             </strong>
                           </span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Target: ≥70%</span>
+                          <span className={cx("text-[12px]", MUTED)}>Target: ≥70%</span>
                         </div>
                       </div>
                     ))}
@@ -642,7 +696,13 @@ export default function LearningPathPage() {
               }
             />
           ) : (
-            <div className="levels-list">
+            <>
+              <SectionHeader
+                id="levels"
+                index="02"
+                title="Struktur Level & Topik"
+                meta={`${learningPath.levels.length} TINGKAT`}
+              />
               {learningPath.levels.map((level, lvlIdx) => {
                 const levelMatchingCount = (level.topics || []).reduce(
                   (acc, t) => acc + (t.concepts || []).filter(matchesFilter).length,
@@ -654,31 +714,47 @@ export default function LearningPathPage() {
                 }
 
                 return (
-                  <GlassPanel key={level.id} variant="default" className="level-card">
+                  <React.Fragment key={level.id}>
                     {/* Level Header */}
-                    <div className="level-header">
-                      <div className="level-order-pill">Tingkat {level.order_index ?? lvlIdx + 1}</div>
-                      <div className="level-title-block">
-                        <h3 className="level-name">{level.name}</h3>
-                        {level.description && (
-                          <p className="level-desc">{level.description}</p>
-                        )}
+                    <GlassPanel
+                      variant="subtle"
+                      className="mt-8 flex flex-col gap-3 p-4 md:flex-row md:items-start md:justify-between md:p-6"
+                    >
+                      <div className="flex min-w-0 items-start gap-3">
+                        <MicroMeta className="mt-0.5 shrink-0">
+                          Tingkat {level.order_index ?? lvlIdx + 1}
+                        </MicroMeta>
+                        <div className="min-w-0">
+                          <h3 className={cx("text-lg font-extrabold leading-snug tracking-tight md:text-xl", INK)}>
+                            {level.name}
+                          </h3>
+                          {level.description && (
+                            <p className={cx("mt-1 text-[13px] leading-relaxed", MUTED)}>
+                              {level.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <StatusBadge status={level.difficulty} />
                       </div>
-                    </div>
+                    </GlassPanel>
 
                     {/* Topics under Level */}
-                    <div className="topics-section">
-                      <h4 className="topics-heading">Daftar Topik &amp; Konsep Materi</h4>
-
-                      {!level.topics || level.topics.length === 0 ? (
-                        <p style={{ fontSize: "0.9rem", color: "var(--color-text-muted)" }}>
+                    {!level.topics || level.topics.length === 0 ? (
+                      <div className={cx("mt-6 border-t pt-5", HAIRLINE)}>
+                        <p className={cx("text-[13px]", MUTED)}>
                           Belum ada topik pada tingkat ini.
                         </p>
-                      ) : (
-                        <div className="topics-grid">
+                      </div>
+                    ) : (
+                      <>
+                        <div className={cx("mt-6 border-t pt-5", HAIRLINE)}>
+                          <h4 className={cx("tabular-nums text-[10px] font-bold uppercase tracking-widest md:text-[11px]", MUTED)}>
+                            Daftar Topik &amp; Konsep Materi
+                          </h4>
+                        </div>
+                        <Grid cols={2} className="mt-6">
                           {level.topics.map((topic, topIdx) => {
                             const matchingConcepts = (topic.concepts || []).filter(matchesFilter);
 
@@ -687,40 +763,42 @@ export default function LearningPathPage() {
                             }
 
                             return (
-                              <div key={topic.id} className="topic-card">
-                                <div className="topic-header">
-                                  <span className="topic-number">{topIdx + 1}.</span>
-                                  <div style={{ flex: 1 }}>
-                                    <h5 className="topic-name">{topic.name}</h5>
+                              <GridCell key={topic.id} className="flex flex-col gap-3">
+                                <div className="flex items-start gap-2">
+                                  <MicroMeta className="mt-0.5 shrink-0">{topIdx + 1}.</MicroMeta>
+                                  <div className="min-w-0 flex-1">
+                                    <h5 className={cx("text-sm font-bold", INK)}>{topic.name}</h5>
                                     {topic.description && (
-                                      <p className="topic-desc">{topic.description}</p>
+                                      <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
+                                        {topic.description}
+                                      </p>
                                     )}
                                   </div>
                                 </div>
 
                                 {/* Concepts under Topic */}
-                                <div className="concepts-section">
-                                  <div className="concepts-header-row">
-                                    <span className="concepts-label">Konsep Kompetensi</span>
-                                    <span className="concepts-count-sub">
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <MicroMeta>Konsep Kompetensi</MicroMeta>
+                                    <MicroMeta>
                                       {matchingConcepts.length} dari {(topic.concepts || []).length} materi
-                                    </span>
+                                    </MicroMeta>
                                   </div>
 
-                                  {(!topic.concepts || topic.concepts.length === 0) ? (
-                                    <p style={{ fontSize: "0.825rem", color: "var(--color-text-muted)" }}>
+                                  {!topic.concepts || topic.concepts.length === 0 ? (
+                                    <p className={cx("text-[12px]", MUTED)}>
                                       Belum ada materi terhubung.
                                     </p>
                                   ) : matchingConcepts.length === 0 ? (
-                                    <p style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", fontStyle: "italic" }}>
+                                    <p className={cx("text-[12px] italic", MUTED)}>
                                       Tidak ada materi yang sesuai dengan filter saat ini.
                                     </p>
                                   ) : (
-                                    <div className="concept-nodes-grid">
+                                    <div className="flex flex-wrap gap-2">
                                       {matchingConcepts.map((concept) => {
                                         const isSelected = selectedConcept?.id === concept.id;
                                         const locked = concept.is_locked === true;
-                                        const statusClass = `node-status-${(concept.learning_status || "not_assessed").toLowerCase()}`;
+                                        const dotTone = conceptDotTone(concept);
 
                                         return (
                                           <button
@@ -729,50 +807,62 @@ export default function LearningPathPage() {
                                             onClick={() =>
                                               handleSelectConcept(concept, topic.name, level.name)
                                             }
-                                            className={`concept-node-card ${statusClass} ${
-                                              locked ? "node-locked" : ""
-                                            } ${isSelected ? "node-selected" : ""}`}
+                                            className={cx(
+                                              "flex min-h-[44px] max-w-full flex-col gap-1 rounded-2xl border px-4 py-2.5 text-left transition-colors",
+                                              isSelected
+                                                ? "border-brand bg-brand-soft"
+                                                : locked
+                                                ? "border-transparent bg-cell dark:bg-cell-dark"
+                                                : "border-hairline hover:bg-cell dark:border-hairline-dark dark:hover:bg-cell-dark"
+                                            )}
                                             title={`Klik untuk melihat detail: ${concept.name}`}
                                           >
-                                            <div className="node-top-row">
-                                              <span className="node-status-dot" />
-                                              <span className="node-name">{concept.name}</span>
-                                              {locked && <IconLock size={12} className="node-lock-icon" />}
-                                            </div>
+                                            <span className="flex items-center gap-2">
+                                              <span
+                                                className={cx("h-1.5 w-1.5 shrink-0 rounded-full", dotTone)}
+                                                aria-hidden="true"
+                                              />
+                                              <span className={cx("truncate text-[12px] font-bold", locked ? MUTED : INK)}>
+                                                {concept.name}
+                                              </span>
+                                              {locked && (
+                                                <IconLock size={12} className="shrink-0 text-muted dark:text-muted-dark" />
+                                              )}
+                                            </span>
 
-                                            <div className="node-meta-row">
-                                              <span className="node-mastery">
+                                            <span className="flex flex-wrap items-center gap-2">
+                                              <span className={cx("tabular-nums text-[10px] uppercase tracking-widest", MUTED)}>
                                                 {concept.mastery_score !== null
                                                   ? `${concept.mastery_score}%`
                                                   : "Belum dinilai"}
                                               </span>
                                               {concept.prerequisites && concept.prerequisites.length > 0 && (
                                                 <span
-                                                  className="node-prereq-badge"
+                                                  className={cx("rounded-full border px-2 py-0.5 tabular-nums text-[10px] uppercase tracking-widest", HAIRLINE, MUTED)}
                                                   title={`${concept.prerequisites.length} prasyarat`}
                                                 >
                                                   Prasyarat: {concept.prerequisites.length}
                                                 </span>
                                               )}
-                                            </div>
+                                            </span>
                                           </button>
                                         );
                                       })}
                                     </div>
                                   )}
                                 </div>
-                              </div>
+                              </GridCell>
                             );
                           })}
-                        </div>
-                      )}
-                    </div>
-                  </GlassPanel>
+                        </Grid>
+                      </>
+                    )}
+                  </React.Fragment>
                 );
               })}
-            </div>
+            </>
           )}
-        </div>
+        </>
       )}
     </PageContainer>
   );

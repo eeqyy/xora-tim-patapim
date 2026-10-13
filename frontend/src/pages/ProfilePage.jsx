@@ -10,13 +10,25 @@ import { useRouter } from "../context/RouterContext";
 import { profileApi, subjectsApi } from "../services/api";
 import {
   PageContainer,
+  PageHeader,
   GlassPanel,
+  SectionHeader,
   StatusBadge,
   PrimaryButton,
   OutlineButton,
   LoadingState,
   ErrorState,
   EmptyState,
+  Field,
+  Input,
+  Select,
+  Textarea,
+  Alert,
+  Avatar,
+  MicroMeta,
+  cx,
+  INK,
+  MUTED,
 } from "../components";
 import { IconCheck, IconRefresh } from "../components/Icons";
 
@@ -188,7 +200,7 @@ export default function ProfilePage() {
               : "Lengkapi data pembelajaran Anda terlebih dahulu."
           }
           action={
-            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
+            <div className="flex flex-wrap items-center justify-center gap-3">
               {isAdmin && (
                 <PrimaryButton onClick={() => navigate("/admin/assessments")}>
                   Buka Halaman Kelola
@@ -218,168 +230,166 @@ export default function ProfilePage() {
 
   const user = profileData?.user || authUser;
   const profile = profileData?.profile || {};
+  const detailIndex = isEditing ? "02" : "01";
 
   return (
     <PageContainer maxWidth="normal">
       {successMessage && (
-        <div className="alert alert-success" style={{ marginBottom: "1.25rem" }}>
-          <IconCheck size={16} />
-          <span>{successMessage}</span>
-        </div>
+        <Alert tone="success">
+          <span className="inline-flex items-center gap-2">
+            <IconCheck size={16} />
+            {successMessage}
+          </span>
+        </Alert>
       )}
 
-      {/* Main Profile Header Card */}
-      <GlassPanel variant="elevated" className="profile-header-card" style={{ marginBottom: "1.5rem" }}>
-        <div className="profile-avatar-row">
-          <div className="profile-avatar">
-            {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-          </div>
-          <div>
-            <h1 className="profile-name">{user?.name}</h1>
-            <p className="profile-email">{user?.email}</p>
-            <div className="badge-row">
-              {Array.isArray(user?.roles) &&
-                user.roles.map((r) => (
-                  <StatusBadge key={r} status={r} />
-                ))}
-              <StatusBadge
-                variant={user?.is_active ? "success" : "error"}
-                label={user?.is_active ? "Aktif" : "Nonaktif"}
-                dot
-              />
-            </div>
-          </div>
-        </div>
+      {/* Header editorial */}
+      <PageHeader
+        badge="PROFIL PEMBELAJAR"
+        title={user?.name}
+        description={user?.email}
+        actions={
+          !isEditing ? (
+            <OutlineButton onClick={handleStartEdit}>Edit Profil</OutlineButton>
+          ) : null
+        }
+      />
 
-        {!isEditing && (
-          <OutlineButton onClick={handleStartEdit}>
-            Edit Profil
-          </OutlineButton>
-        )}
+      {/* Identitas & status akun */}
+      <GlassPanel variant="subtle" className="mt-8 flex flex-wrap items-center gap-5 p-5 md:p-6">
+        <Avatar name={user?.name} size={56} />
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {Array.isArray(user?.roles) &&
+            user.roles.map((r) => (
+              <StatusBadge key={r} status={r} />
+            ))}
+          <StatusBadge
+            variant={user?.is_active ? "success" : "error"}
+            label={user?.is_active ? "Aktif" : "Nonaktif"}
+            dot
+          />
+        </div>
       </GlassPanel>
 
-      {/* Profile Edit Form Card */}
+      {/* Profile Edit Form */}
       {isEditing && (
-        <GlassPanel variant="default" style={{ marginBottom: "1.5rem" }}>
-          <h2 className="section-title">Edit Profil Pembelajar</h2>
+        <>
+          <SectionHeader index="01" title="Edit Profil Pembelajar" />
+          {editError && <Alert tone="error">{editError}</Alert>}
+          <GlassPanel variant="subtle" className="p-5 md:p-6">
+            <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+              <Field label="Nama Lengkap" htmlFor="edit-name" required>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  type="text"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  disabled={isSaving}
+                  required
+                />
+              </Field>
 
-          {editError && <div className="alert alert-error">{editError}</div>}
+              <Field label="Tujuan Belajar (Learning Goal)" htmlFor="edit-goal">
+                <Textarea
+                  id="edit-goal"
+                  name="learning_goal"
+                  rows={3}
+                  placeholder="Misal: Memahami logika pemrograman dasar & struktur data..."
+                  value={editForm.learning_goal}
+                  onChange={handleEditChange}
+                  disabled={isSaving}
+                />
+              </Field>
 
-          <form onSubmit={handleSaveProfile} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="edit-name">Nama Lengkap</label>
-              <input
-                id="edit-name"
-                name="name"
-                type="text"
-                value={editForm.name}
-                onChange={handleEditChange}
-                disabled={isSaving}
-                required
-              />
-            </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Tingkat Pengalaman (Experience Level)" htmlFor="edit-experience">
+                  <Select
+                    id="edit-experience"
+                    name="experience_level"
+                    value={editForm.experience_level}
+                    onChange={handleEditChange}
+                    disabled={isSaving}
+                  >
+                    {EXPERIENCE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
 
-            <div className="form-group">
-              <label htmlFor="edit-goal">Tujuan Belajar (Learning Goal)</label>
-              <textarea
-                id="edit-goal"
-                name="learning_goal"
-                rows={3}
-                placeholder="Misal: Memahami logika pemrograman dasar & struktur data..."
-                value={editForm.learning_goal}
-                onChange={handleEditChange}
-                disabled={isSaving}
-              />
-            </div>
+                <Field label="Mata Pelajaran Pilihan" htmlFor="edit-preferred-subject">
+                  <Select
+                    id="edit-preferred-subject"
+                    name="preferred_subject_id"
+                    value={editForm.preferred_subject_id}
+                    onChange={handleEditChange}
+                    disabled={isSaving}
+                  >
+                    <option value="">-- Belum Memilih Subject --</option>
+                    {subjectsList.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {s.description ? `— ${s.description}` : ""}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="edit-experience">Tingkat Pengalaman (Experience Level)</label>
-              <select
-                id="edit-experience"
-                name="experience_level"
-                value={editForm.experience_level}
-                onChange={handleEditChange}
-                disabled={isSaving}
-              >
-                {EXPERIENCE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="edit-preferred-subject">Mata Pelajaran Pilihan</label>
-              <select
-                id="edit-preferred-subject"
-                name="preferred_subject_id"
-                value={editForm.preferred_subject_id}
-                onChange={handleEditChange}
-                disabled={isSaving}
-              >
-                <option value="">-- Belum Memilih Subject --</option>
-                {subjectsList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} {s.description ? `— ${s.description}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="btn-group">
-              <PrimaryButton type="submit" disabled={isSaving} loading={isSaving}>
-                Simpan Profil
-              </PrimaryButton>
-              <OutlineButton type="button" onClick={handleCancelEdit} disabled={isSaving}>
-                Batal
-              </OutlineButton>
-            </div>
-          </form>
-        </GlassPanel>
+              <div className="flex flex-wrap gap-3">
+                <PrimaryButton type="submit" disabled={isSaving} loading={isSaving}>
+                  Simpan Profil
+                </PrimaryButton>
+                <OutlineButton type="button" onClick={handleCancelEdit} disabled={isSaving}>
+                  Batal
+                </OutlineButton>
+              </div>
+            </form>
+          </GlassPanel>
+        </>
       )}
 
-      {/* Learner Profile Details */}
-      <GlassPanel variant="default" className="profile-details-card">
-        <h2 className="section-title">Detail Pembelajar</h2>
-
-        <div className="detail-grid">
-          <div className="detail-item">
-            <span className="detail-label">Tujuan Belajar</span>
-            <span className="detail-value">
-              {profile.learning_goal || <em style={{ color: "var(--color-text-dim)" }}>Belum ditentukan</em>}
+      {/* Detail Pembelajar */}
+      <SectionHeader index={detailIndex} title="Detail Pembelajar" />
+      <GlassPanel>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+          <div className="flex flex-col gap-1">
+            <MicroMeta>Tujuan Belajar</MicroMeta>
+            <span className={cx("text-[13px]", INK)}>
+              {profile.learning_goal || <em className={MUTED}>Belum ditentukan</em>}
             </span>
           </div>
 
-          <div className="detail-item">
-            <span className="detail-label">Tingkat Pengalaman</span>
-            <span className="detail-value">
-              {profile.experience_level || <em style={{ color: "var(--color-text-dim)" }}>Belum ditentukan</em>}
+          <div className="flex flex-col gap-1">
+            <MicroMeta>Tingkat Pengalaman</MicroMeta>
+            <span className={cx("text-[13px]", INK)}>
+              {profile.experience_level || <em className={MUTED}>Belum ditentukan</em>}
             </span>
           </div>
 
-          <div className="detail-item">
-            <span className="detail-label">Mata Pelajaran Pilihan</span>
-            <span className="detail-value">
+          <div className="flex flex-col gap-1">
+            <MicroMeta>Mata Pelajaran Pilihan</MicroMeta>
+            <span className={cx("text-[13px]", INK)}>
               {profile.preferred_subject ? (
                 <span>
                   <strong>{profile.preferred_subject.name}</strong>
                   {profile.preferred_subject.description && (
-                    <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
+                    <span className={cx("text-[13px]", MUTED)}>
                       {" "}
                       ({profile.preferred_subject.description})
                     </span>
                   )}
                 </span>
               ) : (
-                <em style={{ color: "var(--color-text-dim)" }}>Belum memilih subject</em>
+                <em className={MUTED}>Belum memilih subject</em>
               )}
             </span>
           </div>
 
-          <div className="detail-item">
-            <span className="detail-label">Status Onboarding</span>
-            <span className="detail-value">
+          <div className="flex flex-col gap-1">
+            <MicroMeta>Status Onboarding</MicroMeta>
+            <span>
               <StatusBadge
                 variant={profile.onboarding_completed ? "success" : "warning"}
                 label={profile.onboarding_completed ? "Selesai" : "Belum Selesai"}
@@ -391,12 +401,12 @@ export default function ProfilePage() {
 
         {/* Onboarding Completion Action */}
         {!profile.onboarding_completed && (
-          <div className="onboarding-action-box" style={{ marginTop: "1.5rem" }}>
+          <div className="mt-6 flex flex-col gap-4 border-t border-hairline pt-6 dark:border-hairline-dark sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1rem", color: "var(--color-text-main)" }}>
+              <h3 className={cx("text-[15px] font-bold", INK)}>
                 Selesaikan Orientasi (Onboarding)
               </h3>
-              <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+              <p className={cx("mt-1 text-[13px] leading-relaxed", MUTED)}>
                 Tandai bahwa Anda telah menyelesaikan orientasi profil belajar Xora.
               </p>
             </div>

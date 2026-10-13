@@ -1,9 +1,14 @@
 // ============================================================
-// XORA — StatusBadge Component
+// XORA — StatusBadge (Editorial System v2)
 // frontend/src/components/StatusBadge.jsx
+// ------------------------------------------------------------
+// Badge pil (sans, uppercase, tracking lebar). Palet mono +
+// aksen cobalt: butuh perhatian = cobalt, positif = ink,
+// netral = muted.
 // ============================================================
 
 import React from "react";
+import { cx } from "./ui";
 
 const STATUS_CONFIGS = {
   MASTERED: { label: "Dikuasai", variant: "success", dot: true },
@@ -30,10 +35,21 @@ const STATUS_CONFIGS = {
   ADMIN: { label: "Admin", variant: "accent", dot: false },
 };
 
+const VARIANT_CLASSES = {
+  success: "border-ink text-ink dark:border-ink-dark dark:text-ink-dark",
+  warning: "border-brand text-brand",
+  error: "border-brand bg-brand text-white",
+  info: "border-hairline text-ink dark:border-hairline-dark dark:text-ink-dark",
+  neutral: "border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
+  primary: "border-brand text-brand",
+  accent:
+    "border-ink bg-ink text-white dark:border-ink-dark dark:bg-ink-dark dark:text-canvas-dark",
+};
+
 export default function StatusBadge({
   status,
   label,
-  variant, // "success" | "warning" | "error" | "info" | "neutral" | "primary" | "accent"
+  variant,
   dot = false,
   className = "",
   style,
@@ -45,10 +61,14 @@ export default function StatusBadge({
 
   return (
     <span
-      className={`status-badge status-badge-${effectiveVariant} ${className}`}
+      className={cx(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em]",
+        VARIANT_CLASSES[effectiveVariant] || VARIANT_CLASSES.neutral,
+        className
+      )}
       style={style}
     >
-      {showDot && <span className="status-badge-dot" aria-hidden="true" />}
+      {showDot && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />}
       <span>{effectiveLabel}</span>
     </span>
   );

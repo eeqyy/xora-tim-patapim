@@ -1,9 +1,19 @@
 // ============================================================
-// XORA — ProgressBar Component
+// XORA — ProgressBar (Editorial System v2)
 // frontend/src/components/ProgressBar.jsx
+// ------------------------------------------------------------
+// Batang pil (rounded-full), tanpa shadow. Label mikro,
+// isian aksen cobalt.
 // ============================================================
 
 import React from "react";
+import { MicroMeta, cx } from "./ui";
+
+const HEIGHT = {
+  sm: "h-1.5",
+  md: "h-2",
+  lg: "h-3",
+};
 
 export default function ProgressBar({
   value = 0,
@@ -15,27 +25,37 @@ export default function ProgressBar({
   className = "",
   style,
 }) {
-  const percent = Math.min(100, Math.max(0, Math.round((Number(value || 0) / Number(max || 100)) * 100)));
-  const sizeClass = `progress-bar-${size}`;
-  const variantClass = `progress-bar-${variant}`;
+  const percent = Math.min(
+    100,
+    Math.max(0, Math.round((Number(value || 0) / Number(max || 100)) * 100))
+  );
+
+  const fillClass = variant === "primary" ? "bg-brand" : "bg-ink dark:bg-ink-dark";
 
   return (
-    <div className={`progress-bar-wrapper ${className}`} style={style}>
+    <div className={cx("w-full", className)} style={style}>
       {(label || showPercent) && (
-        <div className="progress-bar-header">
-          {label && <span className="progress-bar-label">{label}</span>}
-          {showPercent && <span className="progress-bar-percent">{percent}%</span>}
+        <div className="mb-2 flex items-center justify-between gap-3">
+          {label ? <MicroMeta>{label}</MicroMeta> : <span />}
+          {showPercent ? (
+            <span className="text-[12px] font-bold tabular-nums text-ink dark:text-ink-dark">
+              {percent}%
+            </span>
+          ) : null}
         </div>
       )}
       <div
-        className={`progress-bar-track ${sizeClass}`}
+        className={cx(
+          "w-full overflow-hidden rounded-full bg-cell dark:bg-cell-dark",
+          HEIGHT[size] || HEIGHT.md
+        )}
         role="progressbar"
         aria-valuenow={percent}
         aria-valuemin={0}
         aria-valuemax={100}
       >
         <div
-          className={`progress-bar-fill ${variantClass}`}
+          className={cx("h-full rounded-full transition-[width] duration-500", fillClass)}
           style={{ width: `${percent}%` }}
         />
       </div>

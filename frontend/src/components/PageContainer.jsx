@@ -1,33 +1,35 @@
 // ============================================================
-// XORA — PageContainer Component
+// XORA — PageContainer (Editorial System v2)
 // frontend/src/components/PageContainer.jsx
+// ------------------------------------------------------------
+// Bingkai halaman: lebar maksimum + padding responsif.
+// Pemisah antar bagian memakai garis horizontal (SectionHeader),
+// bukan lagi grid kotak ber-`border-l`.
 // ============================================================
 
 import React from "react";
+import { cx } from "./ui";
+
+const MAX_WIDTH = {
+  narrow: "max-w-[720px]",
+  normal: "max-w-[1200px]",
+  wide: "max-w-[1200px]",
+  full: "max-w-none",
+};
 
 export default function PageContainer({
   children,
-  maxWidth = "normal", // "narrow" (720px) | "normal" (1080px) | "wide" (1280px) | "full"
+  maxWidth = "normal",
   className = "",
-  style,
   ...props
 }) {
-  let maxWidthStyle = "1080px";
-  if (maxWidth === "narrow") maxWidthStyle = "760px";
-  if (maxWidth === "wide") maxWidthStyle = "1240px";
-  if (maxWidth === "full") maxWidthStyle = "100%";
-
   return (
     <div
-      className={`page-container ${className}`}
-      style={{
-        maxWidth: maxWidthStyle,
-        width: "100%",
-        margin: "0 auto",
-        padding: "2rem 1.25rem 3.5rem 1.25rem",
-        boxSizing: "border-box",
-        ...style,
-      }}
+      className={cx(
+        "mx-auto w-full px-5 pb-16 pt-10 md:px-8 md:pt-14",
+        MAX_WIDTH[maxWidth] || MAX_WIDTH.normal,
+        className
+      )}
       {...props}
     >
       {children}

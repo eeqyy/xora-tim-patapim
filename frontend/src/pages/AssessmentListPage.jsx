@@ -1,7 +1,15 @@
 // ============================================================
 // XORA — Assessment Discovery & List Page (Asesmen)
-// Premium Light Glassmorphism · Minimal · Reusable
+// Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/AssessmentListPage.jsx
+// ------------------------------------------------------------
+// Struktur editorial bernomor:
+//   01 / ALUR TINGKAT PEMBELAJARAN -> grid progres 3 tahap
+//   02 / ASESMEN TINGKAT KEMAHIRAN -> grid kartu asesmen inti
+//   03 / ASESMEN PENGUATAN TERARAH -> grid remedial (kondisional)
+//   04 / BANK LATIHAN PER TOPIK   -> filter + grid latihan topik
+//
+// Logika data (state, useEffect, API, handler, URL, teks) tidak berubah.
 // ============================================================
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -10,13 +18,25 @@ import { useRouter } from "../context/RouterContext";
 import {
   PageContainer,
   PageHeader,
+  Grid,
+  GridCell,
+  SectionHeader,
   GlassPanel,
   StatusBadge,
+  SeverityBadge,
   PrimaryButton,
   OutlineButton,
   Button,
   LoadingState,
   ErrorState,
+  MicroMeta,
+  HAIRLINE,
+  CHIP_CLASS,
+  CHIP_ACTIVE,
+  CHIP_INACTIVE,
+  INK,
+  MUTED,
+  cx,
 } from "../components";
 import {
   IconArrowRight,
@@ -166,7 +186,7 @@ export default function AssessmentListPage() {
   const renderAssessmentCta = (item, isLocked) => {
     if (isLocked) {
       return (
-        <Button disabled variant="outline" fullWidth iconLeft={<IconLock size={15} />}>
+        <Button disabled variant="outline" fullWidth icon={<IconLock size={15} />}>
           Belum Tersedia
         </Button>
       );
@@ -237,127 +257,109 @@ export default function AssessmentListPage() {
     );
   };
 
+  const chipInactive = CHIP_INACTIVE;
+
   return (
     <PageContainer maxWidth="normal">
-      {/* 1. Header Card */}
-      <GlassPanel variant="elevated" className="assessment-header-card">
-        <PageHeader
-          badge="Evaluasi Pemahaman"
-          title="Asesmen"
-          description="Evaluasi terstruktur untuk mengukur pemahaman materi web development secara bertahap."
-          actions={
-            <>
-              <OutlineButton
-                size="sm"
-                onClick={fetchAssessments}
-                icon={<IconRefresh size={14} />}
-              >
-                Segarkan
-              </OutlineButton>
-              <PrimaryButton
-                size="sm"
-                onClick={() => navigate("/learning-path")}
-                iconRight={<IconCompass size={14} />}
-              >
-                Jalur Belajar
-              </PrimaryButton>
-            </>
-          }
-        />
+      <PageHeader
+        badge="Evaluasi Pemahaman"
+        title="Asesmen"
+        description="Evaluasi terstruktur untuk mengukur pemahaman materi web development secara bertahap."
+        actions={
+          <>
+            <OutlineButton
+              size="sm"
+              onClick={fetchAssessments}
+              icon={<IconRefresh size={14} />}
+            >
+              Segarkan
+            </OutlineButton>
+            <PrimaryButton
+              size="sm"
+              onClick={() => navigate("/learning-path")}
+              iconRight={<IconCompass size={14} />}
+            >
+              Jalur Belajar
+            </PrimaryButton>
+          </>
+        }
+      />
 
-        {/* 2. Level Progression Track */}
-        <div className="level-progression-track" aria-label="Alur Tingkat Pembelajaran">
-          {/* Stage 1: Easy */}
-          <div
-            className={`progression-step-card ${
-              levelProgression.easy.passed ? "step-passed" : "step-active"
-            }`}
-          >
-            <div className="step-header">
-              <span className="step-number">Tahap 1</span>
-              <StatusBadge
-                variant={levelProgression.easy.passed ? "success" : "primary"}
-                label={levelProgression.easy.passed ? "Sudah Lulus" : "Tersedia"}
-                dot={levelProgression.easy.passed}
-              />
-            </div>
-            <h4 className="step-title">Tingkat Dasar</h4>
-            <p className="step-desc">Fondasi HTML, CSS, dan JavaScript dasar.</p>
+      {/* 01 — Alur Tingkat Pembelajaran */}
+      <SectionHeader id="levels" index="01" title="Alur Tingkat Pembelajaran" />
+      <Grid cols={3} aria-label="Alur Tingkat Pembelajaran">
+        {/* Stage 1: Easy */}
+        <GridCell className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-3">
+            <MicroMeta>Tahap 1</MicroMeta>
+            <StatusBadge
+              variant={levelProgression.easy.passed ? "success" : "primary"}
+              label={levelProgression.easy.passed ? "Sudah Lulus" : "Tersedia"}
+              dot={levelProgression.easy.passed}
+            />
           </div>
+          <h4 className={cx("text-sm font-bold md:text-[15px]", INK)}>Tingkat Dasar</h4>
+          <p className={cx("text-[12px] leading-relaxed", MUTED)}>
+            Fondasi HTML, CSS, dan JavaScript dasar.
+          </p>
+        </GridCell>
 
-          {/* Stage 2: Medium */}
-          <div
-            className={`progression-step-card ${
-              levelProgression.medium.passed
-                ? "step-passed"
-                : levelProgression.medium.unlocked
-                ? "step-active"
-                : "step-locked"
-            }`}
-          >
-            <div className="step-header">
-              <span className="step-number">Tahap 2</span>
-              <StatusBadge
-                variant={
-                  levelProgression.medium.passed
-                    ? "success"
-                    : levelProgression.medium.unlocked
-                    ? "primary"
-                    : "neutral"
-                }
-                label={
-                  levelProgression.medium.passed
-                    ? "Sudah Lulus"
-                    : levelProgression.medium.unlocked
-                    ? "Terbuka"
-                    : "Belum Terbuka"
-                }
-                dot={levelProgression.medium.passed}
-              />
-            </div>
-            <h4 className="step-title">Tingkat Menengah</h4>
-            <p className="step-desc">
-              Logika pemrograman &amp; interaktivitas. Memerlukan kelulusan Tingkat Dasar.
-            </p>
+        {/* Stage 2: Medium */}
+        <GridCell className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-3">
+            <MicroMeta>Tahap 2</MicroMeta>
+            <StatusBadge
+              variant={
+                levelProgression.medium.passed
+                  ? "success"
+                  : levelProgression.medium.unlocked
+                  ? "primary"
+                  : "neutral"
+              }
+              label={
+                levelProgression.medium.passed
+                  ? "Sudah Lulus"
+                  : levelProgression.medium.unlocked
+                  ? "Terbuka"
+                  : "Belum Terbuka"
+              }
+              dot={levelProgression.medium.passed}
+            />
           </div>
+          <h4 className={cx("text-sm font-bold md:text-[15px]", INK)}>Tingkat Menengah</h4>
+          <p className={cx("text-[12px] leading-relaxed", MUTED)}>
+            Logika pemrograman &amp; interaktivitas. Memerlukan kelulusan Tingkat Dasar.
+          </p>
+        </GridCell>
 
-          {/* Stage 3: Hard */}
-          <div
-            className={`progression-step-card ${
-              levelProgression.hard.passed
-                ? "step-passed"
-                : levelProgression.hard.unlocked
-                ? "step-active"
-                : "step-locked"
-            }`}
-          >
-            <div className="step-header">
-              <span className="step-number">Tahap 3</span>
-              <StatusBadge
-                variant={
-                  levelProgression.hard.passed
-                    ? "success"
-                    : levelProgression.hard.unlocked
-                    ? "primary"
-                    : "neutral"
-                }
-                label={
-                  levelProgression.hard.passed
-                    ? "Sudah Lulus"
-                    : levelProgression.hard.unlocked
-                    ? "Terbuka"
-                    : "Belum Terbuka"
-                }
-                dot={levelProgression.hard.passed}
-              />
-            </div>
-            <h4 className="step-title">Tingkat Lanjut</h4>
-            <p className="step-desc">
-              Arsitektur aplikasi &amp; performa. Memerlukan kelulusan Tingkat Menengah.
-            </p>
+        {/* Stage 3: Hard */}
+        <GridCell className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-3">
+            <MicroMeta>Tahap 3</MicroMeta>
+            <StatusBadge
+              variant={
+                levelProgression.hard.passed
+                  ? "success"
+                  : levelProgression.hard.unlocked
+                  ? "primary"
+                  : "neutral"
+              }
+              label={
+                levelProgression.hard.passed
+                  ? "Sudah Lulus"
+                  : levelProgression.hard.unlocked
+                  ? "Terbuka"
+                  : "Belum Terbuka"
+              }
+              dot={levelProgression.hard.passed}
+            />
           </div>
-        </div>
-      </GlassPanel>
+          <h4 className={cx("text-sm font-bold md:text-[15px]", INK)}>Tingkat Lanjut</h4>
+          <p className={cx("text-[12px] leading-relaxed", MUTED)}>
+            Arsitektur aplikasi &amp; performa. Memerlukan kelulusan Tingkat Menengah.
+          </p>
+        </GridCell>
+      </Grid>
 
       {/* Loading & Error States */}
       {isLoading && (
@@ -372,17 +374,16 @@ export default function AssessmentListPage() {
         />
       )}
 
-      {/* 3. Core Level Assessments Grid */}
+      {/* 02 — Asesmen Tingkat Kemahiran */}
       {!isLoading && !error && (
         <>
-          <div className="assessment-section-header">
-            <h2 className="assessment-section-title">Asesmen Tingkat Kemahiran</h2>
-            <p className="assessment-section-desc">
+          <SectionHeader id="core" index="02" title="Asesmen Tingkat Kemahiran" />
+          <GlassPanel>
+            <p className={cx("text-[13px] leading-relaxed", MUTED)}>
               Instrumen asesmen inti yang memetakan pemahaman konsep HTML, CSS, dan JavaScript secara bertahap.
             </p>
-          </div>
-
-          <div className="assessment-grid">
+          </GlassPanel>
+          <Grid cols={3} className="mt-8">
             {coreLevelAssessments.map((cfg) => {
               const item = cfg.assessment;
               if (!item) return null;
@@ -394,51 +395,52 @@ export default function AssessmentListPage() {
                 : ["HTML", "CSS", "JavaScript"];
 
               return (
-                <GlassPanel
+                <GridCell
                   key={item.id}
-                  variant="default"
-                  className={`assessment-card ${isLocked ? "assessment-card-locked" : ""}`}
+                  className={cx("flex flex-col gap-3", isLocked && "opacity-70")}
                 >
                   {/* Card Header: Difficulty & Access Status */}
-                  <div className="assessment-card-header">
+                  <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={cfg.difficulty} label={cfg.levelName} />
                     <StatusBadge status={accessStatus} />
                   </div>
 
-                  <h3 className="assessment-card-title">{item.title}</h3>
+                  <h3 className={cx("text-base font-extrabold leading-snug tracking-tight", INK)}>
+                    {item.title}
+                  </h3>
 
                   {/* Main Coverage */}
-                  <div className="assessment-topics-section">
-                    <span className="assessment-topics-label">Cakupan Materi</span>
-                    <div className="assessment-topics-list">
+                  <div className="flex flex-col gap-2">
+                    <MicroMeta>Cakupan Materi</MicroMeta>
+                    <div className="flex flex-wrap gap-2">
                       {coveredTopics.map((top, idx) => (
-                        <span key={idx} className="assessment-topic-tag">
+                        <SeverityBadge key={idx} tone="neutral">
                           {top}
-                        </span>
+                        </SeverityBadge>
                       ))}
                     </div>
                   </div>
 
                   {/* Minimal Metadata List */}
-                  <div className="assessment-meta-list">
-                    <div className="meta-item">
-                      <span className="meta-label">Tingkat Kesulitan</span>
-                      <span className="meta-val">{cfg.levelName}</span>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <MicroMeta>Tingkat Kesulitan</MicroMeta>
+                      <span className={cx("text-[13px] font-bold", INK)}>{cfg.levelName}</span>
                     </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Jumlah Soal</span>
-                      <span className="meta-val">{item.question_count || 30} Soal</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <MicroMeta>Jumlah Soal</MicroMeta>
+                      <span className={cx("text-[13px] font-bold", INK)}>
+                        {item.question_count || 30} Soal
+                      </span>
                     </div>
                     {item.learner_status?.best_score !== null && item.learner_status?.best_score !== undefined && (
-                      <div className="meta-item">
-                        <span className="meta-label">Skor Terbaik</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <MicroMeta>Skor Terbaik</MicroMeta>
                         <span
-                          className="meta-val"
-                          style={{
-                            color: item.learner_status.is_passed
-                              ? "var(--color-success)"
-                              : "var(--color-error)",
-                          }}
+                          className={cx(
+                            "tabular-nums text-[13px] font-bold",
+                            item.learner_status.is_passed ? INK : "text-brand"
+                          )}
                         >
                           {Math.round(item.learner_status.best_score)}%
                         </span>
@@ -448,8 +450,14 @@ export default function AssessmentListPage() {
 
                   {/* Lock Explanation Note */}
                   {isLocked && (
-                    <div className="assessment-lock-alert">
-                      <IconLock size={14} style={{ flexShrink: 0, marginTop: "2px" }} />
+                    <div
+                      className={cx(
+                        "flex items-start gap-2 rounded-2xl border p-3 text-[12px] leading-relaxed",
+                        HAIRLINE,
+                        MUTED
+                      )}
+                    >
+                      <IconLock size={14} className="mt-0.5 shrink-0" />
                       <span>
                         {item.learner_status?.lock_reason ||
                           "Asesmen ini belum terbuka. Selesaikan tingkat sebelumnya terlebih dahulu."}
@@ -458,30 +466,28 @@ export default function AssessmentListPage() {
                   )}
 
                   {/* Single Relevant CTA */}
-                  <div className="assessment-card-actions">
+                  <div className="mt-auto">
                     {renderAssessmentCta(item, isLocked)}
                   </div>
-                </GlassPanel>
+                </GridCell>
               );
             })}
-          </div>
+          </Grid>
 
-          {/* 4. Remedial Assessments Section (Only shown if recommended) */}
+          {/* 03 — Asesmen Penguatan Terarah (Only shown if recommended) */}
           {recommendedRemedials.length > 0 && (
             <>
-              <div className="assessment-section-header" style={{ marginTop: "2.5rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <IconTarget size={20} color="var(--color-primary)" />
-                  <h2 className="assessment-section-title" style={{ margin: 0 }}>
-                    Asesmen Penguatan Terarah
-                  </h2>
-                </div>
-                <p className="assessment-section-desc">
+              <SectionHeader id="remedial" index="03" title="Asesmen Penguatan Terarah" />
+              <GlassPanel className="flex items-start gap-3">
+                <span className="shrink-0 text-brand">
+                  <IconTarget size={20} />
+                </span>
+                <p className={cx("text-[13px] leading-relaxed", MUTED)}>
                   Latihan khusus untuk memperkuat pemahaman pada materi yang perlu ditingkatkan berdasarkan hasil evaluasi Anda.
                 </p>
-              </div>
+              </GlassPanel>
 
-              <div className="assessment-grid">
+              <Grid cols={3} className="mt-8">
                 {recommendedRemedials.map((rem) => {
                   const accessStatus = rem.learner_status?.access_status || "AVAILABLE";
                   const coveredTopics = Array.isArray(rem.covered_topics) && rem.covered_topics.length > 0
@@ -489,26 +495,24 @@ export default function AssessmentListPage() {
                     : ["Materi Penguatan"];
 
                   return (
-                    <GlassPanel
-                      key={rem.id}
-                      variant="default"
-                      className="assessment-card"
-                    >
-                      <div className="assessment-card-header">
+                    <GridCell key={rem.id} className="flex flex-col gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <StatusBadge variant="neutral" label="Penguatan" />
                         <StatusBadge status={accessStatus} />
                       </div>
 
-                      <h3 className="assessment-card-title">{rem.title}</h3>
+                      <h3 className={cx("text-base font-extrabold leading-snug tracking-tight", INK)}>
+                        {rem.title}
+                      </h3>
 
                       {/* Main Coverage */}
-                      <div className="assessment-topics-section">
-                        <span className="assessment-topics-label">Materi Fokus</span>
-                        <div className="assessment-topics-list">
+                      <div className="flex flex-col gap-2">
+                        <MicroMeta>Materi Fokus</MicroMeta>
+                        <div className="flex flex-wrap gap-2">
                           {coveredTopics.map((top, idx) => (
-                            <span key={idx} className="assessment-topic-tag">
+                            <SeverityBadge key={idx} tone="neutral">
                               {top}
-                            </span>
+                            </SeverityBadge>
                           ))}
                         </div>
                       </div>
@@ -516,36 +520,32 @@ export default function AssessmentListPage() {
                       {/* Reason / Context */}
                       {rem.learner_status?.recommendation_reason && (
                         <div
-                          style={{
-                            fontSize: "0.8rem",
-                            color: "var(--color-text-muted)",
-                            backgroundColor: "var(--color-bg-subtle)",
-                            padding: "0.6rem 0.8rem",
-                            borderRadius: "var(--radius-sm)",
-                            marginBottom: "1rem",
-                            border: "1px solid var(--color-border)",
-                          }}
+                          className={cx(
+                            "rounded-2xl border p-3 text-[12px] leading-relaxed",
+                            HAIRLINE,
+                            MUTED
+                          )}
                         >
                           {rem.learner_status.recommendation_reason}
                         </div>
                       )}
 
                       {/* Minimal Metadata List */}
-                      <div className="assessment-meta-list">
-                        <div className="meta-item">
-                          <span className="meta-label">Jumlah Soal</span>
-                          <span className="meta-val">{rem.question_count || 20} Soal</span>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <MicroMeta>Jumlah Soal</MicroMeta>
+                          <span className={cx("text-[13px] font-bold", INK)}>
+                            {rem.question_count || 20} Soal
+                          </span>
                         </div>
                         {rem.learner_status?.best_score !== null && rem.learner_status?.best_score !== undefined && (
-                          <div className="meta-item">
-                            <span className="meta-label">Skor Terakhir</span>
+                          <div className="flex items-center justify-between gap-3">
+                            <MicroMeta>Skor Terakhir</MicroMeta>
                             <span
-                              className="meta-val"
-                              style={{
-                                color: rem.learner_status.is_passed
-                                  ? "var(--color-success)"
-                                  : "var(--color-error)",
-                              }}
+                              className={cx(
+                                "tabular-nums text-[13px] font-bold",
+                                rem.learner_status.is_passed ? INK : "text-brand"
+                              )}
                             >
                               {Math.round(rem.learner_status.best_score)}%
                             </span>
@@ -554,137 +554,123 @@ export default function AssessmentListPage() {
                       </div>
 
                       {/* Single Relevant CTA */}
-                      <div className="assessment-card-actions">
+                      <div className="mt-auto">
                         {renderAssessmentCta(rem, false)}
                       </div>
-                    </GlassPanel>
+                    </GridCell>
                   );
                 })}
-              </div>
+              </Grid>
             </>
           )}
 
-          {/* 5. Topic Practice Bank (Latihan Per Topik) */}
-          <div className="assessment-section-header" style={{ marginTop: "2.5rem" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-              <div>
-                <h2 className="assessment-section-title" style={{ margin: 0 }}>
-                  Bank Latihan Per Topik
-                </h2>
-                <p className="assessment-section-desc">
-                  Latihan terarah 20 soal adaptif dengan potongan kode untuk mengasah penguasaan setiap topik spesifik.
-                </p>
-              </div>
+          {/* 04 — Bank Latihan Per Topik */}
+          <SectionHeader id="bank" index="04" title="Bank Latihan Per Topik" />
+          <GlassPanel className="flex flex-col gap-4">
+            <p className={cx("text-[13px] leading-relaxed", MUTED)}>
+              Latihan terarah 20 soal adaptif dengan potongan kode untuk mengasah penguasaan setiap topik spesifik.
+            </p>
 
-              {/* Material Filter Chips */}
-              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                {[
-                  { key: "ALL", label: "Semua Topik" },
-                  { key: "HTML", label: "HTML" },
-                  { key: "CSS", label: "CSS" },
-                  { key: "JAVASCRIPT", label: "JavaScript" },
-                ].map((chip) => {
-                  const isActive = selectedMaterialFilter === chip.key;
-                  return (
-                    <button
-                      key={chip.key}
-                      type="button"
-                      onClick={() => setSelectedMaterialFilter(chip.key)}
-                      style={{
-                        padding: "0.4rem 0.85rem",
-                        fontSize: "0.82rem",
-                        fontWeight: 600,
-                        borderRadius: "9999px",
-                        border: "1px solid",
-                        borderColor: isActive ? "var(--color-primary)" : "var(--color-border)",
-                        backgroundColor: isActive ? "var(--color-primary)" : "var(--color-surface-solid)",
-                        color: isActive ? "#ffffff" : "var(--color-text-main)",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      {chip.label}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Material Filter Chips */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "ALL", label: "Semua Topik" },
+                { key: "HTML", label: "HTML" },
+                { key: "CSS", label: "CSS" },
+                { key: "JAVASCRIPT", label: "JavaScript" },
+              ].map((chip) => {
+                const isActive = selectedMaterialFilter === chip.key;
+                return (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    onClick={() => setSelectedMaterialFilter(chip.key)}
+                    className={cx(
+                      CHIP_CLASS,
+                      isActive
+                        ? CHIP_ACTIVE
+                        : chipInactive
+                    )}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          </GlassPanel>
 
-          <div className="assessment-grid">
+          <Grid cols={3} className="mt-8">
             {filteredTopicPractices.map((practice) => {
-              const accessStatus = practice.learner_status?.access_status || "AVAILABLE";
-              const difficulty = (practice.difficulty || "MEDIUM").toUpperCase();
-              const diffLabel = {
-                EASY: "Mudah",
-                MEDIUM: "Menengah",
-                HARD: "Sulit",
-              }[difficulty] || "Menengah";
+                const accessStatus = practice.learner_status?.access_status || "AVAILABLE";
+                const difficulty = (practice.difficulty || "MEDIUM").toUpperCase();
+                const diffLabel = {
+                  EASY: "Mudah",
+                  MEDIUM: "Menengah",
+                  HARD: "Sulit",
+                }[difficulty] || "Menengah";
 
-              const materialName = (practice.title || "").toUpperCase().includes("CSS")
-                ? "CSS"
-                : (practice.title || "").toUpperCase().includes("JAVASCRIPT")
-                ? "JavaScript"
-                : "HTML";
+                const materialName = (practice.title || "").toUpperCase().includes("CSS")
+                  ? "CSS"
+                  : (practice.title || "").toUpperCase().includes("JAVASCRIPT")
+                  ? "JavaScript"
+                  : "HTML";
 
-              const topicName = practice.topic_name || (Array.isArray(practice.covered_topics) && practice.covered_topics[0]) || practice.title;
+                const topicName = practice.topic_name || (Array.isArray(practice.covered_topics) && practice.covered_topics[0]) || practice.title;
 
-              return (
-                <GlassPanel
-                  key={practice.id}
-                  variant="default"
-                  className="assessment-card"
-                >
-                  <div className="assessment-card-header">
-                    <StatusBadge variant="primary" label={materialName} />
-                    <StatusBadge status={difficulty} label={diffLabel} />
-                    <StatusBadge status={accessStatus} />
-                  </div>
-
-                  <h3 className="assessment-card-title">{practice.title}</h3>
-
-                  <div className="assessment-topics-section">
-                    <span className="assessment-topics-label">Materi &amp; Topik</span>
-                    <div className="assessment-topics-list">
-                      <span className="assessment-topic-tag" style={{ fontWeight: 600 }}>
-                        {materialName} • {topicName}
-                      </span>
+                return (
+                  <GridCell key={practice.id} className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge variant="primary" label={materialName} />
+                      <StatusBadge status={difficulty} label={diffLabel} />
+                      <StatusBadge status={accessStatus} />
                     </div>
-                  </div>
 
-                  <div className="assessment-meta-list">
-                    <div className="meta-item">
-                      <span className="meta-label">Tingkat Kesulitan</span>
-                      <span className="meta-val">{diffLabel}</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Jumlah Soal</span>
-                      <span className="meta-val">{practice.question_count || 20} Soal</span>
-                    </div>
-                    {practice.learner_status?.best_score !== null && practice.learner_status?.best_score !== undefined && (
-                      <div className="meta-item">
-                        <span className="meta-label">Skor Terbaik</span>
-                        <span
-                          className="meta-val"
-                          style={{
-                            color: practice.learner_status.is_passed
-                              ? "var(--color-success)"
-                              : "var(--color-error)",
-                          }}
-                        >
-                          {Math.round(practice.learner_status.best_score)}%
+                    <h3 className={cx("text-base font-extrabold leading-snug tracking-tight", INK)}>
+                      {practice.title}
+                    </h3>
+
+                    <div className="flex flex-col gap-2">
+                      <MicroMeta>Materi &amp; Topik</MicroMeta>
+                      <div className="flex flex-wrap gap-2">
+                        <span className={cx("rounded-full border px-3 py-1 text-[12px] font-bold", HAIRLINE, INK)}>
+                          {materialName} • {topicName}
                         </span>
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="assessment-card-actions">
-                    {renderAssessmentCta(practice, false)}
-                  </div>
-                </GlassPanel>
-              );
-            })}
-          </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <MicroMeta>Tingkat Kesulitan</MicroMeta>
+                        <span className={cx("text-[13px] font-bold", INK)}>{diffLabel}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <MicroMeta>Jumlah Soal</MicroMeta>
+                        <span className={cx("text-[13px] font-bold", INK)}>
+                          {practice.question_count || 20} Soal
+                        </span>
+                      </div>
+                      {practice.learner_status?.best_score !== null && practice.learner_status?.best_score !== undefined && (
+                        <div className="flex items-center justify-between gap-3">
+                          <MicroMeta>Skor Terbaik</MicroMeta>
+                          <span
+                            className={cx(
+                              "tabular-nums text-[13px] font-bold",
+                              practice.learner_status.is_passed ? INK : "text-brand"
+                            )}
+                          >
+                            {Math.round(practice.learner_status.best_score)}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-auto">
+                      {renderAssessmentCta(practice, false)}
+                    </div>
+                  </GridCell>
+                );
+              })}
+            </Grid>
         </>
       )}
     </PageContainer>
