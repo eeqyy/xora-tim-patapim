@@ -23,6 +23,7 @@ const practiceRoutes = require("./routes/practices");
 const historyRoutes = require("./routes/history");
 const aiRoutes = require("./routes/ai");
 const adminRoutes = require("./routes/admin");
+const adminAiRoutes = require("./routes/adminAi");
 const { notFound, sendError } = require("./utils/errors");
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -74,6 +75,9 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/practices", practiceRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/ai", aiRoutes);
+// Mount AI admin SEBELUM adminRoutes agar /api/admin/ai tidak melewati
+// guard admin umum (keduanya aman, ini hanya menghindari kerja ganda).
+app.use("/api/admin/ai", adminAiRoutes);
 app.use("/api/admin", adminRoutes);
 
 // 404 — endpoint API yang tidak dikenal (bukan HTML default Express).

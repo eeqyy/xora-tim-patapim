@@ -33,7 +33,8 @@ Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index
 | Sel / permukaan lembut | `bg-cell` | `dark:bg-cell-dark` |
 | Teks utama | `text-ink` | `dark:text-ink-dark` |
 | Teks redup | `text-muted` | `dark:text-muted-dark` |
-| Garis | `border-hairline` | `dark:border-hairline-dark` |
+| Garis (baris/item) | `border-hairline` | `dark:border-hairline-dark` |
+| Garis section | `border-rule` | `dark:border-rule-dark` |
 | Aksen | `bg-brand` / `text-brand` | idem |
 | Aksen lembut | `bg-brand-soft` | override tema |
 
@@ -43,10 +44,15 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
 ## Primitif bersama (impor dari `../components`)
 - `PageContainer` — bingkai halaman (`{ maxWidth: "narrow" | "normal" | "wide", className }`).
   Tak ada `border-l`; sudah menyediakan padding horizontal + max-width.
+  Lebar responsif: `1200px` → `xl:1340px` → `2xl:1480px` (`narrow` tetap `720px`).
+  Header `Navbar` dan baris filter dashboard memakai lebar yang sama agar sejajar.
 - `PageHeader` — `{ badge, title, description, actions }`. Eyebrow + display
   heading + garis bawah.
-- `SectionHeader` — `{ index, title, meta, id, className }`. Sudah membawa
-  `mt-12 border-t pt-6 md:mt-16 md:pt-7`. Jangan tambah margin atas lagi.
+- `SectionHeader` — `{ index, title, meta, id, sticky, className }`. Memakai garis
+  section `RULE` (lebih tegas dari `HAIRLINE` baris/item). Jangan tambah margin
+  atas lagi. `sticky` (default `true`) membuat judul section menempel di bawah
+  Navbar sebagai bar ringkas (padding lebih kecil + satu baris) di semua halaman;
+  set `sticky={false}` bila tidak diinginkan.
 - `Grid` — `{ cols }` (1, 2, 3, 4, 6), `grid gap-x-8 gap-y-10`. Tambahkan
   `className="mt-8"` bila langsung setelah `SectionHeader`.
 - `GridCell` — `min-w-0 border-t pt-5` (sudah bergaris atas). JANGAN tambah
@@ -68,7 +74,8 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
 - `EmptyState`, `LoadingState`, `ErrorState`, `Avatar`, `AccordionRow`,
   `ChecklistRow`, `DataRow`, `FilterChips`, `Reveal` (`{ delay }`, animasi CSS).
 - Konstanta: `INPUT_CLASS`, `TH_CLASS`, `TD_CLASS`, `TABLE_CLASS`,
-  `CHIP_CLASS`, `CHIP_ACTIVE`, `CHIP_INACTIVE`, `cx`, `HAIRLINE`, `SURFACE`,
+  `CHIP_CLASS`, `CHIP_ACTIVE`, `CHIP_INACTIVE`, `cx`, `HAIRLINE`, `RULE`,
+  `SURFACE`,
   `CELL`, `INK`, `MUTED`.
 
 ## Kerangka halaman standar

@@ -55,6 +55,7 @@ export {
   CHIP_INACTIVE,
   cx,
   HAIRLINE,
+  RULE,
   SURFACE,
   CELL,
   INK,

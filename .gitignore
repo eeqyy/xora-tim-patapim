@@ -26,4 +26,7 @@ yarn-error.log*
 *.sw?
 
 docs/
-scratch/
+scratch/
+
+# OpenCode config lokal (jangan di-push)
+.opencode/

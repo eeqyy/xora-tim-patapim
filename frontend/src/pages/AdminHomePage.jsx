@@ -37,6 +37,13 @@ const MENU = [
     cta: "Buka Kelola Pengguna →",
   },
   {
+    to: "/admin/ai",
+    title: "AI & Model",
+    description:
+      "Simpan API key provider AI, pilih model, dan uji koneksi untuk mesin diagnosis Xora.",
+    cta: "Buka AI & Model →",
+  },
+  {
     to: "/admin/system",
     title: "Kesehatan Sistem",
     description:

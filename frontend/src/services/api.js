@@ -536,3 +536,40 @@ export const adminSystemApi = {
   getAnalytics: (token) =>
     apiRequest("/api/admin/system/analytics", { method: "GET", token }),
 };
+
+/**
+ * Admin — konfigurasi AI (API key + model). Butuh role ADMIN.
+ * API key mentah tidak pernah dikembalikan oleh backend.
+ */
+export const adminAiApi = {
+  // Ringkasan: provider aktif + daftar provider + health.
+  getStatus: (token) => apiRequest("/api/admin/ai", { method: "GET", token }),
+
+  list: (token) => apiRequest("/api/admin/ai/providers", { method: "GET", token }),
+
+  create: (body, token) =>
+    apiRequest("/api/admin/ai/providers", { method: "POST", body, token }),
+
+  update: (id, body, token) =>
+    apiRequest(`/api/admin/ai/providers/${id}`, { method: "PUT", body, token }),
+
+  remove: (id, token) =>
+    apiRequest(`/api/admin/ai/providers/${id}`, { method: "DELETE", token }),
+
+  activate: (id, token) =>
+    apiRequest(`/api/admin/ai/providers/${id}/activate`, { method: "PATCH", token }),
+
+  // Muat daftar model: pakai key yang dikirim (draft) atau provider tersimpan.
+  fetchModels: (body, token) =>
+    apiRequest("/api/admin/ai/models", { method: "POST", body, token }),
+
+  fetchModelsForProvider: (id, token) =>
+    apiRequest(`/api/admin/ai/providers/${id}/models`, { method: "POST", token }),
+
+  // Uji koneksi (chat round-trip JSON). Bisa draft (body) atau provider tersimpan.
+  test: (body, token) =>
+    apiRequest("/api/admin/ai/test", { method: "POST", body, token }),
+
+  testProvider: (id, body, token) =>
+    apiRequest(`/api/admin/ai/providers/${id}/test`, { method: "POST", body, token }),
+};

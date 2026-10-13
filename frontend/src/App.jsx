@@ -23,6 +23,7 @@ import AdminAssessmentEditorPage from "./pages/AdminAssessmentEditorPage";
 import AdminHomePage from "./pages/AdminHomePage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminSystemPage from "./pages/AdminSystemPage";
+import AdminAiSettingsPage from "./pages/AdminAiSettingsPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProgressPage from "./pages/ProgressPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -126,6 +127,12 @@ function AppContent() {
     pageContent = (
       <AdminRoute>
         <AdminSystemPage />
+      </AdminRoute>
+    );
+  } else if (currentPath === "/admin/ai") {
+    pageContent = (
+      <AdminRoute>
+        <AdminAiSettingsPage />
       </AdminRoute>
     );
   } else if (currentPath === "/admin/assessments") {

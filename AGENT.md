@@ -71,7 +71,7 @@ detect gaps → remediate the specific root cause.
 - **Connection:** `backend/db.js` builds a `pg.Pool` from `DATABASE_URL`; **SSL is enabled by
   default** (safe for remote Supabase). Disable it with `DATABASE_SSL=false` for local
   Homebrew Postgres that doesn't support SSL.
-- **Canonical schema:** `database/init/01-schema.sql`. Historical migrations `002`–`008`
+- **Canonical schema:** `database/init/01-schema.sql`. Historical migrations `002`–`009`
   live in `database/migrations/`; the changes still relevant for a fresh install have been
   **merged into `01-schema.sql`**.
 - **Seed:** `backend/seed.js` via `npm run seed`.
@@ -94,8 +94,8 @@ xora-project/
 ├── .env.example                   # Environment template
 │
 ├── database/
-│   ├── init/01-schema.sql         # Canonical PostgreSQL DDL (28 tables, enums, indexes, triggers)
-│   ├── migrations/                # 002..008 (historical; core parts merged into 01)
+│   ├── init/01-schema.sql         # Canonical PostgreSQL DDL (29 tables, enums, indexes, triggers)
+│   ├── migrations/                # 002..009 (historical; core parts merged into 01)
 │   └── seeds/                     # Extra question-bank data & scripts
 │
 ├── backend/
@@ -107,14 +107,15 @@ xora-project/
 │   │   └── requireAdmin.js        # requireAdmin guard (ADMIN role)
 │   ├── config/
 │   │   ├── aiPrompt.js            # Prompt/format for AI analysis
-│   │   ├── aiProvider.js          # OpenRouter client
+│   │   ├── aiProvider.js          # AI client: DB-active config, else .env fallback
 │   │   └── masteryThresholds.js   # Mastery/gap thresholds
-│   ├── routes/                    # 17 route files (see §4), incl. admin.js
-│   ├── services/                  # 20 services (business logic)
+│   ├── routes/                    # 18 route files (see §4), incl. admin.js & adminAi.js
+│   ├── services/                  # 21 services (business logic)
 │   └── utils/
 │       ├── errors.js              # ApiError + sendError + isValidUuid
 │       ├── grading.js             # answer grading helpers
 │       ├── password.js            # bcrypt hash/compare
+│       ├── secretBox.js           # AES-256-GCM encrypt/decrypt for AI API keys
 │       ├── session.js             # bearer extraction / token hashing
 │       └── aiValidator.js         # validate AI JSON output
 │
@@ -140,13 +141,16 @@ xora-project/
             ├── LearningPathPage.jsx, ProgressPage.jsx, AssessmentListPage.jsx,
             ├── AssessmentPage.jsx, AssessmentResultPage.jsx,
             ├── AdminAssessmentsPage.jsx, AdminAssessmentEditorPage.jsx,
+            ├── AdminHomePage.jsx, AdminUsersPage.jsx, AdminSystemPage.jsx,
+            ├── AdminAiSettingsPage.jsx,   # /admin/ai — API key + model AI
             └── NotFoundPage.jsx   # 404
 ```
 
-**Backend services (17):** `aiService`, `assessmentService`, `attemptService`, `authService`,
-`conceptService`, `gapService`, `historyService`, `learningPathService`, `levelService`,
-`masteryService`, `practiceService`, `profileService`, `questionService`,
-`recommendationService`, `sessionService`, `subjectService`, `topicService`.
+**Backend services (21):** `adminUserService`, `aiConfigService`, `aiService`, `assessmentService`,
+`attemptService`, `auditService`, `authService`, `conceptService`, `gapService`,
+`historyService`, `learningPathService`, `levelService`, `masteryService`, `practiceService`,
+`profileService`, `questionService`, `recommendationService`, `sessionService`,
+`subjectService`, `systemMonitorService`, `topicService`.
 
 ---
 
@@ -208,6 +212,27 @@ recorded in `audit_logs` via `auditService`.
 > is never returned. Assessment/question admin mutations (`/api/assessments/admin/*`) also
 > write to `audit_logs`.
 
+### 4.5.1 Admin AI (`/api/admin/ai`) — ADMIN only
+Mounted **before** `/api/admin` so `/api/admin/ai` is handled here first. Lets an admin store
+AI provider API keys and pick a model without editing `.env`. Keys are encrypted with
+**AES-256-GCM** (`utils/secretBox.js`, key derived from env `AI_CREDENTIALS_SECRET`) and are
+**never returned** — the client only sees a `••••••••<last4>` mask. Exactly one row may be
+active (partial unique index); when none is active the runtime falls back to `.env`
+(`AI_API_KEY`/`AI_MODEL`). All mutations are written to `audit_logs`.
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| GET | `/` | Active provider + all providers (masked) + live `aiProvider.healthCheck()` |
+| GET | `/providers` | List stored providers (masked) |
+| POST | `/providers` | Add provider (`label`, `base_url`, `api_key`, `model`, `json_mode`, `is_active`) |
+| PUT | `/providers/:id` | Update provider (`api_key` optional — omit to keep the existing key) |
+| DELETE | `/providers/:id` | Delete provider |
+| PATCH | `/providers/:id/activate` | Make this the single active provider |
+| POST | `/models` | Model catalog using `{ api_key, base_url }` (draft) or `{ provider_id }` |
+| POST | `/providers/:id/models` | Model catalog using the stored key |
+| POST | `/test` | Real chat round-trip JSON test (transient creds or `{ provider_id }`) |
+| POST | `/providers/:id/test` | Same test using the stored key (+ optional `model` override) |
+
 ### 4.6 Attempts (`/api/attempts`) — thin alias layer over `attemptService`
 `POST /` · `GET /` · `GET /:id` · `POST /:id/submit` · `DELETE /:id`
 
@@ -235,7 +260,7 @@ recorded in `audit_logs` via `auditService`.
 
 ## 5. Domain Model & Business Rules
 
-### 5.1 Tables (28, in `database/init/01-schema.sql`)
+### 5.1 Tables (29, in `database/init/01-schema.sql`)
 Identity: `users`, `roles`, `user_roles`, `sessions`.
 Profiles: `learner_profiles`, `admin_profiles`.
 Curriculum: `subjects`, `levels`, `topics`, `materials`, `concepts`, `topic_concepts`,
@@ -245,8 +270,9 @@ Diagnostics/remediation: `diagnostics`, `diagnostic_verifications`, `learning_ac
 `learner_concept_states`.
 Telemetry: `learning_events`, `audit_logs`, `learner_analytics`, `concept_analytics`,
 `learning_path_analytics`.
+AI config: `ai_provider_settings` (encrypted API key + selected model; one active).
 
-Key columns added to match code (migrations 006/007, merged into schema):
+Key columns added to match code (migrations 006–009, merged into schema):
 - `questions`: `material`, `is_active`, `explanation`, `deleted_at`; `assessment_id` &
   `order_index` are **nullable** (bank questions).
 - `assessments`: `difficulty`.
@@ -379,11 +405,13 @@ was tested and what remains.
   password); **system monitoring** (health, stats, recent activity, analytics). Admin actions
   are written to `audit_logs`.
 - **Frontend:** all pages build; unknown routes render a 404 page; admin area has a landing
-  page (`/admin`) plus `/admin/assessments`, `/admin/users`, `/admin/system`.
+  page (`/admin`) plus `/admin/assessments`, `/admin/users`, `/admin/ai`, `/admin/system`.
 
 ### 13.2 Known limitations / not yet implemented
-- **AI features** require `AI_API_KEY`; otherwise `/api/ai/*` → 503 and `ai_status = FAILED`.
-  There is **no** `OnboardingPage`/`DashboardPage` (those were removed from the docs).
+- **AI features** use the admin-configured provider (table `ai_provider_settings`, `/admin/ai`)
+  when one is active, otherwise fall back to `AI_API_KEY`/`AI_MODEL` from `.env`. With neither,
+  `/api/ai/*` → 503 and `ai_status = FAILED`. Saving keys from the dashboard additionally
+  requires `AI_CREDENTIALS_SECRET`. There is **no** `OnboardingPage` (removed from the docs).
 - **Two attempt-lifecycle implementations** coexist (`attemptService` vs
   `assessmentService`) — unify later for maintainability.
 - **`docker-compose` fresh install** is untested in CI; the config is validated with

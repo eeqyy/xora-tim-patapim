@@ -22,6 +22,18 @@ Pilih sesuai cara kalian menjalankan database:
 
 Kalau belum punya `.env`, jalankan `cp .env.example .env` lalu isi datanya.
 
+Untuk fitur **AI & Model** di panel admin (menyimpan API key provider dari dashboard,
+bukan hanya lewat `.env`), tambahkan juga satu baris:
+
+```bash
+AI_CREDENTIALS_SECRET=<string-acak-panjang-min-32-karakter>
+```
+
+Buat dengan `openssl rand -hex 32`. Nilai ini dipakai untuk mengenkripsi API key
+(AES-256-GCM). **Jangan diubah** setelah ada key tersimpan — key lama tidak bisa
+didekripsi lagi. Tanpa variabel ini, tombol simpan di **/admin/ai** akan menolak
+dengan pesan yang jelas.
+
 Untuk **frontend lokal (tanpa Docker)**, samakan URL backend-nya:
 
 ```bash
@@ -35,10 +47,12 @@ perlu langkah ini karena `VITE_API_URL` di-set otomatis oleh `docker-compose.yml
 
 Pilih **salah satu**:
 
-**Tidak pakai Docker** — jalankan 2 file migrasi ini:
+**Tidak pakai Docker** — jalankan file migrasi ini secara berurutan:
 ```bash
 psql -d xora -f database/migrations/006_assessment_engine_and_question_bank.sql
 psql -d xora -f database/migrations/007_question_bank_flexibility.sql
+psql -d xora -f database/migrations/008_formalize_assessment_names.sql
+psql -d xora -f database/migrations/009_ai_provider_settings.sql
 ```
 
 **Pakai Docker** — reset lalu isi ulang data contoh:
@@ -63,5 +77,6 @@ Terakhir, coba login dan buka halaman daftar asesmen.
 | Pesan error | Solusi |
 | :--- | :--- |
 | `server does not support SSL connections` | Tambah `DATABASE_SSL=false` di `.env` |
+| `AI_CREDENTIALS_SECRET belum diisi` saat simpan di /admin/ai | Tambahkan `AI_CREDENTIALS_SECRET` di `.env` lalu restart backend |
 | `column ... does not exist` (tabel/kolom tidak ada) | Langkah 3 belum dijalankan |
 | Halaman acak balas `Endpoint tidak ditemukan` | Normal — itu fitur halaman 404 baru |

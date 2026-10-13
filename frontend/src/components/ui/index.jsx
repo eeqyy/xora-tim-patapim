@@ -19,6 +19,8 @@ export function cx(...parts) {
    ------------------------------------------------------------ */
 export const HAIRLINE = "border-hairline dark:border-hairline-dark";
 export const HAIRLINE_DIVIDE_X = "divide-hairline dark:divide-hairline-dark";
+/* Garis batas section — satu tingkat lebih tegas dari HAIRLINE. */
+export const RULE = "border-rule dark:border-rule-dark";
 export const SURFACE = "bg-canvas dark:bg-canvas-dark";
 export const CELL = "bg-cell dark:bg-cell-dark";
 export const INK = "text-ink dark:text-ink-dark";
@@ -80,22 +82,40 @@ export function DisplayHeading({ as: Tag = "h1", className = "", children, ...re
 /* ------------------------------------------------------------
    SectionHeader — pemisah garis horizontal + nomor bagian
    ------------------------------------------------------------ */
-export function SectionHeader({ index, title, meta, id, className = "" }) {
+export function SectionHeader({ index, title, meta, id, sticky = true, className = "" }) {
   return (
     <div
       id={id}
-      className={cx("mt-12 mb-8 border-t pt-6 md:mt-16 md:mb-10 md:pt-7", HAIRLINE, className)}
+      className={cx(
+        "border-t",
+        RULE,
+        sticky
+          ? "-mx-5 px-5 md:-mx-8 md:px-8 sticky top-[68px] z-30 scroll-mt-[76px] bg-canvas/95 backdrop-blur-sm dark:bg-canvas-dark/95 mt-14 mb-8 pt-3 md:mt-20 md:mb-10 md:pt-4"
+          : "mt-14 mb-8 pt-6 md:mt-20 md:mb-10 md:pt-7",
+        className
+      )}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <div className="flex items-baseline gap-4">
+      <div
+        className={cx(
+          "flex items-baseline justify-between gap-x-6",
+          sticky ? "flex-nowrap" : "flex-wrap gap-y-1"
+        )}
+      >
+        <div className="flex min-w-0 items-baseline gap-4">
           {index ? (
             <span className="text-[12px] font-bold tabular-nums text-brand">{index}</span>
           ) : null}
-          <h2 className={cx("text-[13px] font-semibold uppercase tracking-[0.16em]", INK)}>
+          <h2
+            className={cx(
+              "min-w-0 text-[13px] font-semibold uppercase tracking-[0.16em]",
+              sticky && "truncate",
+              INK
+            )}
+          >
             {title}
           </h2>
         </div>
-        {meta ? <MicroMeta>{meta}</MicroMeta> : null}
+        {meta ? <MicroMeta className={sticky ? "shrink-0" : ""}>{meta}</MicroMeta> : null}
       </div>
     </div>
   );

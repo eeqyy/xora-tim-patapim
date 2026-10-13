@@ -33,6 +33,7 @@ import {
   Alert,
   MicroMeta,
   HAIRLINE,
+  RULE,
   CHIP_CLASS,
   CHIP_ACTIVE,
   CHIP_INACTIVE,
@@ -51,6 +52,15 @@ import {
   IconTarget,
   IconSparkles,
 } from "../components/Icons";
+
+/* Pengelompokan konsep per status (urutan prioritas tampil). */
+const CONCEPT_STATUS_GROUPS = [
+  { key: "CONFIRMED_GAP", label: "Kesenjangan Terkonfirmasi" },
+  { key: "POSSIBLE_GAP", label: "Perlu Verifikasi" },
+  { key: "IN_PRACTICE", label: "Sedang Latihan" },
+  { key: "MASTERED", label: "Dikuasai" },
+  { key: "NOT_ASSESSED", label: "Belum Dinilai" },
+];
 
 export default function ProgressPage() {
   const { navigate } = useRouter();
@@ -125,6 +135,18 @@ export default function ProgressPage() {
   const overview = historyData?.overview || {};
   const growth = historyData?.growth || {};
   const insights = historyData?.insights || {};
+
+  const conceptList = overview.concepts_detail || [];
+  const conceptGroups = CONCEPT_STATUS_GROUPS.map((group) => ({
+    ...group,
+    concepts: conceptList.filter((c) => c.learning_status === group.key),
+  })).filter((group) => group.concepts.length > 0);
+  const otherConcepts = conceptList.filter(
+    (c) => !CONCEPT_STATUS_GROUPS.some((group) => group.key === c.learning_status)
+  );
+  if (otherConcepts.length > 0) {
+    conceptGroups.push({ key: "OTHER", label: "Lainnya", concepts: otherConcepts });
+  }
 
   const tabBase =
     "inline-flex min-h-[44px] items-center rounded-full px-4 py-2.5 text-[13px] font-semibold transition-colors";
@@ -248,47 +270,74 @@ export default function ProgressPage() {
           </GlassPanel>
 
           {/* Concepts Breakdown */}
-          <SectionHeader id="concepts" index="03" title="Rincian Penguasaan Seluruh Konsep" />
-          {(!overview.concepts_detail || overview.concepts_detail.length === 0) ? (
+          <SectionHeader
+            id="concepts"
+            index="03"
+            title="Rincian Penguasaan Seluruh Konsep"
+            meta={`${conceptList.length} KONSEP`}
+          />
+          {conceptList.length === 0 ? (
             <EmptyState
               title="Belum Ada Konsep"
               description="Belum ada data konsep kurikulum yang terhubung."
             />
           ) : (
-            overview.concepts_detail.map((c) => (
-              <GlassPanel
-                key={c.id}
-                className={cx(
-                  "flex flex-col gap-3 border-t pt-5 md:flex-row md:items-center md:justify-between",
-                  HAIRLINE
-                )}
-              >
-                <div className="min-w-[220px] flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <strong className={cx("text-[14px] font-bold", INK)}>{c.name}</strong>
-                    <StatusBadge status={c.learning_status} dot />
-                  </div>
-                  {c.description && (
-                    <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
-                      {c.description}
-                    </p>
+            conceptGroups.map((group) => (
+              <div key={group.key}>
+                <div
+                  className={cx(
+                    "mt-10 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t pt-4",
+                    RULE
                   )}
+                >
+                  <span className={cx("text-[11px] font-bold uppercase tracking-[0.16em]", INK)}>
+                    {group.label}
+                  </span>
+                  <MicroMeta>{group.concepts.length} KONSEP</MicroMeta>
                 </div>
 
-                <div className="shrink-0 md:min-w-[160px] md:text-right">
-                  <div className={cx("tabular-nums text-[13px] font-bold", INK)}>
-                    {c.mastery_score !== null ? `${c.mastery_score}%` : "Belum Dinilai"}
-                  </div>
-                  <div className={cx("text-[11px]", MUTED)}>
-                    {c.evidence_count > 0 ? `${c.evidence_count} bukti terkumpul` : "Belum ada bukti asesmen"}
-                  </div>
-                  {c.mastery_score !== null && (
-                    <div className="mt-1.5 w-[120px] md:ml-auto">
-                      <ProgressBar value={c.mastery_score} size="sm" showPercent={false} />
+                {group.concepts.map((c, idx) => (
+                  <GlassPanel
+                    key={c.id}
+                    className={cx(
+                      "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
+                      idx === 0 ? "pt-4 pb-5" : "border-t py-5",
+                      HAIRLINE
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <MicroMeta className="mt-0.5 shrink-0">
+                        {String(idx + 1).padStart(2, "0")}
+                      </MicroMeta>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <strong className={cx("text-[14px] font-bold", INK)}>{c.name}</strong>
+                          <StatusBadge status={c.learning_status} dot />
+                        </div>
+                        {c.description && (
+                          <p className={cx("mt-1 text-[12px] leading-relaxed", MUTED)}>
+                            {c.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              </GlassPanel>
+
+                    <div className="shrink-0 md:min-w-[160px] md:text-right">
+                      <div className={cx("tabular-nums text-[13px] font-bold", INK)}>
+                        {c.mastery_score !== null ? `${c.mastery_score}%` : "Belum Dinilai"}
+                      </div>
+                      <div className={cx("text-[11px]", MUTED)}>
+                        {c.evidence_count > 0 ? `${c.evidence_count} bukti terkumpul` : "Belum ada bukti asesmen"}
+                      </div>
+                      {c.mastery_score !== null && (
+                        <div className="mt-1.5 w-[120px] md:ml-auto">
+                          <ProgressBar value={c.mastery_score} size="sm" showPercent={false} />
+                        </div>
+                      )}
+                    </div>
+                  </GlassPanel>
+                ))}
+              </div>
             ))
           )}
         </>

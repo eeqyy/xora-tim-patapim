@@ -21,6 +21,7 @@ const ADMIN_MENU = [
   { to: "/admin", label: "Panel Admin", match: (p) => p === "/admin" || p === "/admin/" },
   { to: "/admin/assessments", label: "Kelola Asesmen", match: (p) => p.startsWith("/admin/assessments") },
   { to: "/admin/users", label: "Pengguna", match: (p) => p.startsWith("/admin/users") },
+  { to: "/admin/ai", label: "AI & Model", match: (p) => p.startsWith("/admin/ai") },
   { to: "/admin/system", label: "Sistem", match: (p) => p.startsWith("/admin/system") },
 ];
 
@@ -125,7 +126,7 @@ export default function Navbar() {
         "border-hairline dark:bg-canvas-dark/90 dark:border-hairline-dark"
       )}
     >
-      <div className="mx-auto flex min-h-[68px] max-w-[1200px] items-center gap-3 px-5 py-2 md:px-8">
+      <div className="mx-auto flex min-h-[68px] max-w-[1200px] items-center gap-3 px-5 py-2 md:px-8 xl:max-w-[1340px] xl:px-10 2xl:max-w-[1480px]">
         {/* Logo */}
         <Link
           to="/"
@@ -484,7 +485,7 @@ function ContextPicker() {
 
   return (
     <div className={cx("border-t", HAIRLINE)}>
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-3 px-5 py-3 md:flex-row md:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-3 px-5 py-3 md:flex-row md:px-8 xl:max-w-[1340px] xl:px-10 2xl:max-w-[1480px]">
         <label className={labelClass}>
           <MicroMeta className="whitespace-nowrap">KELAS</MicroMeta>
           <select
