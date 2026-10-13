@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Authentication service (register / login / logout / me)
+// XOLEARN — Authentication service (register / login / logout / me)
 // backend/services/authService.js
 // ============================================================
 // FR-01..FR-05: sign up, login, logout, kelola sesi, profil minat & tujuan.

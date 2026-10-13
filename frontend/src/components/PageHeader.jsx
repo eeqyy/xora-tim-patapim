@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — PageHeader (Editorial System v2)
+// XOLEARN — PageHeader (Editorial System v2)
 // frontend/src/components/PageHeader.jsx
 // ------------------------------------------------------------
 // Band judul halaman: eyebrow, judul display besar, lede, aksi.

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Assessment Routes
+// XOLEARN — Assessment Routes
 // backend/routes/assessments.js
 // ============================================================
 

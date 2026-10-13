@@ -1,6 +1,6 @@
-# Xora Project
+# Xolearn Project
 
-**Xora** adalah platform *Evidence-Based Learning Diagnostic & Root-Cause Navigator*:
+**Xolearn** adalah platform *Evidence-Based Learning Diagnostic & Root-Cause Navigator*:
 asesmen dipetakan ke **konsep**, setiap jawaban disimpan sebagai **evidence**, lalu
 dipakai untuk mendeteksi *gap* dan merekomendasikan remediasi yang tepat sasaran.
 

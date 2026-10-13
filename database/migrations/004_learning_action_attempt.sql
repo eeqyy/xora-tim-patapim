@@ -1,5 +1,5 @@
 -- ============================================================
--- XORA — Migration 004: Link learning action -> attempt
+-- XOLEARN — Migration 004: Link learning action -> attempt
 -- database/migrations/004_learning_action_attempt.sql
 -- ============================================================
 -- Tujuan:

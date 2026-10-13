@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Learner Profile Service
+// XOLEARN — Learner Profile Service
 // backend/services/profileService.js
 // ============================================================
 

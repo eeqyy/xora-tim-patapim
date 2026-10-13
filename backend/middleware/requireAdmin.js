@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin authorization middleware
+// XOLEARN — Admin authorization middleware
 // backend/middleware/requireAdmin.js
 // ============================================================
 // Dipakai setelah requireAuth. Menolak bila user tidak punya role ADMIN.

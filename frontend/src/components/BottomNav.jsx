@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Bottom Navigation (Editorial System v2)
+// XOLEARN — Bottom Navigation (Editorial System v2)
 // frontend/src/components/BottomNav.jsx
 // ------------------------------------------------------------
 // Mobile (<768px): bar bawah dengan indikator pil untuk item

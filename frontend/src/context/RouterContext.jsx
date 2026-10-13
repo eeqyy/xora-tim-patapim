@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Lightweight History Router & ProtectedRoute
+// XOLEARN — Lightweight History Router & ProtectedRoute
 // frontend/src/context/RouterContext.jsx
 // ============================================================
 

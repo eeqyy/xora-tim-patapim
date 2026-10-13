@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Recommendation Routes
+// XOLEARN — Recommendation Routes
 // backend/routes/recommendations.js
 // ============================================================
 // GET  /api/recommendations            -> daftar action aktif learner login

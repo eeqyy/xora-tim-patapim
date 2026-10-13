@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Recommendation Service (learning action lifecycle)
+// XOLEARN — Recommendation Service (learning action lifecycle)
 // backend/services/recommendationService.js
 // ============================================================
 // Menutup siklus gap: learning_action (RECOMMENDED) -> learner menjalankan

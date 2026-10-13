@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Mastery calculation thresholds & helpers
+// XOLEARN — Mastery calculation thresholds & helpers
 // backend/config/masteryThresholds.js
 // ============================================================
 // Konstanta ini konsisten dengan keputusan yang sudah disepakati:

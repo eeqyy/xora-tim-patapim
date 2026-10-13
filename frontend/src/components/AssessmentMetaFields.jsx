@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Form fields untuk meta asesmen (dipakai admin)
+// XOLEARN — Form fields untuk meta asesmen (dipakai admin)
 // frontend/src/components/AssessmentMetaFields.jsx
 // ------------------------------------------------------------
 // Menyediakan: judul, tipe, subjek, level, topik, durasi, passing score.

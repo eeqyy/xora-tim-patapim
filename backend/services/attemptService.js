@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Attempt / evidence service
+// XOLEARN — Attempt / evidence service
 // backend/services/attemptService.js
 // ============================================================
 // Menjawab inti loop pembelajaran (PRD):

@@ -1,11 +1,11 @@
 // ============================================================
-// XORA — Admin AI Routes (/api/admin/ai)
+// XOLEARN — Admin AI Routes (/api/admin/ai)
 // backend/routes/adminAi.js
 // ============================================================
 // Mengelola API key provider AI dari dashboard admin:
 //   - Simpan beberapa provider (key terenkripsi), satu aktif.
 //   - "Muat Model"  -> daftar model dari provider memakai key tersebut.
-//   - "Uji"         -> chat round-trip JSON nyata (validasi model siap Xora).
+//   - "Uji"         -> chat round-trip JSON nyata (validasi model siap Xolearn).
 //
 // Hanya role ADMIN. API key mentah TIDAK pernah dikembalikan ke klien.
 // ============================================================

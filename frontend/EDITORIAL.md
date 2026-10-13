@@ -1,4 +1,4 @@
-# XORA — Editorial System v2 (panduan implementasi halaman)
+# XOLEARN — Editorial System v2 (panduan implementasi halaman)
 
 Sistem visual ini mengikuti bahasa template editorial 21st.dev **#1116**:
 tipografi **Manrope**, **sudut pil untuk elemen interaktif**, dan pemisah

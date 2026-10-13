@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Dashboard Analitik (Editorial System v2)
+// XOLEARN — Dashboard Analitik (Editorial System v2)
 // frontend/src/pages/DashboardPage.jsx
 // ------------------------------------------------------------
 // Struktur editorial bernomor:
@@ -249,7 +249,7 @@ export default function DashboardPage() {
   return (
     <PageContainer>
       <PageHeader
-        badge={`Xora Analytics · ${today}`}
+        badge={`Xolearn Analytics · ${today}`}
         title="Analitik Asesmen & Kesenjangan Belajar"
         description={
           <>

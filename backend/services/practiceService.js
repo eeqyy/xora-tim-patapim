@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Practice Service
+// XOLEARN — Practice Service
 // backend/services/practiceService.js
 // ============================================================
 // "Practice" TIDAK punya tabel sendiri — model-nya reuse assessments

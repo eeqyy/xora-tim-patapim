@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — 404 Not Found Page (Editorial Grid System)
+// XOLEARN — 404 Not Found Page (Editorial Grid System)
 // frontend/src/pages/NotFoundPage.jsx
 // ============================================================
 

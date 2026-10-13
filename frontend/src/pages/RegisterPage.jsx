@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Register Page (Editorial Grid System)
+// XOLEARN — Register Page (Editorial Grid System)
 // frontend/src/pages/RegisterPage.jsx
 // ============================================================
 
@@ -110,7 +110,7 @@ export default function RegisterPage() {
     <PageContainer maxWidth="narrow" className="flex min-h-[70vh] flex-col justify-center">
       <GlassPanel variant="elevated" className="p-8 md:p-10">
         <h1 className={cx("text-2xl font-extrabold leading-tight tracking-tight md:text-3xl", INK)}>
-          Daftar Akun Xora
+          Daftar Akun Xolearn
         </h1>
         <p className={cx("mt-2 text-[13px] leading-relaxed", MUTED)}>
           Mulai perjalanan belajar terarah Anda hari ini

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Kesehatan Sistem & Data — Editorial Grid System
+// XOLEARN — Admin: Kesehatan Sistem & Data — Editorial Grid System
 // frontend/src/pages/AdminSystemPage.jsx
 // ============================================================
 // Memantau status database, statistik data, aktivitas terbaru
@@ -108,7 +108,7 @@ export default function AdminSystemPage() {
       <PageHeader
         badge="ADMIN"
         title="Kesehatan Sistem"
-        description="Status database, statistik data, aktivitas terbaru, dan ringkasan analytics platform Xora."
+        description="Status database, statistik data, aktivitas terbaru, dan ringkasan analytics platform Xolearn."
         actions={
           <SecondaryButton
             size="sm"

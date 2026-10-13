@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Assessment Discovery & List Page (Asesmen)
+// XOLEARN — Assessment Discovery & List Page (Asesmen)
 // Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/AssessmentListPage.jsx
 // ------------------------------------------------------------

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Learner Profile Page
+// XOLEARN — Learner Profile Page
 // Premium Light Glassmorphism · Minimal · Reusable
 // frontend/src/pages/ProfilePage.jsx
 // ============================================================
@@ -407,7 +407,7 @@ export default function ProfilePage() {
                 Selesaikan Orientasi (Onboarding)
               </h3>
               <p className={cx("mt-1 text-[13px] leading-relaxed", MUTED)}>
-                Tandai bahwa Anda telah menyelesaikan orientasi profil belajar Xora.
+                Tandai bahwa Anda telah menyelesaikan orientasi profil belajar Xolearn.
               </p>
             </div>
             <PrimaryButton

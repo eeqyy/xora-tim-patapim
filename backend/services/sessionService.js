@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Session service (create / resolve / revoke)
+// XOLEARN — Session service (create / resolve / revoke)
 // backend/services/sessionService.js
 // ============================================================
 // Tabel sessions menyimpan hanya HASH token, bukan token mentah.

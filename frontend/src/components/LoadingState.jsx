@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — LoadingState (Editorial System v2)
+// XOLEARN — LoadingState (Editorial System v2)
 // frontend/src/components/LoadingState.jsx
 // ============================================================
 

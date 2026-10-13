@@ -1,5 +1,5 @@
 /**
- * XORA — Assessment Scoring Integrity & AI Integration Test Suite
+ * XOLEARN — Assessment Scoring Integrity & AI Integration Test Suite
  * backend/test_assessment_scoring_integrity.js
  */
 
@@ -14,7 +14,7 @@ const aiService = require("./services/aiService");
 
 async function runTestSuite() {
   console.log("==================================================================");
-  console.log("XORA — ASSESSMENT SCORING INTEGRITY & AI INTEGRATION TEST SUITE");
+  console.log("XOLEARN — ASSESSMENT SCORING INTEGRITY & AI INTEGRATION TEST SUITE");
   console.log("==================================================================");
 
   let passed = 0;

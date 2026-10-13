@@ -1,12 +1,12 @@
 // ============================================================
-// XORA — Admin: AI & Model — Editorial Grid System
+// XOLEARN — Admin: AI & Model — Editorial Grid System
 // frontend/src/pages/AdminAiSettingsPage.jsx
 // ============================================================
-// Mengelola API key provider AI yang dipakai fitur diagnosis Xora:
+// Mengelola API key provider AI yang dipakai fitur diagnosis Xolearn:
 //   - Simpan beberapa provider (key terenkripsi di server), satu aktif.
 //   - "Muat Model" menarik katalog model dari provider memakai key itu.
 //   - "Uji" melakukan chat round-trip JSON nyata untuk memastikan model
-//     benar-benar kompatibel (Xora mewajibkan output JSON).
+//     benar-benar kompatibel (Xolearn mewajibkan output JSON).
 //
 // API key mentah tidak pernah ditampilkan — hanya 4 karakter terakhir.
 // Hanya bisa dibuka lewat AdminRoute (role ADMIN).
@@ -300,7 +300,7 @@ export default function AdminAiSettingsPage() {
       <PageHeader
         badge="ADMIN"
         title="AI & Model"
-        description="Simpan API key provider AI dan pilih model untuk mesin diagnosis Xora. API key disimpan terenkripsi dan tidak pernah ditampilkan utuh."
+        description="Simpan API key provider AI dan pilih model untuk mesin diagnosis Xolearn. API key disimpan terenkripsi dan tidak pernah ditampilkan utuh."
       />
 
       {notice && <Alert tone="success">{notice}</Alert>}
@@ -371,7 +371,7 @@ export default function AdminAiSettingsPage() {
           {providers.length === 0 ? (
             <EmptyState
               title="Belum Ada API Key"
-              description="Tambahkan API key provider di bawah agar fitur diagnosis AI Xora bisa berjalan."
+              description="Tambahkan API key provider di bawah agar fitur diagnosis AI Xolearn bisa berjalan."
             />
           ) : (
             <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>

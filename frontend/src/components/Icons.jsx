@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Minimal Consistent SVG Icons
+// XOLEARN — Minimal Consistent SVG Icons
 // frontend/src/components/Icons.jsx
 // ============================================================
 

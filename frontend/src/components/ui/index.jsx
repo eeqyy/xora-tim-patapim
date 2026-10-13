@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Editorial UI Primitives v2
+// XOLEARN — Editorial UI Primitives v2
 // frontend/src/components/ui/index.jsx
 // ------------------------------------------------------------
 // Bahasa visual: tipografi Manrope, sudut pil untuk elemen

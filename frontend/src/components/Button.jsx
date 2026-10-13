@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Button (Editorial System v2)
+// XOLEARN — Button (Editorial System v2)
 // frontend/src/components/Button.jsx
 // ------------------------------------------------------------
 // Sudut pil (rounded-full), tanpa shadow. Semua ukuran >=44px

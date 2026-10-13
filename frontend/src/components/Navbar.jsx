@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Sticky Header Bar (Editorial System v2)
+// XOLEARN — Sticky Header Bar (Editorial System v2)
 // frontend/src/components/Navbar.jsx
 // ------------------------------------------------------------
 // Mobile-first: header 2 tingkat (baris 1 logo + toggle tema,
@@ -133,7 +133,7 @@ export default function Navbar() {
           className="mr-1 flex min-h-[44px] shrink-0 items-center gap-2.5 text-[17px] font-extrabold tracking-[-0.02em] text-ink dark:text-ink-dark"
         >
           <span className="h-2.5 w-2.5 rounded-full bg-brand" aria-hidden="true" />
-          Xora
+          Xolearn
         </Link>
 
         {/* Navigasi desktop */}
@@ -338,7 +338,7 @@ export default function Navbar() {
             aria-label="Navigasi"
           >
         <div className="flex min-h-[68px] shrink-0 items-center justify-between px-5">
-          <MicroMeta>MENU · XORA</MicroMeta>
+          <MicroMeta>MENU · XOLEARN</MicroMeta>
           <button
             type="button"
             onClick={closeMenu}

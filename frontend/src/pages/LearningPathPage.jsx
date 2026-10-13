@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Interactive Learning Path Page (Jalur Belajar)
+// XOLEARN — Interactive Learning Path Page (Jalur Belajar)
 // Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/LearningPathPage.jsx
 // ------------------------------------------------------------

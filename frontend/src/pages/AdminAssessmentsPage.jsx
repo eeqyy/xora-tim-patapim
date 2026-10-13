@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Kelola Asesmen (list + hapus) — Editorial Grid System
+// XOLEARN — Admin: Kelola Asesmen (list + hapus) — Editorial Grid System
 // frontend/src/pages/AdminAssessmentsPage.jsx
 // ============================================================
 // Hanya bisa dibuka lewat AdminRoute (role ADMIN).

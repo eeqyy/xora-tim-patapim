@@ -1,7 +1,7 @@
-# AGENT.md — Xora Project Architecture & Engineering Guidelines
+# AGENT.md — Xolearn Project Architecture & Engineering Guidelines
 
 > **Target Audience:** AI Coding Agents & Software Engineers
-> **Repository:** Xora — Evidence-Based Learning Diagnostic & Root-Cause Navigator
+> **Repository:** Xolearn — Evidence-Based Learning Diagnostic & Root-Cause Navigator
 > **Last Audited:** October 12, 2026
 > **Active Working Branch:** `main`
 
@@ -14,12 +14,12 @@
 ## 1. Project Overview
 
 ### 1.1 Mission and Purpose
-**Xora** is an **Evidence-Based Learning Diagnostic & Root-Cause Navigator**. It transforms
+**Xolearn** is an **Evidence-Based Learning Diagnostic & Root-Cause Navigator**. It transforms
 software engineering education from rote memorization and coarse test scoring into a
 continuous diagnostic loop: measure at concept granularity → store immutable evidence →
 detect gaps → remediate the specific root cause.
 
-### 1.2 The Problem Xora Solves
+### 1.2 The Problem Xolearn Solves
 1. **Superficial Completion & Coarse Scoring:** A "70% passed" score never explains *which
    foundational concept* broke down. Gaps in prerequisites compound silently.
 2. **Ungrounded "AI Tutoring":** Generic LLM tutors hallucinate because they lack granular,

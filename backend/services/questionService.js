@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Question Service (admin CRUD)
+// XOLEARN — Question Service (admin CRUD)
 // backend/services/questionService.js
 // ============================================================
 // Sumber kebenaran pemetaan soal -> konsep + kesulitan:

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Learner Progress & Growth History Page
+// XOLEARN — Learner Progress & Growth History Page
 // Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/ProgressPage.jsx
 // ------------------------------------------------------------

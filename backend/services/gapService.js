@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Gap Service (diagnostic & root-cause pipeline)
+// XOLEARN — Gap Service (diagnostic & root-cause pipeline)
 // backend/services/gapService.js
 // ============================================================
 // Alur gap (PRD: Mastery & Gap Detection):

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — CSS Question Bank Data (Code-Based & Conceptual)
+// XOLEARN — CSS Question Bank Data (Code-Based & Conceptual)
 // database/seeds/questions_data/css_questions.js
 // Topics: CSS Basics, Box Model, Flexbox, Responsive Design
 // ============================================================

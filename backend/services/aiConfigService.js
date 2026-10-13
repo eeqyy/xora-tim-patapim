@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — AI Config Service
+// XOLEARN — AI Config Service
 // backend/services/aiConfigService.js
 // ============================================================
 // Menyimpan & membaca konfigurasi provider AI dari tabel
@@ -344,9 +344,9 @@ function categorizeHttp(status) {
 }
 
 /**
- * Uji nyata: kirim prompt mini bergaya Xora dan pastikan model
+ * Uji nyata: kirim prompt mini bergaya Xolearn dan pastikan model
  * mengembalikan JSON valid (bukan sekadar ping). Inilah penentu
- * apakah model cocok untuk diagnosis Xora.
+ * apakah model cocok untuk diagnosis Xolearn.
  */
 async function testConnection({ api_key, base_url, model, json_mode = true }) {
   const key = String(api_key || "").trim();
@@ -406,7 +406,7 @@ async function testConnection({ api_key, base_url, model, json_mode = true }) {
     json_mode: !!json_mode,
     sample: content.slice(0, 200),
     message: parsed
-      ? "Model merespons JSON valid — siap dipakai Xora."
+      ? "Model merespons JSON valid — siap dipakai Xolearn."
       : "Respons bukan JSON valid. Coba matikan JSON mode atau pilih model lain.",
   };
 }

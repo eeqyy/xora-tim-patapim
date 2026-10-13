@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — System Monitor Service (kesehatan sistem & data)
+// XOLEARN — System Monitor Service (kesehatan sistem & data)
 // backend/services/systemMonitorService.js
 // ============================================================
 // Dipakai HANYA oleh routes/admin.js (role ADMIN).

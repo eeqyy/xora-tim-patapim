@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — ErrorState (Editorial System v2)
+// XOLEARN — ErrorState (Editorial System v2)
 // frontend/src/components/ErrorState.jsx
 // ============================================================
 

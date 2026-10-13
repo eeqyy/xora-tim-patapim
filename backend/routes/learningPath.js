@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Learning Path Routes
+// XOLEARN — Learning Path Routes
 // backend/routes/learningPath.js
 // ============================================================
 

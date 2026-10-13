@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Main Application Entry Point
+// XOLEARN — Main Application Entry Point
 // frontend/src/App.jsx
 // ============================================================
 

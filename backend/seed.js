@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Development Seed Data
+// XOLEARN — Development Seed Data
 // backend/seed.js
 // ============================================================
 // Usage:  npm run seed   (or:  node seed.js)
@@ -80,7 +80,7 @@ async function seed() {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    console.log("🌱 Seeding Xora development data…\n");
+    console.log("🌱 Seeding Xolearn development data…\n");
 
     // ══════════════════════════════════════════════════════════
     // 1. ROLES
@@ -89,13 +89,13 @@ async function seed() {
     const learnerRole = await upsertRow(
       client, "roles",
       ["name", "description"],
-      ["LEARNER", "Pelajar yang menggunakan platform Xora"],
+      ["LEARNER", "Pelajar yang menggunakan platform Xolearn"],
       "(name)", "name", "LEARNER"
     );
     const adminRole = await upsertRow(
       client, "roles",
       ["name", "description"],
-      ["ADMIN", "Administrator platform Xora"],
+      ["ADMIN", "Administrator platform Xolearn"],
       "(name)", "name", "ADMIN"
     );
 

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — StatusBadge (Editorial System v2)
+// XOLEARN — StatusBadge (Editorial System v2)
 // frontend/src/components/StatusBadge.jsx
 // ------------------------------------------------------------
 // Badge pil (sans, uppercase, tracking lebar). Palet mono +

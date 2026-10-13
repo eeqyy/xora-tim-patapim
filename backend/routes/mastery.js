@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Mastery Routes
+// XOLEARN — Mastery Routes
 // backend/routes/mastery.js
 // ============================================================
 // GET /api/mastery                 -> summary seluruh konsep learner login

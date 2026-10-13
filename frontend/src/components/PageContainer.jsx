@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — PageContainer (Editorial System v2)
+// XOLEARN — PageContainer (Editorial System v2)
 // frontend/src/components/PageContainer.jsx
 // ------------------------------------------------------------
 // Bingkai halaman: lebar maksimum + padding responsif.

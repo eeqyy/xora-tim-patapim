@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Assessment Service
+// XOLEARN — Assessment Service
 // backend/services/assessmentService.js
 // ============================================================
 

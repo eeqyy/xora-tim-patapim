@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Learner Profile Routes
+// XOLEARN — Learner Profile Routes
 // backend/routes/profile.js
 // ============================================================
 

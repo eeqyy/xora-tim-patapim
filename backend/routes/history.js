@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Learning History Routes
+// XOLEARN — Learning History Routes
 // backend/routes/history.js
 // ============================================================
 // GET /api/history -> ambil riwayat belajar (timeline events & metrics)

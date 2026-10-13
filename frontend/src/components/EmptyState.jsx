@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — EmptyState (Editorial System v2)
+// XOLEARN — EmptyState (Editorial System v2)
 // frontend/src/components/EmptyState.jsx
 // ============================================================
 

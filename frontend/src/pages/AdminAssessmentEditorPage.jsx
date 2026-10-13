@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Editor asesmen (detail meta + CRUD soal) — Editorial Grid System
+// XOLEARN — Admin: Editor asesmen (detail meta + CRUD soal) — Editorial Grid System
 // frontend/src/pages/AdminAssessmentEditorPage.jsx
 // ============================================================
 // Dua mode lewat satu komponen:

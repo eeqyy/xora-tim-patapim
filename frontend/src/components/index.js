@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Shared UI Components Barrel Export
+// XOLEARN — Shared UI Components Barrel Export
 // frontend/src/components/index.js
 // ============================================================
 

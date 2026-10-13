@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Secret Box (enkripsi kredensial AI)
+// XOLEARN — Secret Box (enkripsi kredensial AI)
 // backend/utils/secretBox.js
 // ============================================================
 // Enkripsi simetris AES-256-GCM memakai kunci turunan dari env

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Home Page (Editorial Grid System)
+// XOLEARN — Home Page (Editorial Grid System)
 // frontend/src/pages/HomePage.jsx
 // ------------------------------------------------------------
 // Hero (PageHeader) + grid fitur + akses cepat.
@@ -70,7 +70,7 @@ export default function HomePage() {
       <PageHeader
         badge="Evidence-Based Learning Platform"
         title="Navigasi Presisi untuk Penguasaan Konsep Belajar"
-        description="Xora menganalisis bukti belajar aktual dari asesmen untuk mengidentifikasi kesenjangan pemahaman dan merekomendasikan remedi yang tepat sasaran."
+        description="Xolearn menganalisis bukti belajar aktual dari asesmen untuk mengidentifikasi kesenjangan pemahaman dan merekomendasikan remedi yang tepat sasaran."
         actions={
           isAuthenticated ? (
             isAdmin ? (

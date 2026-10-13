@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Seed Script: Topic Code Questions & Practice Assessments
+// XOLEARN — Seed Script: Topic Code Questions & Practice Assessments
 // database/seeds/seed_topic_code_questions.js
 // ============================================================
 // Idempoten: Aman dijalankan berulang kali tanpa menambah duplikat.

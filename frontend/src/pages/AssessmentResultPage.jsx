@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Assessment Result & Diagnostic Breakdown Page
+// XOLEARN — Assessment Result & Diagnostic Breakdown Page
 // Editorial Grid System · Flat · Hairline grid
 // frontend/src/pages/AssessmentResultPage.jsx
 // ============================================================

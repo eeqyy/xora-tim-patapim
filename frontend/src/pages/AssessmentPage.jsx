@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Assessment Page (Pengerjaan Asesmen)
+// XOLEARN — Assessment Page (Pengerjaan Asesmen)
 // Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/AssessmentPage.jsx
 // ------------------------------------------------------------

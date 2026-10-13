@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Mastery Service
+// XOLEARN — Mastery Service
 // backend/services/masteryService.js
 // ============================================================
 // Hitung mastery dari evidence NYATA (bukan dari angka seed).

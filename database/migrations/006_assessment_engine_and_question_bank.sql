@@ -1,5 +1,5 @@
 -- ============================================================
--- XORA — Migration 006: Assessment Engine, Question Bank & Snapshots
+-- XOLEARN — Migration 006: Assessment Engine, Question Bank & Snapshots
 -- database/migrations/006_assessment_engine_and_question_bank.sql
 -- ============================================================
 

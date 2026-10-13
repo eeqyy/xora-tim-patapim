@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — HTML Question Bank Data (Code-Based & Conceptual)
+// XOLEARN — HTML Question Bank Data (Code-Based & Conceptual)
 // database/seeds/questions_data/html_questions.js
 // Topics: HTML Basics, Semantic HTML, Forms & Validation
 // ============================================================

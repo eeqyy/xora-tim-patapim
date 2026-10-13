@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Password helpers (bcrypt)
+// XOLEARN — Password helpers (bcrypt)
 // backend/utils/password.js
 // ============================================================
 

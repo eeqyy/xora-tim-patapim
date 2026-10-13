@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Panel / GlassPanel (Editorial System v2)
+// XOLEARN — Panel / GlassPanel (Editorial System v2)
 // frontend/src/components/GlassPanel.jsx
 // ------------------------------------------------------------
 // Nama `GlassPanel` dipertahankan demi kompatibilitas impor.

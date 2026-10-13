@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Theme Context (Light / Dark)
+// XOLEARN — Theme Context (Light / Dark)
 // frontend/src/context/ThemeContext.jsx
 // ============================================================
 // Menyimpan preferensi tema di localStorage ("xora_theme") dan

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — ProgressBar (Editorial System v2)
+// XOLEARN — ProgressBar (Editorial System v2)
 // frontend/src/components/ProgressBar.jsx
 // ------------------------------------------------------------
 // Batang pil (rounded-full), tanpa shadow. Label mikro,

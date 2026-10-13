@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Frontend API Client
+// XOLEARN — Frontend API Client
 // frontend/src/services/api.js
 // ============================================================
 

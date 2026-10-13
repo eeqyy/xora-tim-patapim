@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — AI Diagnostic Prompt Template
+// XOLEARN — AI Diagnostic Prompt Template
 // backend/config/aiPrompt.js
 // ============================================================
 // Design reference: AGENT.md §4.5 (Root-Cause Navigation),
@@ -11,7 +11,7 @@
 // ============================================================
 
 const SYSTEM_INSTRUCTION = `
-You are the Xora AI Diagnostic Layer, an evidence-backed root-cause
+You are the Xolearn AI Diagnostic Layer, an evidence-backed root-cause
 navigator operating under strict engineering rules (AGENT.md).
 
 MANDATORY RULES (non-negotiable):

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — StatCard (Editorial System v2)
+// XOLEARN — StatCard (Editorial System v2)
 // frontend/src/components/StatCard.jsx
 // ------------------------------------------------------------
 // Sel metrik: label mikro, angka besar, keterangan kecil.

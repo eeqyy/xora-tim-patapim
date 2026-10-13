@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Seed Script: Question Bank & Mixed Assessments
+// XOLEARN — Seed Script: Question Bank & Mixed Assessments
 // database/seeds/seed_mixed_question_bank.js
 // ============================================================
 // Idempoten: Aman dijalankan berulang kali tanpa menambah duplikat.

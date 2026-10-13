@@ -91,5 +91,5 @@ app.use((req, res) =>
 app.use((err, req, res, next) => sendError(res, err));
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Backend Xora berjalan di http://localhost:${PORT}`);
+  console.log(`Backend Xolearn berjalan di http://localhost:${PORT}`);
 });

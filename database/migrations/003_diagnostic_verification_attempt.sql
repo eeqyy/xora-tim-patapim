@@ -1,5 +1,5 @@
 -- ============================================================
--- XORA — Migration 003: Link diagnostic verification -> attempt
+-- XOLEARN — Migration 003: Link diagnostic verification -> attempt
 -- database/migrations/003_diagnostic_verification_attempt.sql
 -- ============================================================
 -- Tujuan:

@@ -131,7 +131,7 @@ async function analyzeAssessmentGap({
   topicBreakdown = [],
   primaryGap = null,
 }) {
-  const systemInstruction = `Anda adalah AI Educational Diagnostic Engine untuk sistem XORA.
+  const systemInstruction = `Anda adalah AI Educational Diagnostic Engine untuk sistem XOLEARN.
 Tugas Anda adalah menafsirkan data hasil asesmen learner, menjelaskan gap pemahaman (learning gap), kekuatan materi, serta memberikan arahan belajar kontekstual.
 Gunakan bahasa Indonesia yang profesional, empatik, berbasis bukti, dan jelas.
 Output WAJIB berupa JSON murni dengan format:
