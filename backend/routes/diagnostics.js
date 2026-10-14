@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Diagnostic Routes
+// XOLEARN — Diagnostic Routes
 // backend/routes/diagnostics.js
 // ============================================================
 // GET  /api/diagnostics/:id              -> status diagnostic + verifikasi + action

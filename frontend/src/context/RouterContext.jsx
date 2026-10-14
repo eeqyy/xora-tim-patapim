@@ -1,17 +1,24 @@
 // ============================================================
-// XORA — Lightweight History Router & ProtectedRoute
+// XOLEARN — Lightweight History Router & ProtectedRoute
 // frontend/src/context/RouterContext.jsx
 // ============================================================
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 
 const RouterContext = createContext(null);
 
+// Normalisasi path: buang trailing slash agar `/assessments/` ≡ `/assessments`
+// (hanya untuk nilai yang dipakai pencocokan rute, bukan URL di address bar).
+const normalizePath = (value) => {
+  const path = value || "/";
+  return path.length > 1 ? path.replace(/\/+$/, "") : path;
+};
+
 // Pisahkan pathname & query string agar `currentPath` selalu bersih
 // (tanpa "?query=...") dan query tetap bisa dibaca lewat `query`.
 const readLocation = () => ({
-  pathname: window.location.pathname || "/",
+  pathname: normalizePath(window.location.pathname),
   search: window.location.search || "",
 });
 
@@ -27,23 +34,26 @@ export function RouterProvider({ children }) {
     };
   }, []);
 
-  const navigate = (to) => {
+  const navigate = useCallback((to) => {
     // `to` boleh berupa path polos maupun menyertakan query string.
     const url = new URL(to, window.location.origin);
     const next = `${url.pathname}${url.search}`;
     const current = `${window.location.pathname}${window.location.search}`;
     if (current !== next) {
       window.history.pushState({}, "", next);
-      setLocation({ pathname: url.pathname, search: url.search });
+      setLocation({ pathname: normalizePath(url.pathname), search: url.search });
     }
-  };
+  }, []);
 
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
+  const value = useMemo(
+    () => ({ currentPath: location.pathname, search: location.search, query, navigate }),
+    [location.pathname, location.search, query, navigate]
+  );
+
   return (
-    <RouterContext.Provider
-      value={{ currentPath: location.pathname, search: location.search, query, navigate }}
-    >
+    <RouterContext.Provider value={value}>
       {children}
     </RouterContext.Provider>
   );
@@ -91,7 +101,7 @@ export function ProtectedRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--color-text-muted)" }}>
+      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--color-muted)" }}>
         <p>Memeriksa autentikasi...</p>
       </div>
     );
@@ -123,7 +133,7 @@ export function AdminRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--color-text-muted)" }}>
+      <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--color-muted)" }}>
         <p>Memeriksa autentikasi...</p>
       </div>
     );

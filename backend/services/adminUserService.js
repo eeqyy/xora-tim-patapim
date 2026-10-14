@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin User Service (kelola akun pengguna)
+// XOLEARN — Admin User Service (kelola akun pengguna)
 // backend/services/adminUserService.js
 // ============================================================
 // Dipakai HANYA oleh routes/admin.js (role ADMIN).

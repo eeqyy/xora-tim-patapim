@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Concept Service
+// XOLEARN — Concept Service
 // backend/services/conceptService.js
 // ============================================================
 

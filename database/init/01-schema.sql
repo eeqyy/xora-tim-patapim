@@ -1,5 +1,5 @@
 -- ============================================================
--- XORA DATABASE
+-- XOLEARN DATABASE
 -- PostgreSQL / Supabase
 -- ============================================================
 
@@ -282,6 +282,49 @@ CREATE TABLE admin_profiles (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+
+-- ============================================================
+-- KONFIGURASI AI (dikelola admin lewat /admin/ai)
+-- ============================================================
+-- Menyimpan API key provider AI (terenkripsi AES-256-GCM) + model yang
+-- dipilih. Beberapa baris boleh ada; hanya SATU yang is_active = TRUE.
+-- Bila tak ada baris aktif, backend jatuh kembali ke konfigurasi .env.
+
+CREATE TABLE ai_provider_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    label TEXT NOT NULL,
+    base_url TEXT NOT NULL DEFAULT 'https://openrouter.ai/api/v1',
+    api_key_ciphertext TEXT NOT NULL,
+    api_key_last4 TEXT,
+    model TEXT NOT NULL,
+    json_mode BOOLEAN NOT NULL DEFAULT TRUE,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    created_by UUID,
+    updated_by UUID,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_ai_provider_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_ai_provider_updated_by
+        FOREIGN KEY (updated_by)
+        REFERENCES users(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+-- Hanya satu provider yang boleh aktif.
+CREATE UNIQUE INDEX uq_ai_provider_settings_active
+    ON ai_provider_settings(is_active)
+    WHERE is_active = TRUE;
+
+CREATE INDEX idx_ai_provider_settings_created_by
+    ON ai_provider_settings(created_by);
 
 
 CREATE TABLE levels (
@@ -1290,6 +1333,12 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
 
+CREATE TRIGGER trg_ai_provider_settings_updated_at
+BEFORE UPDATE ON ai_provider_settings
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+
 CREATE TRIGGER trg_subjects_updated_at
 BEFORE UPDATE ON subjects
 FOR EACH ROW
@@ -1333,5 +1382,5 @@ EXECUTE FUNCTION set_updated_at();
 
 
 -- ============================================================
--- END OF XORA DATABASE SCHEMA
+-- END OF XOLEARN DATABASE SCHEMA
 -- ============================================================

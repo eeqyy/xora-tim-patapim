@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Dashboard Analitik (Editorial System v2)
+// XOLEARN — Dashboard Analitik (Editorial System v2)
 // frontend/src/pages/DashboardPage.jsx
 // ------------------------------------------------------------
 // Struktur editorial bernomor:
@@ -249,7 +249,7 @@ export default function DashboardPage() {
   return (
     <PageContainer>
       <PageHeader
-        badge={`Xora Analytics · ${today}`}
+        badge={`Xolearn Analytics · ${today}`}
         title="Analitik Asesmen & Kesenjangan Belajar"
         description={
           <>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
       ) : null}
 
       {/* 01 — Ringkasan */}
-      <SectionHeader id="summary" index="01" title="Ringkasan Asesmen" meta={learnerName} />
+      <SectionHeader id="summary" index="1" title="Ringkasan Asesmen" meta={learnerName} />
       <Reveal>
         <Grid cols={3} className="mt-8">
           {metrics.map((m) => (
@@ -287,7 +287,7 @@ export default function DashboardPage() {
       {/* 02 — Analisis bukti belajar */}
       <SectionHeader
         id="evidence"
-        index="02"
+        index="2"
         title="Analisis Bukti Belajar"
         meta={`${evidenceRows.length} konsep`}
       />
@@ -357,7 +357,7 @@ export default function DashboardPage() {
       {/* 03 — Matriks kesenjangan */}
       <SectionHeader
         id="gap"
-        index="03"
+        index="3"
         title="Matriks Kesenjangan"
         meta={`${topGaps.length} aktif`}
       />
@@ -436,7 +436,7 @@ export default function DashboardPage() {
       {/* 04 — Program remedi */}
       <SectionHeader
         id="remediation"
-        index="04"
+        index="4"
         title="Program Remedi"
         meta={`${filteredRecommendations.length} langkah`}
       />
@@ -450,7 +450,7 @@ export default function DashboardPage() {
           {filteredRecommendations.map((rec, i) => (
             <ChecklistRow
               key={rec.id}
-              marker={String(i + 1).padStart(2, "0")}
+              marker={String(i + 1)}
               title={rec.concept_name || "Konsep"}
               description={rec.reason || "Rencana tindak lanjut."}
             >

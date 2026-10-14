@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Practice Routes
+// XOLEARN — Practice Routes
 // backend/routes/practices.js
 // ============================================================
 // Model "practice" reuse: assessments(type=PRACTICE) + attempts + evidence.

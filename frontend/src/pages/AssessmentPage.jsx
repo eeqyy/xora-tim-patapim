@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Assessment Page (Pengerjaan Asesmen)
+// XOLEARN — Assessment Page (Pengerjaan Asesmen)
 // Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/AssessmentPage.jsx
 // ------------------------------------------------------------
@@ -78,12 +78,15 @@ export default function AssessmentPage({
 
   // 1. Load assessment metadata & questions (filtering out ESSAY questions)
   useEffect(() => {
+    let cancelled = false;
+
     async function initAssessment() {
       setIsLoading(true);
       setLoadError(null);
       try {
         if (isVerification || diagnosticId) {
           const vRes = await diagnosticsApi.startVerification(diagnosticId);
+          if (cancelled) return;
           if (!vRes?.data?.assessment?.id || !vRes?.data?.attempt?.id) {
             throw new Error("Gagal menginisiasi sesi verifikasi diagnostik.");
           }
@@ -93,6 +96,7 @@ export default function AssessmentPage({
           setAttempt(vData.attempt);
 
           const qRes = await assessmentsApi.getQuestions(vData.assessment.id);
+          if (cancelled) return;
           const rawList = Array.isArray(qRes?.data) ? qRes.data : [];
           // Filter out essay questions
           const qList = rawList.filter((q) => q.type !== "ESSAY");
@@ -103,6 +107,7 @@ export default function AssessmentPage({
           }
         } else if (isPractice || actionId) {
           const pRes = await recommendationsApi.start(actionId);
+          if (cancelled) return;
           if (!pRes?.data?.assessment?.id || !pRes?.data?.attempt?.id) {
             throw new Error("Gagal menginisiasi sesi latihan remediasi.");
           }
@@ -114,6 +119,7 @@ export default function AssessmentPage({
           let rawList = Array.isArray(pData.questions) ? pData.questions : [];
           if (rawList.length === 0) {
             const qRes = await assessmentsApi.getQuestions(pData.assessment.id);
+            if (cancelled) return;
             rawList = Array.isArray(qRes?.data) ? qRes.data : [];
           }
           const qList = rawList.filter((q) => q.type !== "ESSAY");
@@ -124,6 +130,7 @@ export default function AssessmentPage({
           }
         } else if (isReassessment && assessmentId) {
           const rRes = await assessmentsApi.reassess(assessmentId);
+          if (cancelled) return;
           if (!rRes?.data?.assessment?.id || !rRes?.data?.attempt?.id) {
             throw new Error("Gagal menginisiasi sesi uji ulang (re-assessment).");
           }
@@ -134,6 +141,7 @@ export default function AssessmentPage({
           let rawList = Array.isArray(rData.questions) ? rData.questions : [];
           if (rawList.length === 0) {
             const qRes = await assessmentsApi.getQuestions(rData.assessment.id);
+            if (cancelled) return;
             rawList = Array.isArray(qRes?.data) ? qRes.data : [];
           }
           const qList = rawList.filter((q) => q.type !== "ESSAY");
@@ -144,6 +152,7 @@ export default function AssessmentPage({
           }
         } else if (assessmentId) {
           const aRes = await assessmentsApi.getById(assessmentId);
+          if (cancelled) return;
           if (!aRes?.data) {
             throw new Error("Asesmen pembelajaran tidak ditemukan.");
           }
@@ -155,6 +164,7 @@ export default function AssessmentPage({
             setAttempt({ id: activeAttId, assessment_id: assessmentId, status: "IN_PROGRESS" });
           }
           const qRes = await assessmentsApi.getQuestions(assessmentId, activeAttId);
+          if (cancelled) return;
           const rawList = Array.isArray(qRes?.data) ? qRes.data : [];
           const qList = rawList.filter((q) => q.type !== "ESSAY");
           setQuestions(qList);
@@ -164,13 +174,17 @@ export default function AssessmentPage({
           }
         }
       } catch (err) {
+        if (cancelled) return;
         setLoadError(err.message || "Gagal memuat data asesmen.");
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     initAssessment();
+    return () => {
+      cancelled = true;
+    };
   }, [assessmentId, diagnosticId, actionId, isVerification, isPractice, isReassessment]);
 
   // Start or resume attempt
@@ -594,7 +608,7 @@ export default function AssessmentPage({
               <span
                 className={cx(
                   "text-2xl font-extrabold tracking-tight md:text-3xl",
-                  unansweredTotal > 0 ? "text-brand" : MUTED
+                  unansweredTotal > 0 ? "text-accent" : MUTED
                 )}
               >
                 {unansweredTotal} Soal
@@ -611,7 +625,7 @@ export default function AssessmentPage({
         {unansweredTotal > 0 && (
           <Alert tone="info">
             <span className="flex items-start gap-2">
-              <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-brand" />
+              <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-accent" />
               <span>
                 <strong>Perhatian:</strong> Masih terdapat <strong>{unansweredTotal} soal</strong> yang belum Anda jawab. Soal yang kosong tidak akan mendapatkan poin.
               </span>
@@ -665,7 +679,7 @@ export default function AssessmentPage({
                 <p className={cx("text-[13px] leading-relaxed", INK)}>
                   <strong>Jawaban:</strong> {answerDisplay}
                 </p>
-                <span className="mt-auto text-right text-[12px] font-bold text-brand">
+                <span className="mt-auto text-right text-[12px] font-bold text-accent">
                   Buka Soal →
                 </span>
               </GridCell>
@@ -713,7 +727,7 @@ export default function AssessmentPage({
                 {unansweredTotal > 0 && (
                   <Alert tone="info" className="border">
                     <span className="flex items-start gap-2">
-                      <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-brand" />
+                      <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-accent" />
                       <span>
                         Masih ada <strong>{unansweredTotal} soal belum dijawab</strong>. Jawaban yang kosong akan dihitung bernilai 0.
                       </span>
@@ -820,7 +834,7 @@ export default function AssessmentPage({
         return (
           <code
             key={idx}
-            className="rounded-md bg-cell px-1 py-0.5 font-mono text-[0.92em] text-brand dark:bg-cell-dark"
+            className="rounded-md bg-cell px-1 py-0.5 font-mono text-[0.92em] text-accent dark:bg-cell-dark"
           >
             {part.slice(1, -1)}
           </code>
@@ -871,7 +885,7 @@ export default function AssessmentPage({
                     className={cx(
                       "flex min-h-[44px] w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
                       isSelected
-                        ? "border-brand text-brand"
+                        ? "border-brand text-accent"
                         : "border-hairline text-ink hover:bg-cell dark:border-hairline-dark dark:text-ink-dark dark:hover:bg-cell-dark"
                     )}
                     onClick={() => handleSelectOption(currentQ.id, letter)}
@@ -916,7 +930,7 @@ export default function AssessmentPage({
           {currentQ.type === "DRAG_DROP" && (
             <div className="flex flex-col gap-5">
               <div className={cx("flex items-start gap-2 rounded-2xl border p-4", HAIRLINE)}>
-                <IconInfo size={16} className="mt-0.5 shrink-0 text-brand" />
+                <IconInfo size={16} className="mt-0.5 shrink-0 text-accent" />
                 <p className={cx("text-[13px] leading-relaxed", INK)}>
                   <strong>Petunjuk:</strong> Klik atau tarik kartu item yang tersedia, lalu letakkan di kotak target yang sesuai.
                 </p>
@@ -933,7 +947,7 @@ export default function AssessmentPage({
                 <div className="flex flex-wrap gap-2">
                   {availableItems.length === 0 ? (
                     <div className="flex items-center gap-2 text-[13px] text-ink dark:text-ink-dark">
-                      <IconCheck size={14} className="shrink-0 text-brand" />
+                      <IconCheck size={14} className="shrink-0 text-accent" />
                       <span>
                         Semua item telah dipasangkan. Tekan tombol lepas pada kotak target jika ingin mengubah pasangan.
                       </span>
@@ -951,7 +965,7 @@ export default function AssessmentPage({
                         className={cx(
                           "inline-flex min-h-[44px] cursor-pointer select-none items-center rounded-full border px-4 py-2 text-[13px] font-bold transition-colors",
                           selectedDragItemId === item.id
-                            ? "border-brand text-brand"
+                            ? "border-brand text-accent"
                             : "border-hairline text-ink hover:bg-cell dark:border-hairline-dark dark:text-ink-dark dark:hover:bg-cell-dark"
                         )}
                         title="Klik untuk memilih lalu klik target"
@@ -1003,13 +1017,13 @@ export default function AssessmentPage({
                       <strong className={cx("text-[13px] font-bold", INK)}>{tg.label}</strong>
                       {assignedItem ? (
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand px-3 py-1 tabular-nums text-[10px] font-bold uppercase tracking-widest text-brand md:text-[11px]">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand px-3 py-1 tabular-nums text-[10px] font-bold uppercase tracking-widest text-accent md:text-[11px]">
                             {assignedItem.label}
                           </span>
                           <button
                             type="button"
                             className={cx(
-                              "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-ink transition-colors hover:border-brand hover:text-brand dark:text-ink-dark",
+                              "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-ink transition-colors hover:border-brand hover:text-accent dark:text-ink-dark",
                               HAIRLINE
                             )}
                             title="Lepaskan item"
@@ -1101,7 +1115,7 @@ export default function AssessmentPage({
                     isCurrent
                       ? "border-brand bg-brand text-white"
                       : isAnswered
-                      ? "border-brand text-brand hover:bg-cell dark:hover:bg-cell-dark"
+                      ? "border-brand text-accent hover:bg-cell dark:hover:bg-cell-dark"
                       : "border-hairline text-ink hover:bg-cell dark:border-hairline-dark dark:text-ink-dark dark:hover:bg-cell-dark"
                   )}
                   onClick={() => handleJumpToQuestion(idx)}

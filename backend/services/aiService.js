@@ -114,7 +114,7 @@ async function analyzeEvidence(learnerId, { conceptId } = {}) {
     confidence: candidate.confidence,
     reason: candidate.reason,
     reference_evidence_ids: candidate.reference_evidence_ids,
-    provider_model: process.env.AI_MODEL || "gpt-4o-mini",
+    provider_model: (await aiProvider.currentInfo()).model,
     evidence_count: evidenceList.length,
   };
 }
@@ -131,7 +131,7 @@ async function analyzeAssessmentGap({
   topicBreakdown = [],
   primaryGap = null,
 }) {
-  const systemInstruction = `Anda adalah AI Educational Diagnostic Engine untuk sistem XORA.
+  const systemInstruction = `Anda adalah AI Educational Diagnostic Engine untuk sistem XOLEARN.
 Tugas Anda adalah menafsirkan data hasil asesmen learner, menjelaskan gap pemahaman (learning gap), kekuatan materi, serta memberikan arahan belajar kontekstual.
 Gunakan bahasa Indonesia yang profesional, empatik, berbasis bukti, dan jelas.
 Output WAJIB berupa JSON murni dengan format:
@@ -175,7 +175,7 @@ Output WAJIB berupa JSON murni dengan format:
     strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
     gap_explanation: parsed.gap_explanation || (primaryGap ? `Fokus peningkatan utama ada pada materi ${primaryGap.material}.` : "Performa seimbang di semua materi."),
     study_advice: parsed.study_advice || "Lanjutkan latihan remediasi terarah pada materi yang masih perlu penguatan.",
-    provider_model: process.env.AI_MODEL || "openrouter/free",
+    provider_model: (await aiProvider.currentInfo()).model,
     analyzed_at: new Date().toISOString(),
   };
 }

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Dashboard Filter Context
+// XOLEARN — Dashboard Filter Context
 // frontend/src/context/DashboardFilterContext.jsx
 // ------------------------------------------------------------
 // Menyimpan konteks analitik (Kelas = subject, Siswa = learner)

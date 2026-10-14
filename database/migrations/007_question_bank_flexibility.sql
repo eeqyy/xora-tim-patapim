@@ -1,5 +1,5 @@
 -- ============================================================
--- XORA — Migration 007: Question Bank Flexibility
+-- XOLEARN — Migration 007: Question Bank Flexibility
 -- Memungkinkan soal di question bank dibuat independen tanpa terikat ke 1 assessment spesifik
 -- ============================================================
 

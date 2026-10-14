@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Beranda (landing) — Editorial Grid System
+// XOLEARN — Admin: Beranda (landing) — Editorial Grid System
 // frontend/src/pages/AdminHomePage.jsx
 // ============================================================
 // Pintu masuk area admin. Berisi tiga sel menuju:
@@ -37,6 +37,13 @@ const MENU = [
     cta: "Buka Kelola Pengguna →",
   },
   {
+    to: "/admin/ai",
+    title: "AI & Model",
+    description:
+      "Simpan API key provider AI, pilih model, dan uji koneksi untuk mesin diagnosis Xolearn.",
+    cta: "Buka AI & Model →",
+  },
+  {
     to: "/admin/system",
     title: "Kesehatan Sistem",
     description:
@@ -53,7 +60,7 @@ export default function AdminHomePage() {
       <PageHeader
         badge="ADMIN"
         title="Panel Admin"
-        description="Pusat kendali untuk mengelola konten asesmen, akun pengguna, dan memantau kesehatan sistem Xora."
+        description="Pusat kendali untuk mengelola konten asesmen, akun pengguna, dan memantau kesehatan sistem Xolearn."
       />
 
       <Grid cols={3} className="mt-12">
@@ -67,7 +74,7 @@ export default function AdminHomePage() {
               {item.title}
             </h2>
             <p className={cx("text-[13px] leading-relaxed", MUTED)}>{item.description}</p>
-            <span className="mt-auto pt-2 text-[12px] font-semibold tracking-[0.02em] text-brand">
+            <span className="mt-auto pt-2 text-[12px] font-semibold tracking-[0.02em] text-accent">
               {item.cta}
             </span>
           </GlassPanel>

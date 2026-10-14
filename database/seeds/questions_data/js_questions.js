@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — JavaScript Question Bank Data (Code-Based & Conceptual)
+// XOLEARN — JavaScript Question Bank Data (Code-Based & Conceptual)
 // database/seeds/questions_data/js_questions.js
 // Topics:
 //   1. Variables & Data Types (18 new -> 34 total)

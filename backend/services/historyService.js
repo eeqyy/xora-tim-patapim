@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Learning History Service
+// XOLEARN — Learning History Service
 // backend/services/historyService.js
 // ============================================================
 // Menelusuri seluruh riwayat aktivitas belajar (audit trail / events):

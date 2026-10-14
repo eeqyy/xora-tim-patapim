@@ -2,7 +2,7 @@
   "name": "xora-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Backend API untuk Xora (Node.js + Express)",
+  "description": "Backend API untuk Xolearn (Node.js + Express)",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",

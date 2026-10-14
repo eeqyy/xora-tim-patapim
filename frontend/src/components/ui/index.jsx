@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Editorial UI Primitives v2
+// XOLEARN — Editorial UI Primitives v2
 // frontend/src/components/ui/index.jsx
 // ------------------------------------------------------------
 // Bahasa visual: tipografi Manrope, sudut pil untuk elemen
@@ -19,6 +19,8 @@ export function cx(...parts) {
    ------------------------------------------------------------ */
 export const HAIRLINE = "border-hairline dark:border-hairline-dark";
 export const HAIRLINE_DIVIDE_X = "divide-hairline dark:divide-hairline-dark";
+/* Garis batas section — satu tingkat lebih tegas dari HAIRLINE. */
+export const RULE = "border-rule dark:border-rule-dark";
 export const SURFACE = "bg-canvas dark:bg-canvas-dark";
 export const CELL = "bg-cell dark:bg-cell-dark";
 export const INK = "text-ink dark:text-ink-dark";
@@ -28,7 +30,7 @@ export const MUTED = "text-muted dark:text-muted-dark";
 export const CHIP_CLASS =
   "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[13px] font-semibold transition-colors";
 export const CHIP_INACTIVE =
-  "border-hairline bg-transparent text-ink hover:border-brand hover:text-brand dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-brand";
+  "border-hairline bg-transparent text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent";
 export const CHIP_ACTIVE = "border-brand bg-brand text-white hover:bg-brand-hover";
 
 /* ------------------------------------------------------------
@@ -80,22 +82,40 @@ export function DisplayHeading({ as: Tag = "h1", className = "", children, ...re
 /* ------------------------------------------------------------
    SectionHeader — pemisah garis horizontal + nomor bagian
    ------------------------------------------------------------ */
-export function SectionHeader({ index, title, meta, id, className = "" }) {
+export function SectionHeader({ index, title, meta, id, sticky = true, className = "" }) {
   return (
     <div
       id={id}
-      className={cx("mt-12 mb-8 border-t pt-6 md:mt-16 md:mb-10 md:pt-7", HAIRLINE, className)}
+      className={cx(
+        "border-t",
+        RULE,
+        sticky
+          ? "-mx-5 px-5 md:-mx-8 md:px-8 xl:-mx-10 xl:px-10 sticky top-[var(--header-h,68px)] z-30 scroll-mt-[calc(var(--header-h,68px)+8px)] bg-canvas/95 backdrop-blur-sm dark:bg-canvas-dark/95 mt-14 mb-8 pt-1 md:mt-20 md:mb-10 md:pt-1.5"
+          : "mt-14 mb-8 pt-6 md:mt-20 md:mb-10 md:pt-7",
+        className
+      )}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <div className="flex items-baseline gap-4">
+      <div
+        className={cx(
+          "flex items-baseline justify-between gap-x-6",
+          sticky ? "flex-nowrap" : "flex-wrap gap-y-1"
+        )}
+      >
+        <div className="flex min-w-0 items-baseline gap-4">
           {index ? (
-            <span className="text-[12px] font-bold tabular-nums text-brand">{index}</span>
+            <span className="text-[12px] font-bold tabular-nums text-accent">{index}</span>
           ) : null}
-          <h2 className={cx("text-[13px] font-semibold uppercase tracking-[0.16em]", INK)}>
+          <h2
+            className={cx(
+              "min-w-0 text-[13px] font-semibold uppercase tracking-[0.16em]",
+              sticky && "truncate",
+              INK
+            )}
+          >
             {title}
           </h2>
         </div>
-        {meta ? <MicroMeta>{meta}</MicroMeta> : null}
+        {meta ? <MicroMeta className={sticky ? "shrink-0" : ""}>{meta}</MicroMeta> : null}
       </div>
     </div>
   );
@@ -178,8 +198,8 @@ export function MetricCell({ label, value, hint, className = "" }) {
    SeverityBadge — indikator tingkat keparahan (pil)
    ------------------------------------------------------------ */
 const SEVERITY_STYLES = {
-  high: "bg-brand text-white",
-  medium: "border border-brand text-brand",
+  high: "bg-error text-white",
+  medium: "border border-warning bg-warning text-warning-ink",
   low: "border border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
   neutral:
     "border border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
@@ -224,8 +244,8 @@ export function GhostButton({ className = "", children, ...rest }) {
     <button
       className={cx(
         "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[14px] font-semibold transition-colors",
-        "border-hairline text-ink hover:border-brand hover:text-brand",
-        "dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-brand",
+        "border-hairline text-ink hover:border-brand hover:text-accent",
+        "dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
         className
       )}
       {...rest}
@@ -236,7 +256,7 @@ export function GhostButton({ className = "", children, ...rest }) {
 }
 
 /* ------------------------------------------------------------
-   ProgressBar — batang pil (isi aksen cobalt)
+   ProgressBar — batang pil (isi aksen azure)
    ------------------------------------------------------------ */
 export function ProgressBar({ value = 0, className = "" }) {
   const pct = Math.max(0, Math.min(100, Number(value) || 0));
@@ -290,7 +310,7 @@ export function ChecklistRow({ marker, title, description, children, className =
   return (
     <div className={cx("border-t py-6", HAIRLINE, className)}>
       <div className="flex items-start gap-4">
-        <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold tabular-nums text-brand">
+        <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold tabular-nums text-accent">
           {marker}
         </span>
         <div className="min-w-0 flex-1">
@@ -320,7 +340,7 @@ export function DataRow({ className = "", children, ...rest }) {
    Kelas bidang formulir & tabel (dipakai lintas halaman)
    ------------------------------------------------------------ */
 export const INPUT_CLASS =
-  "block w-full min-h-[48px] rounded-2xl border border-hairline bg-canvas px-4 py-2.5 text-[14px] text-ink placeholder:text-muted focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-hairline-dark dark:bg-canvas-dark dark:text-ink-dark dark:placeholder:text-muted-dark";
+  "block w-full min-h-[48px] rounded-2xl border border-hairline bg-canvas px-4 py-2.5 text-[14px] text-ink placeholder:text-muted focus:border-accent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-hairline-dark dark:bg-canvas-dark dark:text-ink-dark dark:placeholder:text-muted-dark";
 
 export const TH_CLASS = cx(
   "border-b px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] tabular-nums align-bottom",
@@ -357,7 +377,7 @@ export function Field({
       {children}
       {hint ? <p className={cx("text-[12px] leading-snug", MUTED)}>{hint}</p> : null}
       {error ? (
-        <p className="text-[12px] font-semibold text-brand" role="alert">
+        <p className="text-[12px] font-semibold text-error-strong" role="alert">
           {error}
         </p>
       ) : null}
@@ -387,8 +407,8 @@ Textarea.displayName = "Textarea";
    Alert — pemberitahuan (sudut lembut, aksen sesuai tone)
    ------------------------------------------------------------ */
 const ALERT_STYLES = {
-  success: "border-brand/30 bg-brand-soft text-ink dark:text-ink-dark",
-  error: "border-brand bg-brand text-white",
+  success: "border-positive/30 bg-positive-soft text-ink dark:text-ink-dark",
+  error: "border-error bg-error text-white",
   info: "border-hairline bg-cell text-ink dark:border-hairline-dark dark:bg-cell-dark dark:text-ink-dark",
   neutral:
     "border-hairline bg-cell text-ink dark:border-hairline-dark dark:bg-cell-dark dark:text-ink-dark",

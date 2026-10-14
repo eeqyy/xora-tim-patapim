@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Panel / GlassPanel (Editorial System v2)
+// XOLEARN — Panel / GlassPanel (Editorial System v2)
 // frontend/src/components/GlassPanel.jsx
 // ------------------------------------------------------------
 // Nama `GlassPanel` dipertahankan demi kompatibilitas impor.
@@ -15,7 +15,7 @@ const VARIANT_CLASSES = {
   default: "",
   elevated: "rounded-3xl bg-cell dark:bg-cell-dark",
   subtle: "rounded-3xl bg-cell dark:bg-cell-dark",
-  highlight: "rounded-3xl bg-brand-soft",
+  highlight: "rounded-3xl bg-highlight",
   interactive:
     "rounded-3xl cursor-pointer transition-colors hover:bg-cell dark:hover:bg-cell-dark",
 };

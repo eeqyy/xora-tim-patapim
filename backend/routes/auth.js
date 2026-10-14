@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Auth Routes
+// XOLEARN — Auth Routes
 // backend/routes/auth.js
 // ============================================================
 // POST /api/auth/register  -> daftar + langsung dapat token

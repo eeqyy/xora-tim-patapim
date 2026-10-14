@@ -1,5 +1,5 @@
 -- ============================================================
--- XORA — Migration 005: Link material -> concept
+-- XOLEARN — Migration 005: Link material -> concept
 -- database/migrations/005_material_concept.sql
 -- ============================================================
 -- Tujuan:

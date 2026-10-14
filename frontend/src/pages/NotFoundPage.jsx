@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — 404 Not Found Page (Editorial Grid System)
+// XOLEARN — 404 Not Found Page (Editorial Grid System)
 // frontend/src/pages/NotFoundPage.jsx
 // ============================================================
 
@@ -28,7 +28,7 @@ export default function NotFoundPage() {
           <IconCompass size={44} className={INK} />
         </div>
 
-        <p className="mt-4 tabular-nums text-6xl font-semibold leading-none tracking-[-0.03em] text-brand md:text-7xl">
+        <p className="mt-4 tabular-nums text-6xl font-semibold leading-none tracking-[-0.03em] text-accent md:text-7xl">
           404
         </p>
         <h1 className={cx("mt-4 text-2xl font-bold tracking-tight md:text-3xl", INK)}>

@@ -1,6 +1,6 @@
-# Xora Project
+# Xolearn Project
 
-**Xora** adalah platform *Evidence-Based Learning Diagnostic & Root-Cause Navigator*:
+**Xolearn** adalah platform *Evidence-Based Learning Diagnostic & Root-Cause Navigator*:
 asesmen dipetakan ke **konsep**, setiap jawaban disimpan sebagai **evidence**, lalu
 dipakai untuk mendeteksi *gap* dan merekomendasikan remediasi yang tepat sasaran.
 
@@ -186,16 +186,21 @@ Login sebagai `admin@xora.dev`, lalu buka **`/admin`**. Tiga kemampuan utama:
 | Admin — asesmen | `/api/assessments/admin/questions/bank` (CRUD soal), `/api/assessments/admin/full/:id` |
 | Admin — pengguna | `GET /api/admin/users`, `GET /:id`, `PATCH /:id/status`, `PUT /:id/roles`, `POST /:id/reset-password` |
 | Admin — sistem | `GET /api/admin/system/health`, `/stats`, `/activity`, `/analytics` |
+| Admin — AI | `GET/POST/PUT/DELETE /api/admin/ai/providers`, `/models`, `/test`, `PATCH .../activate` |
 | AI (opsional) | `POST /api/ai/analyze`, `GET /api/ai/health` |
 
 > Semua endpoint `/api/admin/*` butuh role `ADMIN`. Detail lengkap: lihat `AGENT.md` §4.
-> Halaman admin: `/admin` (landing), `/admin/assessments`, `/admin/users`, `/admin/system`.
+> Halaman admin: `/admin` (landing), `/admin/assessments`, `/admin/users`, `/admin/ai`, `/admin/system`.
 
 ---
 
 ## 🤖 Fitur AI
 
-Tanpa `AI_API_KEY`, endpoint `/api/ai/*` mengembalikan **503** dan kolom analisis AI pada
+Provider AI bisa dikonfigurasi dari panel admin (**/admin/ai**): simpan API key (terenkripsi
+AES-256-GCM, butuh `AI_CREDENTIALS_SECRET` di `.env`), muat daftar model, lalu pilih & uji.
+Bila tidak ada provider aktif di database, sistem memakai `AI_API_KEY`/`AI_MODEL` dari `.env`.
+
+Tanpa keduanya, endpoint `/api/ai/*` mengembalikan **503** dan kolom analisis AI pada
 attempt berstatus `FAILED`. Fitur inti (asesmen, scoring, mastery, gap, rekomendasi) **tetap berjalan**.
 
 ---

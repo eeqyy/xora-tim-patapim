@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Auto-grading (assessment item evaluation)
+// XOLEARN — Auto-grading (assessment item evaluation)
 // backend/utils/grading.js
 // ============================================================
 // Menjawab FR: "Sistem dapat menentukan hasil benar/salah untuk assessment
@@ -43,7 +43,7 @@ function matchesToken(text, token) {
 
 /**
  * Bandingkan kode tanpa peduli spasi/baris dan huruf besar-kecil.
- * `"const name = 'Xora';\nlet number = 42;"` dianggap sama dengan
+ * `"const name = 'Xolearn';\nlet number = 42;"` dianggap sama dengan
  * versi satu baris / indentasi berbeda.
  */
 function normalizeCode(value) {

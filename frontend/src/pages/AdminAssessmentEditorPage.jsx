@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Editor asesmen (detail meta + CRUD soal) — Editorial Grid System
+// XOLEARN — Admin: Editor asesmen (detail meta + CRUD soal) — Editorial Grid System
 // frontend/src/pages/AdminAssessmentEditorPage.jsx
 // ============================================================
 // Dua mode lewat satu komponen:
@@ -70,7 +70,7 @@ const CAPTION_CLASS = cx(
 const HINT_CLASS = cx("text-[11px] leading-snug", MUTED);
 
 const ERROR_CLASS =
-  "tabular-nums text-[10px] font-bold uppercase tracking-widest text-brand";
+  "tabular-nums text-[10px] font-bold uppercase tracking-widest text-accent";
 
 const FIELD_GRID = "grid grid-cols-1 gap-4 md:grid-cols-2";
 
@@ -585,7 +585,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
         <>
           {/* Detail asesmen */}
           <section aria-labelledby="meta-heading">
-            <SectionHeader id="meta-heading" index="01" title="Detail asesmen" />
+            <SectionHeader id="meta-heading" index="1" title="Detail asesmen" />
             {renderNotice(metaNotice)}
             <GlassPanel variant="subtle" className="mt-8 p-4 md:p-6">
               <form onSubmit={handleSaveMeta} noValidate>
@@ -617,7 +617,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
           {/* Soal — baru bisa diisi setelah asesmen punya id */}
           {!isNew && (
             <section aria-labelledby="question-heading">
-              <SectionHeader id="question-heading" index="02" title="Daftar soal" />
+              <SectionHeader id="question-heading" index="2" title="Daftar soal" />
 
               <GlassPanel variant="subtle" className="mt-8 flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:px-6">
                 <p className={HINT_CLASS}>
@@ -833,13 +833,13 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                           <option value="CODE">Kode</option>
                         </Select>
                         {questionForm.type === "ESSAY" && (
-                          <p className={cx(HINT_CLASS, "text-brand")}>
+                          <p className={cx(HINT_CLASS, "text-accent")}>
                             ℹ️ Soal Esai tersimpan aman di bank soal dan otomatis dikecualikan dari
                             asesmen learner sampai penilaian otomatis esai aktif.
                           </p>
                         )}
                         {questionForm.type === "DRAG_DROP" && (
-                          <p className={cx(HINT_CLASS, "text-brand")}>
+                          <p className={cx(HINT_CLASS, "text-accent")}>
                             ℹ️ Struktur Drag &amp; Drop memetakan item ke target yang tervalidasi.
                           </p>
                         )}

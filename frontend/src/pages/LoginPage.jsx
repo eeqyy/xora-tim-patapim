@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Login Page (Editorial Grid System)
+// XOLEARN — Login Page (Editorial Grid System)
 // frontend/src/pages/LoginPage.jsx
 // ============================================================
 
@@ -80,7 +80,7 @@ export default function LoginPage() {
     <PageContainer maxWidth="narrow" className="flex min-h-[70vh] flex-col justify-center">
       <GlassPanel variant="elevated" className="p-8 md:p-10">
         <h1 className={cx("text-2xl font-extrabold leading-tight tracking-tight md:text-3xl", INK)}>
-          Masuk ke Xora
+          Masuk ke Xolearn
         </h1>
         <p className={cx("mt-2 text-[13px] leading-relaxed", MUTED)}>
           Akses profil belajar dan progres kompetensi Anda
@@ -130,7 +130,7 @@ export default function LoginPage() {
           <span>Belum memiliki akun?</span>
           <Link
             to="/register"
-            className="inline-flex min-h-[44px] items-center font-bold text-brand underline underline-offset-2 hover:text-brand-hover"
+            className="inline-flex min-h-[44px] items-center font-bold text-accent underline underline-offset-2 hover:text-accent-hover"
           >
             Daftar sekarang
           </Link>

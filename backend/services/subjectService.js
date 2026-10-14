@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Subject Service
+// XOLEARN — Subject Service
 // backend/services/subjectService.js
 // ============================================================
 

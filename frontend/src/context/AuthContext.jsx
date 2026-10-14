@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Auth Context & State Provider
+// XOLEARN — Auth Context & State Provider
 // frontend/src/context/AuthContext.jsx
 // ============================================================
 

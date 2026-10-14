@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — PageContainer (Editorial System v2)
+// XOLEARN — PageContainer (Editorial System v2)
 // frontend/src/components/PageContainer.jsx
 // ------------------------------------------------------------
 // Bingkai halaman: lebar maksimum + padding responsif.
@@ -12,8 +12,8 @@ import { cx } from "./ui";
 
 const MAX_WIDTH = {
   narrow: "max-w-[720px]",
-  normal: "max-w-[1200px]",
-  wide: "max-w-[1200px]",
+  normal: "max-w-[1200px] xl:max-w-[1340px] 2xl:max-w-[1480px]",
+  wide: "max-w-[1200px] xl:max-w-[1340px] 2xl:max-w-[1480px]",
   full: "max-w-none",
 };
 
@@ -26,7 +26,7 @@ export default function PageContainer({
   return (
     <div
       className={cx(
-        "mx-auto w-full px-5 pb-16 pt-10 md:px-8 md:pt-14",
+        "mx-auto w-full px-5 pb-16 pt-10 md:px-8 md:pt-14 xl:px-10",
         MAX_WIDTH[maxWidth] || MAX_WIDTH.normal,
         className
       )}

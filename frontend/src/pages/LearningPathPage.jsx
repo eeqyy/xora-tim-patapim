@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Interactive Learning Path Page (Jalur Belajar)
+// XOLEARN — Interactive Learning Path Page (Jalur Belajar)
 // Editorial Grid System · Flat · Token-driven
 // frontend/src/pages/LearningPathPage.jsx
 // ------------------------------------------------------------
@@ -498,7 +498,7 @@ export default function LearningPathPage() {
           {/* Filter Bar */}
           <SectionHeader
             id="filter"
-            index="01"
+            index="1"
             title="Filter Materi"
             meta={currentFilterLabel}
           />
@@ -508,7 +508,7 @@ export default function LearningPathPage() {
               {statusFilter !== "ALL" && (
                 <button
                   type="button"
-                  className="min-h-[44px] tabular-nums text-[11px] font-bold uppercase tracking-widest text-brand hover:underline"
+                  className="min-h-[44px] tabular-nums text-[11px] font-bold uppercase tracking-widest text-accent hover:underline"
                   onClick={() => setStatusFilter("ALL")}
                 >
                   Reset Filter (Tampilkan Semua)
@@ -699,7 +699,7 @@ export default function LearningPathPage() {
             <>
               <SectionHeader
                 id="levels"
-                index="02"
+                index="2"
                 title="Struktur Level & Topik"
                 meta={`${learningPath.levels.length} TINGKAT`}
               />

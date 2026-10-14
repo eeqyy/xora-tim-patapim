@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Audit Log Service
+// XOLEARN — Audit Log Service
 // backend/services/auditService.js
 // ============================================================
 // Mencatat aksi penting (terutama aksi admin) ke tabel audit_logs.

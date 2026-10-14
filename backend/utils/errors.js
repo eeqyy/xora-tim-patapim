@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Error handling helpers
+// XOLEARN — Error handling helpers
 // backend/utils/errors.js
 // ============================================================
 // Dipakai routes untuk menjaga bentuk respons konsisten dengan kode
@@ -40,7 +40,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const isValidUuid = (id) => typeof id === "string" && UUID_REGEX.test(id);
 
 /**
- * Kirim error sebagai respons HTTP dengan bentuk standar XORA.
+ * Kirim error sebagai respons HTTP dengan bentuk standar XOLEARN.
  *
  * - ApiError / statusCode / status -> statusnya dipakai apa adanya jika dalam rentang 400..599
  * - error lain -> 500 dan pesan generik (jangan bocorkan detail internal)

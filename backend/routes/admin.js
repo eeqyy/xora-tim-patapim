@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin Routes (/api/admin)
+// XOLEARN — Admin Routes (/api/admin)
 // backend/routes/admin.js
 // ============================================================
 // Seluruh endpoint di sini wajib login DAN role ADMIN.

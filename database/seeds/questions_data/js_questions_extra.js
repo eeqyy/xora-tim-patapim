@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — JavaScript Additional Question Bank Data
+// XOLEARN — JavaScript Additional Question Bank Data
 // database/seeds/questions_data/js_questions_extra.js
 // Topics: Control Flow, Functions, Arrays & Objects, DOM Manipulation, Async JS, Promises
 // ============================================================

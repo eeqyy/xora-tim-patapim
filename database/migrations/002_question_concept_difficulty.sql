@@ -1,5 +1,5 @@
 -- ============================================================
--- XORA — Migration 002: Question -> Concept mapping + difficulty
+-- XOLEARN — Migration 002: Question -> Concept mapping + difficulty
 -- database/migrations/002_question_concept_difficulty.sql
 -- ============================================================
 -- Tujuan:

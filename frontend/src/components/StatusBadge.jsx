@@ -1,9 +1,9 @@
 // ============================================================
-// XORA — StatusBadge (Editorial System v2)
+// XOLEARN — StatusBadge (Editorial System v2)
 // frontend/src/components/StatusBadge.jsx
 // ------------------------------------------------------------
 // Badge pil (sans, uppercase, tracking lebar). Palet mono +
-// aksen cobalt: butuh perhatian = cobalt, positif = ink,
+// aksen azure: butuh perhatian = aksen, positif = ink,
 // netral = muted.
 // ============================================================
 
@@ -36,12 +36,12 @@ const STATUS_CONFIGS = {
 };
 
 const VARIANT_CLASSES = {
-  success: "border-ink text-ink dark:border-ink-dark dark:text-ink-dark",
-  warning: "border-brand text-brand",
-  error: "border-brand bg-brand text-white",
+  success: "border-positive bg-positive text-white",
+  warning: "border-warning bg-warning text-warning-ink",
+  error: "border-error bg-error text-white",
   info: "border-hairline text-ink dark:border-hairline-dark dark:text-ink-dark",
   neutral: "border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
-  primary: "border-brand text-brand",
+  primary: "border-brand text-accent",
   accent:
     "border-ink bg-ink text-white dark:border-ink-dark dark:bg-ink-dark dark:text-canvas-dark",
 };

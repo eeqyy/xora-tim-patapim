@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Authentication middleware
+// XOLEARN — Authentication middleware
 // backend/middleware/auth.js
 // ============================================================
 // Wajib dipakai pada endpoint yang butuh login (PRD TR-41:

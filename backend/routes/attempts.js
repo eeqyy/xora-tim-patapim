@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Attempt Routes (assessment execution)
+// XOLEARN — Attempt Routes (assessment execution)
 // backend/routes/attempts.js
 // ============================================================
 // Semua endpoint di sini TERPROTEKSI (PRD TR-41) — learner hanya boleh

@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Session token helpers
+// XOLEARN — Session token helpers
 // backend/utils/session.js
 // ============================================================
 // Token dikirim ke client sebagai `Authorization: Bearer <token>`.

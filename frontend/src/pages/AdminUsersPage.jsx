@@ -1,5 +1,5 @@
 // ============================================================
-// XORA — Admin: Kelola Pengguna — Editorial Grid System
+// XOLEARN — Admin: Kelola Pengguna — Editorial Grid System
 // frontend/src/pages/AdminUsersPage.jsx
 // ============================================================
 // Melihat daftar akun, mengubah status (aktif/nonaktif/suspend),
