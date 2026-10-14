@@ -39,8 +39,6 @@ import {
   IconRefresh,
   IconCompass,
   IconChart,
-  IconSparkles,
-  IconTarget,
 } from "../components/Icons";
 
 function formatErrorPattern(rawPattern) {

@@ -46,7 +46,6 @@ import {
   IconRefresh,
   IconBook,
   IconCompass,
-  IconChart,
   IconTrendingUp,
   IconClock,
   IconTarget,

@@ -10,7 +10,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "../context/RouterContext";
 import { IconChart, IconSearch, IconTarget, IconBandage, IconClipboard, IconUser, IconSettings } from "./Icons";
-import { HAIRLINE, cx } from "./ui";
+import { cx } from "./ui";
 
 const LEARNER_ITEMS = [
   { key: "summary", label: "Ringkasan", Icon: IconChart, to: "/dashboard", section: "summary" },

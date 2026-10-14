@@ -15,6 +15,9 @@ yarn-debug.log*
 yarn-error.log*
 *.log
 
+# Tool scratch (screenshot/YAML Playwright CLI, dll.)
+.playwright-cli/
+
 # OS / Editor files
 .DS_Store
 .vscode/

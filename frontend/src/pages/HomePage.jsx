@@ -28,7 +28,6 @@ import {
   IconTarget,
   IconUser,
   IconArrowRight,
-  IconSparkles,
 } from "../components/Icons";
 
 export default function HomePage() {

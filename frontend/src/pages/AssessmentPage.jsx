@@ -38,7 +38,6 @@ import {
   IconClock,
   IconBook,
   IconTarget,
-  IconRefresh,
   IconInfo,
   IconLock,
   IconAlertTriangle,

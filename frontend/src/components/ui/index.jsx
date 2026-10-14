@@ -18,7 +18,6 @@ export function cx(...parts) {
    Token kelas yang dipakai berulang
    ------------------------------------------------------------ */
 export const HAIRLINE = "border-hairline dark:border-hairline-dark";
-export const HAIRLINE_DIVIDE_X = "divide-hairline dark:divide-hairline-dark";
 /* Garis batas section — satu tingkat lebih tegas dari HAIRLINE. */
 export const RULE = "border-rule dark:border-rule-dark";
 export const SURFACE = "bg-canvas dark:bg-canvas-dark";
