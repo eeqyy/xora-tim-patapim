@@ -61,6 +61,10 @@ const CONCEPT_STATUS_GROUPS = [
   { key: "NOT_ASSESSED", label: "Belum Dinilai" },
 ];
 
+/* Batas tampilan awal grup "Belum Dinilai" agar daftar tidak
+   mendominasi halaman; sisanya diringkas jadi satu baris catatan. */
+const NOT_ASSESSED_CAP = 8;
+
 export default function ProgressPage() {
   const { navigate } = useRouter();
 
@@ -281,7 +285,14 @@ export default function ProgressPage() {
               description="Belum ada data konsep kurikulum yang terhubung."
             />
           ) : (
-            conceptGroups.map((group) => (
+            conceptGroups.map((group) => {
+              // Batasi grup "Belum Dinilai" agar daftar panjang tidak dominan.
+              const shownConcepts =
+                group.key === "NOT_ASSESSED"
+                  ? group.concepts.slice(0, NOT_ASSESSED_CAP)
+                  : group.concepts;
+              const hiddenCount = group.concepts.length - shownConcepts.length;
+              return (
               <div key={group.key}>
                 <div
                   className={cx(
@@ -292,10 +303,14 @@ export default function ProgressPage() {
                   <span className={cx("text-[11px] font-bold uppercase tracking-[0.16em]", INK)}>
                     {group.label}
                   </span>
-                  <MicroMeta>{group.concepts.length} KONSEP</MicroMeta>
+                  <MicroMeta>
+                    {hiddenCount > 0
+                      ? `${shownConcepts.length} dari ${group.concepts.length} konsep`
+                      : `${group.concepts.length} konsep`}
+                  </MicroMeta>
                 </div>
 
-                {group.concepts.map((c, idx) => (
+                {shownConcepts.map((c, idx) => (
                   <GlassPanel
                     key={c.id}
                     className={cx(
@@ -305,9 +320,9 @@ export default function ProgressPage() {
                     )}
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3">
-                      <MicroMeta className="mt-0.5 shrink-0">
+                      <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold tabular-nums text-accent">
                         {idx + 1}
-                      </MicroMeta>
+                      </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <strong className={cx("text-[14px] font-bold", INK)}>{c.name}</strong>
@@ -336,8 +351,14 @@ export default function ProgressPage() {
                     </div>
                   </GlassPanel>
                 ))}
+                {hiddenCount > 0 ? (
+                  <p className={cx("border-t py-4 text-[12px]", HAIRLINE, MUTED)}>
+                    +{hiddenCount} konsep lainnya belum dinilai
+                  </p>
+                ) : null}
               </div>
-            ))
+              );
+            })
           )}
         </>
       )}

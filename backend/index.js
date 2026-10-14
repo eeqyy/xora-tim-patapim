@@ -28,15 +28,30 @@ const { notFound, sendError } = require("./utils/errors");
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Origin tegas: daftar bawaan + CLIENT_URL (boleh beberapa, pisahkan dengan koma).
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-  process.env.CLIENT_URL,
+  ...String(process.env.CLIENT_URL || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
 ].filter(Boolean);
+
+// Origin lokal apa pun (port berapa saja) — supaya port dev yang bergeser
+// (mis. Vite naik otomatis ke 5174/5175) tetap bisa akses backend.
+const localOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, callback) {
+      // Tanpa origin (curl/Postman/same-origin) → izinkan.
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin) || localOriginPattern.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
     credentials: true,
   })
 );

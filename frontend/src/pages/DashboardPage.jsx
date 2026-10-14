@@ -33,6 +33,9 @@ import {
   PageHeader,
   MicroMeta,
   SectionHeader,
+  SectionLede,
+  GlassPanel,
+  StatusBadge,
   Grid,
   MetricCell,
   AccordionRow,
@@ -86,8 +89,15 @@ function gapSeverityShort(status) {
   return "Aman";
 }
 
+/* Label manusiawi untuk jenis tindakan rekomendasi AI
+   (menggantikan kode teknis agar mudah dibaca pengguna/juri). */
 function actionTypeLabel(type) {
   const t = String(type || "").toUpperCase();
+  if (t === "COLLECT_MORE_EVIDENCE") return "Kumpulkan Bukti Tambahan";
+  if (t === "RUN_DIAGNOSTIC") return "Verifikasi Akar Masalah";
+  if (t === "PREREQUISITE_PRACTICE") return "Latihan Prasyarat";
+  if (t === "TARGETED_PRACTICE") return "Latihan Terarah";
+  if (t === "ADVANCE") return "Lanjut ke Materi Berikutnya";
   if (t.includes("VERIFICATION")) return "Verifikasi";
   if (t.includes("PRACTICE")) return "Latihan";
   if (t.includes("REMEDI")) return "Remediasi";
@@ -195,6 +205,13 @@ export default function DashboardPage() {
 
   const totalConcepts = assessedRows.length;
 
+  // Narasi ringkas (turunan tampilan saja): gap teratas & rekomendasi AI prioritas.
+  const topGapName = filteredGaps[0]?.concept_name || "";
+  const priorityRec =
+    filteredRecommendations
+      .slice()
+      .sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99))[0] || null;
+
   const metrics = [
     {
       label: "Penguasaan",
@@ -204,14 +221,23 @@ export default function DashboardPage() {
     {
       label: "Kesenjangan",
       value: String(filteredGaps.length),
-      hint: "dugaan / terkonfirmasi lemah",
+      hint: topGapName ? `Teratas: ${topGapName}` : "Tidak ada kesenjangan aktif",
     },
     {
       label: "Status Remediasi",
       value: filteredRecommendations.length ? "Aktif" : "Kosong",
-      hint: `${filteredRecommendations.length} langkah tindak lanjut`,
+      hint: priorityRec
+        ? `${filteredRecommendations.length} langkah · ${actionTypeLabel(priorityRec.action_type)}`
+        : "Belum ada rencana tindak lanjut",
     },
   ];
+
+  // Kalimat narasi section 1: menyatukan gap -> rekomendasi AI.
+  const summaryLede = priorityRec
+    ? `Dari ${totalConcepts} konsep terukur, ${filteredGaps.length} menunjukkan kesenjangan aktif. AI menyusun ${filteredRecommendations.length} langkah remediasi — prioritas: ${actionTypeLabel(priorityRec.action_type)}.`
+    : filteredGaps.length
+    ? `${filteredGaps.length} kesenjangan aktif dari ${totalConcepts} konsep terukur. Belum ada rekomendasi AI yang aktif.`
+    : `Tidak ada kesenjangan aktif dari ${totalConcepts} konsep terukur. Lanjutkan ke materi berikutnya.`;
 
   const evidenceRows = (
     filteredMastery.length
@@ -276,12 +302,27 @@ export default function DashboardPage() {
 
       {/* 01 — Ringkasan */}
       <SectionHeader id="summary" index="1" title="Ringkasan Asesmen" meta={learnerName} />
+      <SectionLede>{summaryLede}</SectionLede>
       <Reveal>
-        <Grid cols={3} className="mt-8">
+        <Grid cols={3}>
           {metrics.map((m) => (
             <MetricCell key={m.label} label={m.label} value={m.value} hint={m.hint} />
           ))}
         </Grid>
+        {priorityRec ? (
+          <GlassPanel variant="elevated" className="mt-8 p-5 md:p-6">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <StatusBadge variant="accent" label="Langkah Prioritas" />
+              <MicroMeta>Otomatis dari analisis AI</MicroMeta>
+            </div>
+            <h3 className={cx("mt-3 text-base font-extrabold tracking-tight", INK)}>
+              {priorityRec.concept_name || actionTypeLabel(priorityRec.action_type)}
+            </h3>
+            <p className={cx("mt-1.5 max-w-2xl text-[13px] leading-relaxed", MUTED)}>
+              {priorityRec.reason || "Langkah tindak lanjut dari analisis AI."}
+            </p>
+          </GlassPanel>
+        ) : null}
       </Reveal>
 
       {/* 02 — Analisis bukti belajar */}
@@ -447,6 +488,14 @@ export default function DashboardPage() {
         </p>
       ) : (
         <div className="mt-2">
+          <GlassPanel variant="elevated" className="mb-6 flex flex-col gap-2 p-5 md:p-6">
+            <StatusBadge variant="accent" label="Rekomendasi AI" className="self-start" />
+            <p className={cx("max-w-2xl text-[13px] leading-relaxed", MUTED)}>
+              Rencana remediasi ini disusun AI dari bukti asesmen{" "}
+              <strong className={cx("font-bold", INK)}>{learnerName}</strong> dan diurutkan
+              berdasarkan prioritas.
+            </p>
+          </GlassPanel>
           {filteredRecommendations.map((rec, i) => (
             <ChecklistRow
               key={rec.id}

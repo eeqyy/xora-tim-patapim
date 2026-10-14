@@ -29,6 +29,7 @@ import {
   Button,
   LoadingState,
   ErrorState,
+  EmptyState,
   MicroMeta,
   HAIRLINE,
   CHIP_CLASS,
@@ -131,6 +132,13 @@ export default function AssessmentListPage() {
       };
     });
   }, [assessments]);
+
+  // Asesmen inti (MIXED) yang benar-benar tersedia — dipakai untuk
+  // menentukan tampilan empty state bila semua level kosong.
+  const coreAvailable = useMemo(
+    () => coreLevelAssessments.filter((c) => c.assessment),
+    [coreLevelAssessments]
+  );
 
   // Recommended remedial assessments: only shown if relevant to learner's gap analysis or active
   const recommendedRemedials = useMemo(() => {
@@ -383,8 +391,32 @@ export default function AssessmentListPage() {
               Instrumen asesmen inti yang memetakan pemahaman konsep HTML, CSS, dan JavaScript secara bertahap.
             </p>
           </GlassPanel>
-          <Grid cols={3} className="mt-8">
-            {coreLevelAssessments.map((cfg) => {
+          {coreAvailable.length === 0 ? (
+            <EmptyState
+              title="Belum Ada Asesmen Inti untuk Level Ini"
+              description="Belum ada asesmen inti yang tersedia untuk level ini. Mulai dari Bank Latihan Per Topik atau telusuri Jalur Belajar terlebih dahulu."
+              action={
+                <>
+                  <PrimaryButton
+                    onClick={() =>
+                      document.getElementById("bank")?.scrollIntoView({ behavior: "smooth" })
+                    }
+                    iconRight={<IconArrowRight size={16} />}
+                  >
+                    Bank Latihan Per Topik
+                  </PrimaryButton>
+                  <OutlineButton
+                    onClick={() => navigate("/learning-path")}
+                    icon={<IconCompass size={15} />}
+                  >
+                    Jalur Belajar
+                  </OutlineButton>
+                </>
+              }
+            />
+          ) : null}
+          <Grid cols={3} className={coreAvailable.length > 0 ? "mt-8" : ""}>
+            {coreAvailable.map((cfg) => {
               const item = cfg.assessment;
               if (!item) return null;
 

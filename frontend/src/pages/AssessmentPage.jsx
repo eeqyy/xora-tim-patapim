@@ -666,7 +666,7 @@ export default function AssessmentPage({
                 title="Klik untuk membuka soal ini"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className={cx("tabular-nums text-[11px] font-bold uppercase tracking-widest", MUTED)}>
+                  <span className="tabular-nums text-[12px] font-bold uppercase tracking-widest text-accent">
                     Soal #{idx + 1}
                   </span>
                   <StatusBadge
@@ -1110,12 +1110,12 @@ export default function AssessmentPage({
                   key={q.id}
                   type="button"
                   className={cx(
-                    "inline-flex h-11 w-11 items-center justify-center rounded-full border tabular-nums text-[11px] font-bold transition-colors",
+                    "inline-flex aspect-square w-full items-center justify-center rounded-full border tabular-nums text-[13px] font-bold transition-colors",
                     isCurrent
                       ? "border-brand bg-brand text-white"
                       : isAnswered
                       ? "border-brand text-accent hover:bg-cell dark:hover:bg-cell-dark"
-                      : "border-hairline text-ink hover:bg-cell dark:border-hairline-dark dark:text-ink-dark dark:hover:bg-cell-dark"
+                      : "border-rule text-ink hover:bg-cell dark:border-rule-dark dark:text-ink-dark dark:hover:bg-cell-dark"
                   )}
                   onClick={() => handleJumpToQuestion(idx)}
                 >
