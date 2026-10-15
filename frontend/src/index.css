@@ -95,6 +95,8 @@
     color: var(--color-ink);
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    transition: background-color 300ms cubic-bezier(0.2, 0.75, 0.15, 1),
+                color 300ms cubic-bezier(0.2, 0.75, 0.15, 1);
   }
 
   html[data-theme="dark"] {
@@ -127,6 +129,8 @@
     font-feature-settings: "ss01" on, "cv01" on;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 300ms cubic-bezier(0.2, 0.75, 0.15, 1),
+                color 300ms cubic-bezier(0.2, 0.75, 0.15, 1);
   }
 
   /* Judul editorial: SUSE Mono, rapat, seimbang. */
@@ -270,45 +274,58 @@
    Teks lipat (Fold Text — paper fold)
    --------------------------------------------- */
 .ft {
-  display: inline-block;
+  display: inline;
   perspective: var(--ft-perspective, 800px);
-  line-height: 1.15;
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  line-height: inherit;
 }
 .ft-inner {
-  display: inline-block;
+  display: inline;
   transform-style: preserve-3d;
+}
+.ft-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.ft-space {
+  display: inline;
+  white-space: pre;
 }
 .ft-char {
   display: inline-block;
-  vertical-align: text-bottom;
+  vertical-align: baseline;
   transform-origin: var(--ft-hinge, center center);
   will-change: transform, filter, opacity;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ft.is-run:not(.is-in) .ft-char {
-    transform: rotateX(var(--ft-angle, 90deg)) scaleY(0.25);
-    opacity: 0.4;
+@keyframes ftFoldIn {
+  0% {
+    transform: perspective(var(--ft-perspective, 800px)) rotateX(var(--ft-angle, 90deg)) scaleY(0.25);
+    opacity: 0.2;
     filter: brightness(calc(1 - var(--ft-shade, 0.55) * 0.5));
   }
-  .ft.is-in .ft-char {
-    transform: none;
+  100% {
+    transform: perspective(var(--ft-perspective, 800px)) rotateX(0deg) scaleY(1);
     opacity: 1;
     filter: none;
-    transition:
-      transform var(--ft-dur, 650ms) var(--ft-ease, ease-out) var(--ft-delay, 0ms),
-      filter var(--ft-dur, 650ms) var(--ft-ease, ease-out) var(--ft-delay, 0ms),
-      opacity var(--ft-dur, 650ms) ease var(--ft-delay, 0ms);
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ft.is-in .ft-char {
+    animation-name: ftFoldIn;
+    animation-duration: var(--ft-dur, 600ms);
+    animation-timing-function: var(--ft-ease, cubic-bezier(0.215, 0.61, 0.355, 1));
+    animation-delay: var(--ft-delay, 0ms);
+    animation-fill-mode: both;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .ft .ft-char,
   .enter-rise {
-    animation: none;
-    opacity: 1;
-    transform: none;
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

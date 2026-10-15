@@ -156,7 +156,7 @@ function AppContent() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-canvas text-ink dark:bg-canvas-dark dark:text-ink-dark">
+    <div className="flex min-h-dvh flex-col bg-canvas text-ink dark:bg-canvas-dark dark:text-ink-dark transition-colors duration-300">
       <Navbar />
       {/* pb = tinggi BottomNav (5rem) + safe-area iPhone, agar konten
           terakhir tidak pernah tertutup bar bawah. */}

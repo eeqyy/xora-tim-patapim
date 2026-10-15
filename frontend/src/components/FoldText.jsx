@@ -22,8 +22,8 @@ export default function FoldText({
   splitBy = "char",
   hinge = "top",
   foldAngle = 90,
-  duration = 0.65,
-  stagger = 0.045,
+  duration = 0.6,
+  stagger = 0.025,
   staggerFrom = "start",
   perspective = 700,
   creaseShading = 0.55,
@@ -39,11 +39,32 @@ export default function FoldText({
 
   const src = text ?? (typeof children === "string" ? children : String(children ?? ""));
 
-  // Cacah huruf / kata
-  const chars = splitBy === "word" ? src.split(/(\s+)/) : Array.from(src);
+  // Kelompokkan token: kata (dipertahankan utuh dalam span ft-word) dan spasi (ft-space).
+  // Mencegah pemotongan kata di tengah huruf saat text wrapping.
+  const tokens = React.useMemo(() => {
+    if (!src) return [];
+    if (splitBy === "word") {
+      return src.split(/(\s+)/).map((t, idx) => ({
+        type: /^\s+$/.test(t) ? "space" : "word",
+        value: t,
+        chars: [t],
+        key: `w-${idx}`,
+      }));
+    }
+    return src.split(/(\s+)/).map((t, idx) => ({
+      type: /^\s+$/.test(t) ? "space" : "word",
+      value: t,
+      chars: Array.from(t),
+      key: `t-${idx}`,
+    }));
+  }, [src, splitBy]);
 
-  // Bobot stagger berdasarkan staggerFrom
-  const n = Math.max(1, chars.length - 1);
+  // Total unit karakter untuk stagger
+  const totalUnits = React.useMemo(() => {
+    return tokens.reduce((acc, t) => acc + (t.type === "word" ? t.chars.length : 0), 0);
+  }, [tokens]);
+
+  const n = Math.max(1, totalUnits - 1);
   const weight = (i) => {
     const x = i / n;
     switch (staggerFrom) {
@@ -57,7 +78,7 @@ export default function FoldText({
         return x;
     }
   };
-  const delayMs = (i) => Math.max(0, weight(i) * chars.length * stagger * 1000);
+  const delayMs = (i) => Math.max(0, weight(i) * totalUnits * stagger * 1000);
 
   const hingeOrigin =
     hinge === "bottom" ? "bottom"
@@ -66,7 +87,8 @@ export default function FoldText({
     : "top";
 
   const durMs = Math.round(duration * 1000);
-  const ms = durMs + chars.reduce((a, _, i) => Math.max(a, delayMs(i)), 0) + 80;
+  const maxDelay = totalUnits > 0 ? Math.max(...Array.from({ length: totalUnits }, (_, i) => delayMs(i))) : 0;
+  const ms = durMs + maxDelay + 80;
 
   const vars = {
     ...style,
@@ -82,29 +104,28 @@ export default function FoldText({
 
   React.useEffect(() => {
     const el = ref.current;
-    if (!el || typeof IntersectionObserver === "undefined") return undefined;
+    if (!el) return undefined;
+    if (typeof IntersectionObserver === "undefined") {
+      el.classList.add("is-in");
+      return undefined;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
           observer.disconnect();
-          el.classList.add("is-run");
-          void el.offsetHeight;
           el.classList.add("is-in");
-          timer.current = window.setTimeout(() => {
-            el.classList.remove("is-run");
-            el.classList.remove("is-in");
-          }, ms);
         });
       },
-      { rootMargin: "0px 0px -8% 0px", threshold }
+      { rootMargin: "0px 0px -5% 0px", threshold }
     );
     observer.observe(el);
     return () => {
       observer.disconnect();
-      if (timer.current) window.clearTimeout(timer.current);
     };
-  }, []);
+  }, [threshold]);
+
+  let globalCharIdx = 0;
 
   return (
     <span
@@ -115,17 +136,34 @@ export default function FoldText({
       {...rest}
     >
       <span className="ft-inner" aria-label={src}>
-        {chars.map((c, i) => (
-          <span
-            key={i}
-            className="ft-char"
-            data-i={i}
-            style={{ "--ft-delay": `${delayMs(i)}ms`, transitionDelay: `${delayMs(i)}ms` }}
-            aria-hidden="true"
-          >
-            {c === " " ? "\u00A0" : c}
-          </span>
-        ))}
+        {tokens.map((token) => {
+          if (token.type === "space") {
+            return (
+              <span key={token.key} className="ft-space">
+                {token.value}
+              </span>
+            );
+          }
+          return (
+            <span key={token.key} className="ft-word">
+              {token.chars.map((c, cIdx) => {
+                const charIdx = globalCharIdx++;
+                const delay = delayMs(charIdx);
+                return (
+                  <span
+                    key={`${token.key}-${cIdx}`}
+                    className="ft-char"
+                    data-i={charIdx}
+                    style={{ "--ft-delay": `${delay}ms`, animationDelay: `${delay}ms` }}
+                    aria-hidden="true"
+                  >
+                    {c}
+                  </span>
+                );
+              })}
+            </span>
+          );
+        })}
       </span>
     </span>
   );

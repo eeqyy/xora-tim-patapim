@@ -15,7 +15,7 @@
 // ============================================================
 
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import PixelSwap from "../components/PixelSwap";
+import PixelTransition from "../components/PixelTransition";
 
 const TransitionContext = createContext(null);
 
@@ -29,10 +29,9 @@ const TransitionContext = createContext(null);
    Overlay dirender lebih lambat sedikit dari perintah React, jadi ada
    `SLACK` sebelum titik tukar supaya layar dipastikan sudah tertutup
    penuh saat tema berganti. */
-const COVER_MS = 900;
-const REVEAL_MS = 900;
-const PIXEL_MS = 450;
-const SLACK_MS = 40;
+const COVER_MS = 380;
+const HOLD_MS = 240; // jeda saat layar tertutup penuh agar efek pixel terlihat jelas
+const REVEAL_MS = 450;
 
 /* Gaya pixel (ReactBits PixelSwap): sisi pixel & skala awalnya. */
 const PIXEL_SIZE = 88;
@@ -68,22 +67,18 @@ export function TransitionProvider({ children }) {
 
   const run = useCallback(async (fn, options) => {
     if (typeof fn !== "function") return;
-
-    if (prefersReducedMotion() || runningRef.current) {
-      fn();
-      return;
-    }
+    if (runningRef.current) return;
 
     runningRef.current = true;
     try {
       setTargetTheme(options && options.targetTheme ? options.targetTheme : null);
       setPhase("cover");
-      await wait(COVER_MS + SLACK_MS);
+      await wait(COVER_MS);
       fn();
       await nextPaint();
-      await wait(SLACK_MS);
+      await wait(HOLD_MS);
       setPhase("reveal");
-      await wait(REVEAL_MS + SLACK_MS);
+      await wait(REVEAL_MS);
     } finally {
       setPhase("idle");
       runningRef.current = false;
@@ -95,13 +90,10 @@ export function TransitionProvider({ children }) {
   return (
     <TransitionContext.Provider value={value}>
       {children}
-      <PixelSwap
+      <PixelTransition
         phase={phase}
-        targetTheme={targetTheme}
-        pixelSize={PIXEL_SIZE}
-        pixelScale={PIXEL_SCALE}
-        duration={phase === "reveal" ? REVEAL_MS : COVER_MS}
-        pixelDuration={PIXEL_MS}
+        coverMs={COVER_MS}
+        revealMs={REVEAL_MS}
       />
     </TransitionContext.Provider>
   );

@@ -47,7 +47,7 @@ const BLEED = 1.02;
    warna dasar + variannya yang digeser `TONE_MIX` ke arah warna teks.
    Tiap pixel dipilih acak 50/50, jadi penutupnya berbutir — bukan rata
    satu warna. Naikkan angkanya kalau ingin kontras dua warna lebih kuat. */
-const TONE_MIX = 0.08;
+const TONE_MIX = 0.18;
 
 const PATTERNS = {
   random: () => null,
@@ -204,30 +204,26 @@ export default function PixelSwap({
   easing = "cubic-bezier(0.22, 1, 0.36, 1)",
   className = "",
 }) {
-  const [box, setBox] = useState({ width: 0, height: 0 });
+  const getWindowSize = () => {
+    if (typeof window === "undefined") return { width: 0, height: 0 };
+    return { width: window.innerWidth, height: window.innerHeight };
+  };
+
+  const [box, setBox] = useState(getWindowSize);
   const containerRef = useRef(null);
   const pixelRefs = useRef([]);
   const animationsRef = useRef([]);
   const toneRef = useRef(null);
 
-  // Ukur kotak overlay. Dilakukan sejak awal (overlay selalu ter-mount,
-  // transparan, dan `pointer-events: none`) supaya grid sudah siap saat
-  // tema pertama kali diganti.
+  // Ukur kotak overlay. Dilakukan sejak awal memakai dimensi jendela layar
+  // agar grid siap seketika saat tema pertama kali diganti.
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return undefined;
-
     const measure = () => {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      if (!width || !height) return;
-      setBox((current) => (current.width === width && current.height === height ? current : { width, height }));
+      setBox(getWindowSize());
     };
-
     measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(container);
-    return () => observer.disconnect();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
   }, []);
 
   const grid = useMemo(

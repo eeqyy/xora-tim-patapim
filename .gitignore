@@ -17,6 +17,7 @@ yarn-error.log*
 
 # Tool scratch (screenshot/YAML Playwright CLI, dll.)
 .playwright-cli/
+.superpowers/
 
 # OS / Editor files
 .DS_Store
@@ -32,4 +33,4 @@ docs/
 scratch/
 
 # OpenCode config lokal (jangan di-push)
-.opencode/
+.opencode/
