@@ -1,0 +1,60 @@
+/* ============================================================
+   XOLEARN — PixelSwap.css
+   ------------------------------------------------------------
+   Diambil dari registry ReactBits (@react-bits/PixelSwap-JS-CSS)
+   dan dipertahankan apa adanya, lalu ditambah satu blok di bawah
+   untuk mode overlay layar penuh (dipakai Xolearn).
+   ============================================================ */
+
+.pixel-swap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  outline: none;
+}
+
+.pixel-swap__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pixel-swap__layer[data-visible='false'] {
+  visibility: hidden;
+}
+
+.pixel-swap__grid {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pixel-swap__pixel {
+  position: absolute;
+  overflow: hidden;
+  opacity: 0;
+  contain: paint;
+}
+
+.pixel-swap__pixel-content {
+  position: absolute;
+}
+
+/* ------------------------------------------------------------
+   Tambahan Xolearn — mode overlay layar penuh.
+   Dipakai sebagai penutup layar saat mengganti tema. Kelas
+   `__layer` / `__pixel-content` tidak dipakai di mode ini (tidak
+   ada konten yang di-clone), tapi tetap dibiarkan agar berkas
+   CSS-nya utuh seperti registry.
+   ------------------------------------------------------------ */
+.pixel-swap--overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}

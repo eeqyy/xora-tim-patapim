@@ -45,24 +45,31 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   /* Perubahan tema dijalankan di dalam penutup pixel supaya pergantian
-     terang → gelap terasa seperti satu transisi, bukan kedipan. Warna
-     pixel diambil SEBELUM tema berganti, sehingga proses buka tetap
-     terlihat di atas tema yang baru. */
+     terang ⇄ gelap terasa seperti satu transisi, bukan kedipan. Tema
+     tujuan dikirim ke overlay, jadi panel penutupnya berwarna tema yang
+     akan muncul (gelap → terang berarti panel putih, dan sebaliknya). */
   const setTheme = useCallback(
     (next) => {
       const value = next === "dark" ? "dark" : "light";
-      run(() => {
-        setThemeState((prev) => (prev === value ? prev : value));
-      });
+      run(
+        () => {
+          setThemeState((prev) => (prev === value ? prev : value));
+        },
+        { targetTheme: value }
+      );
     },
     [run]
   );
 
   const toggleTheme = useCallback(() => {
-    run(() => {
-      setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
-    });
-  }, [run]);
+    const next = theme === "dark" ? "light" : "dark";
+    run(
+      () => {
+        setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
+      },
+      { targetTheme: next }
+    );
+  }, [run, theme]);
 
   return (
     <ThemeContext.Provider

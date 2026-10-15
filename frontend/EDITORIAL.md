@@ -238,20 +238,55 @@ import { CHIP_CLASS, CHIP_ACTIVE, CHIP_INACTIVE, cx } from "../components";
      sudah dipasang di `PageHeader` (badge → judul → lede) dan `SectionHeader`
      (index/judul → meta). Stagger lewat `style={{ "--i": n }}` (kelipatan 55ms).
    - **Ganti tema (terang ⇄ gelap)**: transisi "pixel swap" lewat
-     `usePixelTransition().run(fn)` — overlay kanvas menutup layar, `fn` dijalankan
-     saat layar tertutup, lalu dibuka lagi. Warna pixel mengikuti tema aktif
-     (diambil sebelum tema berganti, jadi proses buka tetap terlihat jelas).
+     `usePixelTransition().run(fn, { targetTheme })` — overlay pixel menutup
+     layar, `fn` dijalankan saat layar tertutup, lalu dibuka lagi. Palet pixel
+     memakai warna **tema tujuan** (`targetTheme`), jadi panel penutupnya sudah
+     sewarna dengan tema yang akan muncul: gelap → terang berarti panel putih,
+     terang → gelap berarti panel gelap.
      **Perpindahan halaman sengaja TIDAK memakai animasi ini** — navigasi harus
      terasa instan. Jangan menambahkan `run(...)` di `RouterContext`, cukup
      reset scroll di `commitLocation`.
-     Ukuran sel di `PixelTransition.jsx`: **48px** desktop / **36px** mobile
-     (≤ 767px) — jangan diperkecil tanpa alasan, sel besar justru lebih ringan
-     (570 sel di 1440×900). Durasi `TransitionContext.jsx`: cover 240ms + jeda
-     40ms + reveal 340ms, dengan jeda itu yang menjamin layar sudah tertutup
-     penuh sebelum tema berganti.
+     Durasi `TransitionContext.jsx`: cover 900ms + jeda 40ms + reveal 900ms.
+     Jeda itu yang menjamin layar sudah tertutup penuh sebelum tema berganti.
      Aturan penting: `run` **tidak pernah** membatalkan `fn`; jika animasi tidak
      memungkinkan (prefers-reduced-motion / transisi lain sedang jalan), `fn`
      langsung dijalankan — tema tetap berganti.
+   - **Overlay pixel** memakai komponen "PixelSwap" (ReactBits, registry
+     `@react-bits/PixelSwap-JS-CSS`) di `PixelSwap.jsx` + `PixelSwap.css`.
+     Matematika grid, pattern, easing, dan animasinya (Web Animations API, satu
+     elemen DOM per pixel) dipertahankan sama seperti aslinya.
+     Angka yang dipakai: sisi pixel **88px**, skala awal **0,35**, `duration`
+     (total) **900ms**, `pixelDuration` **450ms**.
+     Selisih `duration - pixelDuration` = **spread**, dan spread itulah yang
+     jadi jatah delay acak per pixel (`pattern: 'random'` → offset pseudo-acak).
+     **Itu sebabnya kotak-kotak muncul berserakan seperti ReactBits.** Kalau
+     spread = 0 (kedua durasi sama), semua pixel mulai bersamaan dan hasilnya
+     jadi grid rapi yang seragam — hindari kecuali memang ingin efek itu.
+     Grid dibatasi `MAX_PIXELS = 220` seperti aslinya, jadi di layar besar sisi
+     pixel otomatis membesar (mis. 1920×1080 → 101px) dan jumlah elemen DOM
+     tetap aman.
+     Penyesuaian wajib dari versi asli: ReactBits PixelSwap adalah KOTAK
+     (`aspectRatio` bawaan `16 / 10`) yang menukar dua isi dan meng-clone konten
+     masuk ke tiap pixel; setelah pixel menutup penuh gridnya langsung dibuang,
+     jadi tidak ada fase membuka. Di sini dipakai sebagai overlay layar penuh
+     (`phase`: `cover` → `reveal` → `idle`), pixelnya berisi dua warna penutup
+     (bukan clone konten, supaya aplikasi tidak ter-clone ratusan kali), dan fase
+     `reveal` menjalankan animasi yang sama secara `direction: 'reverse'`.
+     **Palet dua warna** (`TONE_MIX = 0.08`), diambil dari **tema tujuan**
+     (`targetTheme`): warna dasar `--color-canvas` (tema terang) atau
+     `--color-canvas-dark` (tema gelap), plus variannya yang digeser `TONE_MIX`
+     ke arah `--color-ink` / `--color-ink-dark`. Tiap pixel dipilih acak 50/50,
+     jadi penutupnya berbutir dan tidak rata satu warna — pola ini disalin dari
+     transisi pixel sebelumnya. Karena dasarnya warna latar tema tujuan, layar
+     yang tertutup penuh sudah sama dengan latar tema baru, sehingga saat tema
+     berganti tidak ada kedipan. Naikkan `TONE_MIX` kalau ingin beda dua
+     warnanya lebih kuat. Palet disusun sekali per transisi (disimpan di ref,
+     termasuk `targetTheme`-nya) supaya butirannya tidak berkedip saat layout
+     berubah. Kalau `targetTheme` tidak dikirim, yang dipakai adalah palet tema
+     gelap sebagai cadangan.
+     Pixel digambar `BLEED = 1.02` lebih besar dari selnya agar tidak ada celah
+     rambut saat layar wajib tertutup penuh. Jangan menyalin komponennya
+     mentah-mentah sebagai overlay.
    - **Perpindahan halaman**: seketika (tanpa overlay), lalu reset scroll ke atas
      di `commitLocation` dan `.enter-rise` bermain di halaman baru.
    - **Akordeon** (`AccordionRow`): tinggi dianimasikan dengan trik grid
