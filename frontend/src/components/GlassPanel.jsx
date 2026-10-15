@@ -16,6 +16,8 @@ const VARIANT_CLASSES = {
   elevated: "rounded-3xl bg-cell dark:bg-cell-dark",
   subtle: "rounded-3xl bg-cell dark:bg-cell-dark",
   highlight: "rounded-3xl bg-highlight",
+  // `brand` = band sorotan untuk pesan inti (mis. rekomendasi AI).
+  brand: "rounded-3xl bg-brand-soft",
   interactive:
     "rounded-3xl cursor-pointer transition-colors hover:bg-cell dark:hover:bg-cell-dark",
 };

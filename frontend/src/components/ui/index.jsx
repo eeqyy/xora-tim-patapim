@@ -197,8 +197,8 @@ export function MetricCell({ label, value, hint, className = "" }) {
    SeverityBadge — indikator tingkat keparahan (pil)
    ------------------------------------------------------------ */
 const SEVERITY_STYLES = {
-  high: "bg-error text-white",
-  medium: "border border-warning bg-warning text-warning-ink",
+  high: "border border-error-strong bg-error-soft text-error-ink",
+  medium: "border border-warning-strong bg-warning-soft text-warning-ink",
   low: "border border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
   neutral:
     "border border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
@@ -407,7 +407,7 @@ Textarea.displayName = "Textarea";
    ------------------------------------------------------------ */
 const ALERT_STYLES = {
   success: "border-positive/30 bg-positive-soft text-ink dark:text-ink-dark",
-  error: "border-error bg-error text-white",
+  error: "border-error-strong bg-error-soft text-error-ink",
   info: "border-hairline bg-cell text-ink dark:border-hairline-dark dark:bg-cell-dark dark:text-ink-dark",
   neutral:
     "border-hairline bg-cell text-ink dark:border-hairline-dark dark:bg-cell-dark dark:text-ink-dark",

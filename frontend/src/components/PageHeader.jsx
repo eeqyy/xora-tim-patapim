@@ -7,7 +7,7 @@
 // ============================================================
 
 import React from "react";
-import { Eyebrow, DisplayHeading, MUTED, HAIRLINE, cx } from "./ui";
+import { Eyebrow, DisplayHeading, MUTED, RULE, cx } from "./ui";
 
 export default function PageHeader({
   badge,
@@ -17,7 +17,16 @@ export default function PageHeader({
   className = "",
 }) {
   return (
-    <header className={cx("border-b pb-8 md:pb-10", HAIRLINE, className)}>
+    <header
+      className={cx(
+        // Garis bawah dibuat full-bleed ke tepi PageContainer dan memakai
+        // RULE (sama seperti SectionHeader) supaya kedua garis yang
+        // berurutan di satu halaman punya panjang + warna yang identik.
+        "-mx-5 border-b px-5 pb-8 md:-mx-8 md:px-8 md:pb-10 xl:-mx-10 xl:px-10",
+        RULE,
+        className
+      )}
+    >
       {badge
         ? typeof badge === "string"
           ? <Eyebrow>{badge}</Eyebrow>

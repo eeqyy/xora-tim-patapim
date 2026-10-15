@@ -155,7 +155,11 @@ function AppContent() {
   return (
     <div className="flex min-h-dvh flex-col bg-canvas text-ink dark:bg-canvas-dark dark:text-ink-dark">
       <Navbar />
-      <main className="flex-1 pb-20 md:pb-0">{pageContent}</main>
+      {/* pb = tinggi BottomNav (5rem) + safe-area iPhone, agar konten
+          terakhir tidak pernah tertutup bar bawah. */}
+      <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+        {pageContent}
+      </main>
       <BottomNav />
     </div>
   );

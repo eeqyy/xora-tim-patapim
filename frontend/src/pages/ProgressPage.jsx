@@ -21,6 +21,7 @@ import {
   Grid,
   GridCell,
   SectionHeader,
+  AiRecommendation,
   GlassPanel,
   StatCard,
   StatusBadge,
@@ -186,6 +187,23 @@ export default function ProgressPage() {
           </>
         }
       />
+
+      {/* Rekomendasi AI — pesan inti aplikasi, tampil di tab mana pun
+          (disembunyikan di tab "Langkah Rekomendasi" agar tidak dobel). */}
+      {activeTab !== "insights" && insights.next_best_action ? (
+        <AiRecommendation
+          className="mt-8"
+          meta="Dari analisis AI"
+          title={
+            insights.next_best_action.concept_name ||
+            insights.next_best_action.action_type
+          }
+          reason={insights.next_best_action.reason}
+          actionLabel={insights.next_best_action.cta_text}
+          onAction={() => navigate(insights.next_best_action.target_url)}
+          iconRight={<IconArrowRight size={16} />}
+        />
+      ) : null}
 
       {/* Tab Navigation */}
       <div className="mt-8 flex flex-wrap gap-2">
@@ -637,7 +655,7 @@ export default function ProgressPage() {
                 <GlassPanel
                   key={rec.id}
                   className={cx(
-                    "flex flex-col gap-3 border-t pt-5 md:flex-row md:items-center md:justify-between",
+                    "flex flex-col gap-3 border-t py-5 md:flex-row md:items-center md:justify-between",
                     HAIRLINE
                   )}
                 >

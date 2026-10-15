@@ -34,14 +34,18 @@
   --color-accent: #0222af;
   --color-accent-hover: #011b8c;
 
+  /* Perhatian (kesenjangan perlu verifikasi) — peach pastel */
   --color-warning: #f8cda4;
-  --color-warning-ink: #4a2a05;
+  --color-warning-soft: #fdf0dd;
+  --color-warning-ink: #7a4a0d;
   --color-warning-strong: #a85e14;
   --color-highlight: #fbf0ac;
   --color-highlight-ink: #4a4300;
 
-  /* Error / destruktif */
+  /* Error / destruktif (kesenjangan terkonfirmasi) — merah pastel */
   --color-error: #c0392b;
+  --color-error-soft: #fbe4e1;
+  --color-error-ink: #8f1d15;
   --color-error-strong: #b3261e;
 
   /* Positif / berhasil — mint pastel */
@@ -49,11 +53,13 @@
   --color-positive-strong: #176b49;
   --color-positive-soft: #d9f2e5;
 
-  /* Kanvas & permukaan lembut — lavender pastel / navy pekat */
+  /* Kanvas & permukaan lembut — lavender pastel (terang) / indigo pekat
+     yang diredam (gelap). Mode gelap memakai saturasi rendah supaya bidang
+     luas tidak menyilaukan; hue tetap indigo mengikuti brand kit. */
   --color-canvas: #f7f7fd;
-  --color-canvas-dark: #040063;
+  --color-canvas-dark: #0c0c22;
   --color-cell: #ebebf8;
-  --color-cell-dark: #16168c;
+  --color-cell-dark: #1b1c44;
 
   /* Teks */
   --color-ink: #040063;
@@ -61,13 +67,14 @@
   --color-muted: #5a5a93;
   --color-muted-dark: #c0c0e8;
 
-  /* Garis rambut horizontal (baris/item) */
-  --color-hairline: #dddcf0;
-  --color-hairline-dark: #34349f;
+  /* Garis rambut horizontal (baris/item) — cukup tegas agar terlihat
+     di atas kanvas (>=1.8:1), tanpa terasa berat. */
+  --color-hairline: #b0afd6;
+  --color-hairline-dark: #3b3d75;
 
   /* Garis tegas khusus batas section (lebih kuat dari hairline) */
-  --color-rule: #b4b3d6;
-  --color-rule-dark: #5555d0;
+  --color-rule: #8b8abd;
+  --color-rule-dark: #5a5da6;
 
   /* Skala tipe editorial */
   --text-eyebrow: 0.75rem;
@@ -86,10 +93,14 @@
   html[data-theme="dark"] {
     background-color: var(--color-canvas-dark);
     color: var(--color-ink-dark);
-    --color-brand-soft: #1c1c93;
+    --color-brand-soft: #202253;
     --color-accent: #aabcff;
     --color-accent-hover: #c8d4ff;
+    --color-warning-soft: #3a2c12;
+    --color-warning-ink: #f8cda4;
     --color-warning-strong: #f8cda4;
+    --color-error-soft: #3b1417;
+    --color-error-ink: #f2aaa3;
     --color-error-strong: #f2aaa3;
     --color-positive-strong: #8fe3b9;
     --color-positive-soft: #0c3a2b;

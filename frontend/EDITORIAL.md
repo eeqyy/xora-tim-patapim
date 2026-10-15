@@ -1,8 +1,9 @@
 # XOLEARN — Editorial System v2 (panduan implementasi halaman)
 
 Sistem visual ini mengikuti bahasa template editorial 21st.dev **#1116**:
-tipografi **Manrope**, **sudut pil untuk elemen interaktif**, dan pemisah
-berupa **garis horizontal (hairline) + ruang kosong** — tanpa grid kotak 1px.
+tipografi **SUSE** (teks) + **SUSE Mono** (judul/display), **sudut pil untuk
+elemen interaktif**, dan pemisah berupa **garis horizontal + ruang kosong** —
+tanpa grid kotak 1px.
 
 Referensi hidup: `src/pages/DashboardPage.jsx`.
 Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index.js`.
@@ -10,30 +11,45 @@ Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index
 ## Prinsip
 - **Garis horizontal saja**: pemisah antar-section/baris/sel memakai
   `border-t` (kelas `HAIRLINE`). JANGAN memakai `border-r` / `border-l` /
-  `border-b` untuk membentuk grid kotak.
+  `border-b` untuk membentuk grid kotak. Satu pengecualian: garis penutup
+  `PageHeader` (`border-b`) yang memang menjadi batas atas halaman.
+- **Panjang garis**: `PageHeader` dan `SectionHeader` memakai `RULE` dan
+  sama-sama **full-bleed** ke tepi `PageContainer` (kelas
+  `-mx-5 px-5 md:-mx-8 md:px-8 xl:-mx-10 xl:px-10`), jadi kedua garis yang
+  berurutan di satu halaman selalu sama panjang + sama warna. Garis
+  baris/item (`HAIRLINE`: `GridCell`, `MetricCell`, baris daftar) tetap
+  masuk ke kolom konten. Jangan menambah padding horizontal lain di dalam
+  `PageContainer` — pakai kelas negatif-margin di atas bila perlu full-bleed.
 - **Sudut**: elemen interaktif (tombol, chip, badge, pil, avatar, progress)
   memakai `rounded-full`; kontainer/input memakai `rounded-2xl` / `rounded-3xl`.
   Section full-bleed tetap persegi (tanpa radius).
-- **Satu font**: Manrope (default via `--font-sans`). Angka memakai
-  `tabular-nums` (sans). `font-mono` HANYA untuk blok kode (`<pre>`/`<code>`)
-  dan input jawaban kode.
-- **Palet (two-tone hangat)**: `brand` = *azure vivid* untuk CTA & pil terisi
-  (`bg-brand`, hover `bg-brand-hover`); `accent` = *azure pekat* untuk
-  teks/tautan/tab aktif/nomor section (`text-accent`, hover `text-accent-hover`);
-  `warning` = *sandy_brown* + `warning-ink` untuk status "perlu perhatian";
-  `positive` = *olive hangat* (`bg-positive` + teks putih) untuk status
-  positif/berhasil;
-  `error` = *brick_red* (`bg-error`, `text-error-strong`) khusus error/destruktif;
-  `highlight` = *vanilla_custard* (wash sorotan, mis. `GlassPanel variant="highlight"`).
-  Varian lembut: `bg-brand-soft`, `bg-positive-soft`; permukaan netral memakai
-  krem hangat. Isi `brand` hanya untuk latar terisi + teks putih — untuk
-  teks/tautan selalu `text-accent`.
+- **Dua font**: `--font-sans` = **SUSE** (teks/UI), `--font-display` =
+  **SUSE Mono** untuk `h1`–`h4` (judul halaman & section). Angka memakai
+  `tabular-nums`. `font-mono` HANYA untuk blok kode (`<pre>`/`<code>`) dan
+  input jawaban kode.
+- **Palet (brand kit SUSE Mono + SUSE)**: `brand` = *azure* untuk CTA & pil
+  terisi (`bg-brand`, hover `bg-brand-hover`, teks putih); `accent` = *indigo
+  pekat* untuk teks/tautan/tab aktif/nomor section (`text-accent`);
+  `ink` = indigo gelap `#040063` untuk teks utama; `warning` = pastel hangat
+  (`bg-warning-soft` + `text-warning-ink`) untuk "perlu perhatian";
+  `positive` (`bg-positive-soft` + `text-positive-strong`) untuk berhasil;
+  `error` (`bg-error-soft` + `text-error-ink`) khusus error/destruktif;
+  `highlight` = wash sorotan (`bg-highlight`).
+  Varian lembut: `bg-brand-soft`, `bg-positive-soft`, `bg-warning-soft`,
+  `bg-error-soft` — semua bertumpu pada pastel, bukan warna pekat.
+  Isi `brand` hanya untuk latar terisi + teks putih — untuk teks/tautan selalu
+  `text-accent`. Jangan memakai warna pekat sebagai latar blok besar.
 - **Target sentuh ≥ 44–48px** untuk semua kontrol interaktif (sengaja lebih
   besar dari chip 38px template agar nyaman di mobile).
 - **Dual-mode**: tema gelap dikendalikan atribut `[data-theme="dark"]` pada
   `<html>`; `brand` (azure) tetap, `accent`/`brand-soft`/`warning-strong`/
   `error-strong`/`positive-strong`/`highlight` diterangkan otomatis di gelap,
   permukaan/teks/garis bertukar.
+- **Mode gelap diredam**: kanvas/sel/garis gelap memakai hue indigo yang sama
+  tetapi saturasi rendah (`canvas-dark #0c0c22`, `cell-dark #1b1c44`,
+  `hairline-dark #3b3d75`, `rule-dark #5a5da6`, `brand-soft #202253`). Bidang
+  luas tidak boleh memakai biru pekat (mis. `#040063` penuh) karena menyilaukan;
+  garis tetap ≥1.8:1 dan teks tetap ≥4.5:1 di atas kanvas baru.
 
 ## Token kelas
 | Peran | Terang | Gelap |
@@ -43,14 +59,14 @@ Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index
 | Teks utama | `text-ink` | `dark:text-ink-dark` |
 | Teks redup | `text-muted` | `dark:text-muted-dark` |
 | Garis (baris/item) | `border-hairline` | `dark:border-hairline-dark` |
-| Garis section | `border-rule` | `dark:border-rule-dark` |
+| Garis section & PageHeader | `border-rule` (full-bleed) | `dark:border-rule-dark` |
 | Brand (isi) | `bg-brand` / `bg-brand-hover` | idem (azure) |
 | Aksen (teks) | `text-accent` / `text-accent-hover` | override tema (lebih terang) |
-| Aksen lembut | `bg-brand-soft` | override tema |
-| Peringatan | `bg-warning text-warning-ink` | idem |
-| Positif | `bg-positive` + teks putih | idem |
+| Band pesan inti / aksen lembut | `bg-brand-soft` | override tema (indigo gelap) |
+| Peringatan | `bg-warning-soft` + `text-warning-ink` | override tema |
+| Positif | `bg-positive-soft` + `text-positive-strong` | override tema |
 | Sorotan | `text-highlight` / `bg-highlight` | override tema (lebih gelap) |
-| Error | `bg-error` / `text-error-strong` | override tema (lebih terang) |
+| Error | `bg-error-soft` + `text-error-ink` | override tema |
 
 Metadata mikro (badge/tag/timestamp/label) memakai `<MicroMeta>`:
 sans, uppercase, `tracking` lebar, `tabular-nums`.
@@ -61,7 +77,22 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
   Lebar responsif: `1200px` → `xl:1340px` → `2xl:1480px` (`narrow` tetap `720px`).
   Header `Navbar` dan baris filter dashboard memakai lebar yang sama agar sejajar.
 - `PageHeader` — `{ badge, title, description, actions }`. Eyebrow + display
-  heading + garis bawah.
+  heading + garis bawah `RULE` **full-bleed** (lihat "Panjang garis"); jarak
+  judul→konten pertama sudah dijaga `SectionHeader` (`mt-14 md:mt-20`), jadi
+  jangan menambah margin atas pada blok pertama setelah `PageHeader`.
+- `GlassPanel` — nama dipertahankan. `variant="default"` = transparan tanpa
+  border (untuk baris daftar → tambahkan `cx("border-t pt-5", HAIRLINE)`).
+  `variant="subtle"`/`"elevated"` = `rounded-3xl bg-cell dark:bg-cell-dark`.
+  `variant="brand"` = `rounded-3xl bg-brand-soft` (band pesan inti, mis. saran
+  AI). `variant="highlight"` = `rounded-3xl bg-highlight`. `variant="interactive"`
+  = pil + hover.
+- `AiRecommendation` — band sorotan pesan inti aplikasi (saran belajar dari AI).
+  `{ label, title, reason, meta, actionLabel, onAction, iconRight, className }`,
+  memakai `GlassPanel variant="brand"` + `p-5 md:p-6`.
+  **Aturan penempatan**: tampilkan di dalam bagian **Ringkasan** (blok pertama,
+  sebelum metrik) atau di atas tab — jangan disembunyikan di dalam tab/langkah
+  lanjutan. Bila satu halaman menampilkan saran yang sama di tab, sembunyikan
+  band-nya saat tab itu aktif (`activeTab !== "insights" && ...`) agar tidak dobel.
 - `SectionHeader` — `{ index, title, meta, id, sticky, className }`. Memakai garis
   section `RULE` (lebih tegas dari `HAIRLINE` baris/item). Jangan tambah margin
   atas lagi. `sticky` (default `true`) membuat judul section menempel di bawah
@@ -75,11 +106,6 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
   `border-r/-b/-l`. Hindari latar kondisional; pakai `opacity` bila perlu.
 - `MetricCell` — `{ label, value, hint }`.
 - `StatCard` — `{ label, value, secondary, variant }`.
-- `GlassPanel` — nama dipertahankan. `variant="default"` = transparan tanpa
-  border (untuk baris daftar → tambahkan `cx("border-t pt-5", HAIRLINE)`).
-  `variant="subtle"`/`"elevated"` = `rounded-3xl bg-cell dark:bg-cell-dark`.
-  `variant="highlight"` = `rounded-3xl bg-brand-soft`. `variant="interactive"`
-  = pil + hover.
 - `Button` / `PrimaryButton` / `SecondaryButton` / `OutlineButton` / `GhostButton`
   — `{ variant, size, icon, iconRight, fullWidth, loading }` (pil, ≥44px).
 - `ProgressBar` (standalone) — `{ value, max, label, showPercent, variant, size, className }`.
@@ -127,6 +153,14 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
   <LoadingState /> | <ErrorState onRetry={...} /> | <EmptyState ... />
 
   <SectionHeader index="1" title="Ringkasan" meta="…" />
+  {/* Pesan inti: saran AI selalu di blok pertama bagian Ringkasan. */}
+  <AiRecommendation
+    title="…"
+    reason="…"
+    actionLabel="Lanjutkan Belajar"
+    onAction={() => navigate("…")}
+    iconRight={<IconArrowRight size={16} />}
+  />
   <Grid cols={3} className="mt-8">
     <StatCard label="…" value="…" />
     <StatCard label="…" value="…" />
@@ -175,6 +209,7 @@ import { CHIP_CLASS, CHIP_ACTIVE, CHIP_INACTIVE, cx } from "../components";
    Hanya ubah markup/`className`/struktur visual.
 2. **Tanpa kotak**: hapus `border-r`/`border-l`/`border-b` grid, `rounded-none`,
    `shadow`, blur, dan gradient. Ganti dengan `border-t` + ruang kosong.
+   Pengecualian: garis penutup `PageHeader` (`border-b`, kelas `RULE`).
 3. **Angka**: ganti `font-mono` (kecuali kode) dengan `tabular-nums`.
 4. **Warna inline** (`var(--color-*)`, hex) → token kelas. `style={{...}}` hanya
    untuk nilai dinamis (mis. `width`).

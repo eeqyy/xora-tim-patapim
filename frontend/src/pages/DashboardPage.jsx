@@ -34,6 +34,7 @@ import {
   MicroMeta,
   SectionHeader,
   SectionLede,
+  AiRecommendation,
   GlassPanel,
   StatusBadge,
   Grid,
@@ -107,6 +108,17 @@ function actionTypeLabel(type) {
 function humanizePattern(pattern) {
   if (!pattern) return "";
   return String(pattern).replace(/_/g, " ").toLowerCase();
+}
+
+/* Tujuan tombol "Lanjutkan Belajar": langsung ke sesi tindak lanjut
+   dari AI (verifikasi atau latihan), sama seperti alur di halaman
+   Progres. Bila data tidak lengkap, jatuh ke peta materi. */
+function recommendationTarget(rec) {
+  if (!rec) return "/learning-path";
+  if (String(rec.action_type || "").toUpperCase() === "RUN_DIAGNOSTIC") {
+    return rec.diagnostic_id ? `/verification/${rec.diagnostic_id}` : "/learning-path";
+  }
+  return rec.id ? `/practice/${rec.id}` : "/learning-path";
 }
 
 export default function DashboardPage() {
@@ -304,25 +316,29 @@ export default function DashboardPage() {
       <SectionHeader id="summary" index="1" title="Ringkasan Asesmen" meta={learnerName} />
       <SectionLede>{summaryLede}</SectionLede>
       <Reveal>
-        <Grid cols={3}>
+        {priorityRec ? (
+          <AiRecommendation
+            meta="Otomatis dari analisis AI"
+            title={priorityRec.concept_name || actionTypeLabel(priorityRec.action_type)}
+            reason={priorityRec.reason || "Langkah tindak lanjut dari analisis AI."}
+            actionLabel="Lanjutkan Belajar"
+            onAction={() => navigate(recommendationTarget(priorityRec))}
+            iconRight={<IconArrowRight size={16} />}
+          />
+        ) : (
+          <AiRecommendation
+            title="Belum Ada Langkah Prioritas"
+            reason="Mulai dari peta materi untuk memilih konsep yang ingin dikerjakan — AI akan menyusun langkah berikutnya."
+            actionLabel="Mulai Belajar"
+            onAction={() => navigate("/learning-path")}
+            iconRight={<IconArrowRight size={16} />}
+          />
+        )}
+        <Grid cols={3} className="mt-8">
           {metrics.map((m) => (
             <MetricCell key={m.label} label={m.label} value={m.value} hint={m.hint} />
           ))}
         </Grid>
-        {priorityRec ? (
-          <GlassPanel variant="elevated" className="mt-8 p-5 md:p-6">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <StatusBadge variant="accent" label="Langkah Prioritas" />
-              <MicroMeta>Otomatis dari analisis AI</MicroMeta>
-            </div>
-            <h3 className={cx("mt-3 text-base font-extrabold tracking-tight", INK)}>
-              {priorityRec.concept_name || actionTypeLabel(priorityRec.action_type)}
-            </h3>
-            <p className={cx("mt-1.5 max-w-2xl text-[13px] leading-relaxed", MUTED)}>
-              {priorityRec.reason || "Langkah tindak lanjut dari analisis AI."}
-            </p>
-          </GlassPanel>
-        ) : null}
       </Reveal>
 
       {/* 02 — Analisis bukti belajar */}

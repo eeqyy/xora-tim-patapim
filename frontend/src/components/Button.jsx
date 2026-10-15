@@ -15,7 +15,7 @@ const VARIANT_CLASSES = {
     "border border-hairline text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
   outline:
     "border border-hairline text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
-  danger: "border border-error text-error-strong hover:bg-error hover:text-white",
+  danger: "border border-error-strong text-error-ink hover:bg-error-soft",
   ghost: "text-accent hover:underline px-0",
 };
 
