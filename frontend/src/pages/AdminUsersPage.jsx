@@ -13,6 +13,7 @@
 import React, { useEffect, useState } from "react";
 import { adminUsersApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useDialog } from "../context/DialogContext";
 import {
   PageContainer,
   PageHeader,
@@ -21,7 +22,7 @@ import {
   PrimaryButton,
   OutlineButton,
   SecondaryButton,
-  LoadingState,
+  SkeletonTable,
   EmptyState,
   Alert,
   Field,
@@ -84,6 +85,8 @@ export default function AdminUsersPage() {
   // supaya <select> kembali menampilkan nilai yang sebenarnya.
   const [, forceUpdate] = useState(0);
 
+  const { confirm, prompt } = useDialog();
+
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -126,12 +129,15 @@ export default function AdminUsersPage() {
   const handleStatusChange = async (target, newStatus) => {
     if (newStatus === target.status) return;
     const label = STATUS_LABELS[newStatus] || newStatus;
-    const confirmed = window.confirm(
-      `Ubah status "${target.name}" menjadi ${label}?\n\n` +
-        (newStatus === "ACTIVE"
+    const confirmed = await confirm({
+      title: `Ubah status "${target.name}" menjadi ${label}?`,
+      description:
+        newStatus === "ACTIVE"
           ? "Akun kembali bisa login."
-          : "Semua sesi aktif akun ini akan dicabut dan ia tidak bisa login.")
-    );
+          : "Semua sesi aktif akun ini akan dicabut dan ia tidak bisa login.",
+      confirmLabel: "Ubah Status",
+      tone: newStatus === "ACTIVE" ? "primary" : "danger",
+    });
     if (!confirmed) {
       forceUpdate((n) => n + 1);
       return;
@@ -161,9 +167,17 @@ export default function AdminUsersPage() {
     if (!option) return;
     if (newRoleValue === roleValueFromRoles(target.roles)) return;
 
-    const confirmed = window.confirm(
-      `Ubah role "${target.name}" menjadi ${option.label}?`
-    );
+    const confirmed = await confirm({
+      title: `Ubah role "${target.name}" menjadi ${option.label}?`,
+      description:
+        option.value === "BOTH"
+          ? "Akun ini akan bisa masuk sebagai peserta sekaligus admin."
+          : option.value === "ADMIN"
+          ? "Akun ini akan mendapat akses penuh ke area admin."
+          : "Akses admin akun ini akan dicabut.",
+      confirmLabel: "Ubah Role",
+      tone: option.value === "LEARNER" ? "danger" : "primary",
+    });
     if (!confirmed) {
       forceUpdate((n) => n + 1);
       return;
@@ -185,14 +199,16 @@ export default function AdminUsersPage() {
   };
 
   const handleResetPassword = async (target) => {
-    const newPassword = window.prompt(
-      `Password baru untuk "${target.name}" (${target.email}).\nMinimal 8 karakter:`
-    );
+    const newPassword = await prompt({
+      title: `Reset password "${target.name}"`,
+      description: `${target.email} — semua sesi aktif akan dicabut sehingga ia harus login ulang.`,
+      label: "Password baru",
+      placeholder: "Minimal 8 karakter",
+      minLength: 8,
+      confirmLabel: "Reset Password",
+      tone: "danger",
+    });
     if (newPassword === null) return;
-    if (String(newPassword).length < 8) {
-      window.alert("Password minimal 8 karakter.");
-      return;
-    }
 
     setBusyId(target.id);
     setError(null);
@@ -276,7 +292,7 @@ export default function AdminUsersPage() {
 
       {error && <Alert tone="error">{error}</Alert>}
 
-      {isLoading && <LoadingState message="Memuat daftar pengguna..." />}
+      {isLoading && <SkeletonTable rows={5} columns={4} className="mt-8" />}
 
       {!isLoading && !error && users.length === 0 && (
         <EmptyState

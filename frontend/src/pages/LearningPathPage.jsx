@@ -27,6 +27,7 @@ import {
   OutlineButton,
   EmptyState,
   LoadingState,
+  SkeletonPage,
   ErrorState,
   MicroMeta,
   HAIRLINE,
@@ -413,7 +414,7 @@ export default function LearningPathPage() {
   if (isLoadingSubjects) {
     return (
       <PageContainer maxWidth="normal">
-        <LoadingState message="Memuat kurikulum alur belajar..." />
+        <SkeletonPage />
       </PageContainer>
     );
   }

@@ -13,6 +13,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+import { usePixelTransition } from "./TransitionContext";
 
 const ThemeContext = createContext(null);
 const THEME_KEY = "xora_theme";
@@ -32,6 +33,7 @@ function readInitialTheme() {
 
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(readInitialTheme);
+  const { run } = usePixelTransition();
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -42,13 +44,25 @@ export function ThemeProvider({ children }) {
     }
   }, [theme]);
 
-  const setTheme = useCallback((next) => {
-    setThemeState(next === "dark" ? "dark" : "light");
-  }, []);
+  /* Perubahan tema dijalankan di dalam penutup pixel supaya pergantian
+     terang → gelap terasa seperti satu transisi, bukan kedipan. Warna
+     pixel diambil SEBELUM tema berganti, sehingga proses buka tetap
+     terlihat di atas tema yang baru. */
+  const setTheme = useCallback(
+    (next) => {
+      const value = next === "dark" ? "dark" : "light";
+      run(() => {
+        setThemeState((prev) => (prev === value ? prev : value));
+      });
+    },
+    [run]
+  );
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
-  }, []);
+    run(() => {
+      setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
+    });
+  }, [run]);
 
   return (
     <ThemeContext.Provider

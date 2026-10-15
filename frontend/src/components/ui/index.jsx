@@ -27,7 +27,7 @@ export const MUTED = "text-muted dark:text-muted-dark";
 
 /* Pil filter / chip (target sentuh >=44px). */
 export const CHIP_CLASS =
-  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[13px] font-semibold transition-colors";
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[13px] font-semibold transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[.98]";
 export const CHIP_INACTIVE =
   "border-hairline bg-transparent text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent";
 export const CHIP_ACTIVE = "border-brand bg-brand text-white hover:bg-brand-hover";
@@ -102,19 +102,26 @@ export function SectionHeader({ index, title, meta, id, sticky = true, className
       >
         <div className="flex min-w-0 items-baseline gap-4">
           {index ? (
-            <span className="text-[12px] font-bold tabular-nums text-accent">{index}</span>
+            <span className="enter-rise text-[12px] font-bold tabular-nums text-accent" style={{ "--i": 0 }}>
+              {index}
+            </span>
           ) : null}
           <h2
             className={cx(
-              "min-w-0 text-[13px] font-semibold uppercase tracking-[0.16em]",
+              "enter-rise min-w-0 text-[13px] font-semibold uppercase tracking-[0.16em]",
               sticky && "truncate",
               INK
             )}
+            style={{ "--i": 0 }}
           >
             {title}
           </h2>
         </div>
-        {meta ? <MicroMeta className={sticky ? "shrink-0" : ""}>{meta}</MicroMeta> : null}
+        {meta ? (
+          <MicroMeta className={cx("enter-rise", sticky && "shrink-0")} style={{ "--i": 1 }}>
+            {meta}
+          </MicroMeta>
+        ) : null}
       </div>
     </div>
   );
@@ -225,7 +232,7 @@ export function PrimaryButton({ className = "", fullWidth = false, children, ...
   return (
     <button
       className={cx(
-        "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-brand px-6 text-[14px] font-semibold text-white transition-colors",
+        "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-brand px-6 text-[14px] font-semibold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[.98]",
         "hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50",
         fullWidth && "w-full",
         className
@@ -242,7 +249,7 @@ export function GhostButton({ className = "", children, ...rest }) {
   return (
     <button
       className={cx(
-        "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[14px] font-semibold transition-colors",
+        "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[14px] font-semibold transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[.98]",
         "border-hairline text-ink hover:border-brand hover:text-accent",
         "dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
         className
@@ -297,7 +304,20 @@ export function AccordionRow({
         <span className="min-w-0 flex-1">{summary}</span>
         <span className="flex shrink-0 items-center gap-3">{trailing}</span>
       </button>
-      {open ? <div className="pb-6">{children}</div> : null}
+      {/* Isi akordeon tetap ter-mount supaya tingginya bisa dianimasikan
+          (0fr → 1fr). Saat tertutup, isinya terpotong `overflow-hidden`
+          dan ditandai aria-hidden; isinya hanya teks sehingga tidak ada
+          elemen yang bisa difokus. Tanpa dukungan animasi grid, barisnya
+          hanya membuka/menutup seketika (tetap berfungsi). */}
+      <div
+        className="accordion-region grid"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+        aria-hidden={!open}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="pb-6">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }

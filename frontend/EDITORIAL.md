@@ -115,6 +115,23 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
 - `Alert` — `{ tone: "success" | "error" | "info" | "neutral" }`.
 - `EmptyState`, `LoadingState`, `ErrorState`, `Avatar`, `AccordionRow`,
   `ChecklistRow`, `DataRow`, `FilterChips`, `Reveal` (`{ delay }`, animasi CSS).
+- `Skeleton` (`SkeletonBar`, `SkeletonLines`, `SkeletonTable`, `SkeletonSummary`,
+  `SkeletonPage`) — kerangka muat pengganti spinner supaya tata letak tidak
+  melompat. **Pakai skeleton saat memuat data**, bukan `LoadingState`, kecuali
+  untuk blok kecil yang tidak punya bentuk tetap. Bungkus dengan `role="status"`
+  + `aria-live="polite"` (sudah dilakukan komponen) dan sembunyikan isinya dari
+  pembaca layar (`aria-hidden`) karena ini hiasan.
+- `Dialog` — kerangka modal bertema (`<dialog>` native + `showModal()`). Pemakaian
+  sehari-hari lewat hook `useDialog()`:
+  - `await confirm({ title, description, confirmLabel, cancelLabel, tone })`
+    → `true`/`false`. Ganti **semua** `window.confirm`.
+  - `await prompt({ title, description, label, placeholder, minLength, ... })`
+    → `string` atau `null` (dibatalkan). Ganti **semua** `window.prompt`.
+  Karena berbasis Promise, handler pemanggil harus `async` dan `await` hasilnya
+  sebelum melanjutkan aksi. **Jangan** pakai `window.alert`; pakai `useToast()`.
+- `useToast()` — `{ show, success, error, info }` untuk umpan balik singkat
+  (mis. "Laporan disiapkan untuk dicetak"). Jangan pakai toast untuk kesalahan
+  yang butuh tindakan pengguna — pakai `Alert` di dekat penyebabnya.
 - Konstanta: `INPUT_CLASS`, `TH_CLASS`, `TD_CLASS`, `TABLE_CLASS`,
   `CHIP_CLASS`, `CHIP_ACTIVE`, `CHIP_INACTIVE`, `cx`, `HAIRLINE`, `RULE`,
   `SURFACE`,
@@ -217,4 +234,28 @@ import { CHIP_CLASS, CHIP_ACTIVE, CHIP_INACTIVE, cx } from "../components";
 6. Mobile-first: `grid-cols-1` lalu `sm:`/`md:`/`lg:`.
 7. Motion hanya CSS + `IntersectionObserver` (`Reveal` / kelas `.reveal`);
    tanpa dependency runtime baru (no framer-motion/GSAP).
+   - **Teks masuk**: kelas `.enter-rise` (geser 9px + opacity `.45 → 1`, ±440ms)
+     sudah dipasang di `PageHeader` (badge → judul → lede) dan `SectionHeader`
+     (index/judul → meta). Stagger lewat `style={{ "--i": n }}` (kelipatan 55ms).
+   - **Ganti tema (terang ⇄ gelap)**: transisi "pixel swap" lewat
+     `usePixelTransition().run(fn)` — overlay kanvas menutup layar, `fn` dijalankan
+     saat layar tertutup, lalu dibuka lagi. Warna pixel mengikuti tema aktif
+     (diambil sebelum tema berganti, jadi proses buka tetap terlihat jelas).
+     **Perpindahan halaman sengaja TIDAK memakai animasi ini** — navigasi harus
+     terasa instan. Jangan menambahkan `run(...)` di `RouterContext`, cukup
+     reset scroll di `commitLocation`.
+     Ukuran sel di `PixelTransition.jsx`: **48px** desktop / **36px** mobile
+     (≤ 767px) — jangan diperkecil tanpa alasan, sel besar justru lebih ringan
+     (570 sel di 1440×900). Durasi `TransitionContext.jsx`: cover 240ms + jeda
+     40ms + reveal 340ms, dengan jeda itu yang menjamin layar sudah tertutup
+     penuh sebelum tema berganti.
+     Aturan penting: `run` **tidak pernah** membatalkan `fn`; jika animasi tidak
+     memungkinkan (prefers-reduced-motion / transisi lain sedang jalan), `fn`
+     langsung dijalankan — tema tetap berganti.
+   - **Perpindahan halaman**: seketika (tanpa overlay), lalu reset scroll ke atas
+     di `commitLocation` dan `.enter-rise` bermain di halaman baru.
+   - **Akordeon** (`AccordionRow`): tinggi dianimasikan dengan trik grid
+     `0fr → 1fr`; isinya tetap ter-mount dan ditandai `aria-hidden` saat tertutup.
+   - Semua animasi berhenti saat `prefers-reduced-motion: reduce`, dan tidak ada
+     konten yang disembunyikan dengan `opacity: 0` (aman untuk tangkapan layar).
 8. Setelah selesai: jalankan `cd frontend && npm run build` dan pastikan sukses.

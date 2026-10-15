@@ -248,3 +248,132 @@
     transition: none;
   }
 }
+
+/* ---------------------------------------------
+   Teks masuk (.enter-rise)
+   ---------------------------------------------
+   Dipakai judul & lede di PageHeader / SectionHeader. Sama seperti
+   `.reveal`, konten TIDAK pernah disembunyikan: titik awal opacity
+   `.45` + geser 9px, jadi teks selalu terbaca walau animasi belum
+   sempat berjalan (mis. pada tangkapan layar penuh).
+   Stagger antar baris lewat variabel `--i`. */
+@keyframes enter-rise {
+  from {
+    opacity: 0.45;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .enter-rise {
+    animation: enter-rise 440ms cubic-bezier(0.2, 0.75, 0.15, 1) both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------
+   Skeleton (kerangka muat)
+   ---------------------------------------------
+   Warna diambil dari token permukaan, jadi otomatis ikut tema.
+   Denyut halus; mati saat prefers-reduced-motion. */
+.skeleton {
+  background-color: var(--color-cell);
+}
+
+html[data-theme="dark"] .skeleton {
+  background-color: var(--color-cell-dark);
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+/* ---------------------------------------------
+   Dialog & Toast
+   ---------------------------------------------
+   Dialog memakai elemen <dialog> native (fokus terkurung + latar
+   inert otomatis). Yang diatur di sini hanya tampilan & animasinya. */
+dialog.dialog-panel {
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+dialog.dialog-panel::backdrop {
+  background-color: rgb(4 0 99 / 0.42);
+}
+
+html[data-theme="dark"] dialog.dialog-panel::backdrop {
+  background-color: rgb(0 0 0 / 0.62);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.dialog-panel[open] {
+    animation: dialog-in 200ms ease-out both;
+  }
+
+  .toast-item {
+    animation: toast-in 220ms cubic-bezier(0.2, 0.75, 0.15, 1) both;
+  }
+}
+
+/* ---------------------------------------------
+   Akordeon (buka/tutup beranimasi)
+   ---------------------------------------------
+   Tinggi baris dianimasikan dengan trik grid `0fr → 1fr`.
+   Kalau browser belum mendukung interpolasi `fr`, baris hanya
+   membuka/menutup seketika — fungsi tetap utuh. */
+.accordion-region {
+  transition: grid-template-rows 260ms cubic-bezier(0.2, 0.75, 0.15, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-region {
+    transition: none;
+  }
+}

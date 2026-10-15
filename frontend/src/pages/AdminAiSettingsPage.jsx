@@ -14,6 +14,7 @@
 
 import React, { useEffect, useState } from "react";
 import { adminAiApi } from "../services/api";
+import { useDialog } from "../context/DialogContext";
 import {
   PageContainer,
   PageHeader,
@@ -82,6 +83,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminAiSettingsPage() {
+  const { confirm } = useDialog();
   const [status, setStatus] = useState({ active: null, providers: [], health: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -272,9 +274,12 @@ export default function AdminAiSettingsPage() {
   };
 
   const handleDelete = async (row) => {
-    const confirmed = window.confirm(
-      `Hapus provider "${row.label}"? API key tersimpan akan ikut dihapus.`
-    );
+    const confirmed = await confirm({
+      title: `Hapus provider "${row.label}"?`,
+      description: "API key yang tersimpan akan ikut dihapus.",
+      confirmLabel: "Hapus",
+      tone: "danger",
+    });
     if (!confirmed) return;
     setBusyId(row.id);
     setError(null);

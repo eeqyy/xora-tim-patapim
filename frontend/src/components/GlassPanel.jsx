@@ -19,7 +19,7 @@ const VARIANT_CLASSES = {
   // `brand` = band sorotan untuk pesan inti (mis. rekomendasi AI).
   brand: "rounded-3xl bg-brand-soft",
   interactive:
-    "rounded-3xl cursor-pointer transition-colors hover:bg-cell dark:hover:bg-cell-dark",
+    "rounded-3xl cursor-pointer transition-[background-color,transform] duration-150 ease-out hover:bg-cell active:scale-[.99] dark:hover:bg-cell-dark",
 };
 
 export default function GlassPanel({

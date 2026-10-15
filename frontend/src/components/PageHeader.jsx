@@ -29,18 +29,22 @@ export default function PageHeader({
     >
       {badge
         ? typeof badge === "string"
-          ? <Eyebrow>{badge}</Eyebrow>
+          ? <Eyebrow className="enter-rise" style={{ "--i": 0 }}>{badge}</Eyebrow>
           : badge
         : null}
       {title ? (
         <DisplayHeading
-          className={cx("max-w-4xl text-display", badge ? "mt-4" : "")}
+          className={cx("enter-rise max-w-4xl text-display", badge ? "mt-4" : "")}
+          style={{ "--i": 1 }}
         >
           {title}
         </DisplayHeading>
       ) : null}
       {description ? (
-        <p className={cx("mt-5 max-w-2xl text-[15px] leading-relaxed md:text-[16px]", MUTED)}>
+        <p
+          className={cx("enter-rise mt-5 max-w-2xl text-[15px] leading-relaxed md:text-[16px]", MUTED)}
+          style={{ "--i": 2 }}
+        >
           {description}
         </p>
       ) : null}

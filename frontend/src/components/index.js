@@ -19,6 +19,7 @@ export { default as ProgressBar } from "./ProgressBar";
 export { default as EmptyState } from "./EmptyState";
 export { default as LoadingState } from "./LoadingState";
 export { default as ErrorState } from "./ErrorState";
+export { default as Skeleton, SkeletonBar, SkeletonLines, SkeletonTable, SkeletonSummary, SkeletonPage } from "./Skeleton";
 export { default as AssessmentMetaFields } from "./AssessmentMetaFields";
 export * from "./Icons";
 

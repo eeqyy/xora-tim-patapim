@@ -10,12 +10,12 @@ import React from "react";
 import { cx } from "./ui";
 
 const VARIANT_CLASSES = {
-  primary: "bg-brand text-white hover:bg-brand-hover",
+  primary: "bg-brand text-white hover:bg-brand-hover active:scale-[.98]",
   secondary:
-    "border border-hairline text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
+    "border border-hairline text-ink hover:border-brand hover:text-accent active:scale-[.98] dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
   outline:
-    "border border-hairline text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
-  danger: "border border-error-strong text-error-ink hover:bg-error-soft",
+    "border border-hairline text-ink hover:border-brand hover:text-accent active:scale-[.98] dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
+  danger: "border border-error-strong text-error-ink hover:bg-error-soft active:scale-[.98]",
   ghost: "text-accent hover:underline px-0",
 };
 
@@ -46,7 +46,7 @@ export default function Button({
     <button
       type={type}
       className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-colors",
+        "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[background-color,border-color,color,transform] duration-150 ease-out",
         "disabled:cursor-not-allowed disabled:opacity-50",
         sizeClass,
         variantClass,

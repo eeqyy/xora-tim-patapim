@@ -20,6 +20,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "../context/RouterContext";
 import { useDashboardFilter } from "../context/DashboardFilterContext";
+import { useToast } from "../context/ToastContext";
 import {
   historyApi,
   masteryApi,
@@ -47,6 +48,8 @@ import {
   ProgressBar,
   Alert,
   Reveal,
+  SkeletonLines,
+  SkeletonSummary,
   HAIRLINE,
   INK,
   MUTED,
@@ -124,6 +127,7 @@ function recommendationTarget(rec) {
 export default function DashboardPage() {
   const { user } = useAuth();
   const { navigate } = useRouter();
+  const toast = useToast();
   const { isAdmin, learners, conceptSubject, selectedSubject, selectedLearnerId } =
     useDashboardFilter();
 
@@ -298,7 +302,13 @@ export default function DashboardPage() {
         }
         actions={
           <>
-            <GhostButton onClick={() => window.print()} className="w-auto">
+            <GhostButton
+              onClick={() => {
+                toast.info("Menyiapkan laporan untuk dicetak…", { duration: 2600 });
+                setTimeout(() => window.print(), 60);
+              }}
+              className="w-auto"
+            >
               Ekspor Laporan
             </GhostButton>
             {isLoading ? <MicroMeta>Memuat data…</MicroMeta> : null}
@@ -316,29 +326,35 @@ export default function DashboardPage() {
       <SectionHeader id="summary" index="1" title="Ringkasan Asesmen" meta={learnerName} />
       <SectionLede>{summaryLede}</SectionLede>
       <Reveal>
-        {priorityRec ? (
-          <AiRecommendation
-            meta="Otomatis dari analisis AI"
-            title={priorityRec.concept_name || actionTypeLabel(priorityRec.action_type)}
-            reason={priorityRec.reason || "Langkah tindak lanjut dari analisis AI."}
-            actionLabel="Lanjutkan Belajar"
-            onAction={() => navigate(recommendationTarget(priorityRec))}
-            iconRight={<IconArrowRight size={16} />}
-          />
+        {isLoading ? (
+          <SkeletonSummary />
         ) : (
-          <AiRecommendation
-            title="Belum Ada Langkah Prioritas"
-            reason="Mulai dari peta materi untuk memilih konsep yang ingin dikerjakan — AI akan menyusun langkah berikutnya."
-            actionLabel="Mulai Belajar"
-            onAction={() => navigate("/learning-path")}
-            iconRight={<IconArrowRight size={16} />}
-          />
+          <>
+            {priorityRec ? (
+              <AiRecommendation
+                meta="Otomatis dari analisis AI"
+                title={priorityRec.concept_name || actionTypeLabel(priorityRec.action_type)}
+                reason={priorityRec.reason || "Langkah tindak lanjut dari analisis AI."}
+                actionLabel="Lanjutkan Belajar"
+                onAction={() => navigate(recommendationTarget(priorityRec))}
+                iconRight={<IconArrowRight size={16} />}
+              />
+            ) : (
+              <AiRecommendation
+                title="Belum Ada Langkah Prioritas"
+                reason="Mulai dari peta materi untuk memilih konsep yang ingin dikerjakan — AI akan menyusun langkah berikutnya."
+                actionLabel="Mulai Belajar"
+                onAction={() => navigate("/learning-path")}
+                iconRight={<IconArrowRight size={16} />}
+              />
+            )}
+            <Grid cols={3} className="mt-8">
+              {metrics.map((m) => (
+                <MetricCell key={m.label} label={m.label} value={m.value} hint={m.hint} />
+              ))}
+            </Grid>
+          </>
         )}
-        <Grid cols={3} className="mt-8">
-          {metrics.map((m) => (
-            <MetricCell key={m.label} label={m.label} value={m.value} hint={m.hint} />
-          ))}
-        </Grid>
       </Reveal>
 
       {/* 02 — Analisis bukti belajar */}
@@ -346,10 +362,12 @@ export default function DashboardPage() {
         id="evidence"
         index="2"
         title="Analisis Bukti Belajar"
-        meta={`${evidenceRows.length} konsep`}
+        meta={isLoading ? undefined : `${evidenceRows.length} konsep`}
       />
       <Reveal>
-      {evidenceRows.length === 0 ? (
+      {isLoading ? (
+        <SkeletonLines count={4} className="mt-8 max-w-2xl" />
+      ) : evidenceRows.length === 0 ? (
         <p className={cx("mt-8 text-[13px]", MUTED)}>
           Belum ada bukti. Mulai asesmen untuk menghasilkan data.
         </p>
@@ -373,14 +391,20 @@ export default function DashboardPage() {
                   </span>
                 }
                 trailing={
-                  <span
-                    className={cx(
-                      "text-[15px] font-bold tabular-nums",
-                      score === null ? MUTED : INK
-                    )}
-                  >
-                    {score === null ? "—" : `${score}%`}
-                  </span>
+                  <>
+                    <span
+                      className={cx(
+                        "text-[15px] font-bold tabular-nums",
+                        score === null ? MUTED : INK
+                      )}
+                    >
+                      {score === null ? "—" : `${score}%`}
+                    </span>
+                    <IconChevronDown
+                      size={16}
+                      className={cx("transition-transform", isOpen && "rotate-180")}
+                    />
+                  </>
                 }
               >
                 <div className="grid grid-cols-3 gap-x-6 gap-y-6">

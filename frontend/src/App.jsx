@@ -4,8 +4,11 @@
 // ============================================================
 
 import React from "react";
-import { AuthProvider } from "./context/AuthContext";
+import { TransitionProvider } from "./context/TransitionContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
+import { DialogProvider } from "./context/DialogContext";
+import { AuthProvider } from "./context/AuthContext";
 import { DashboardFilterProvider } from "./context/DashboardFilterContext";
 import { RouterProvider, useRouter, ProtectedRoute, AdminRoute } from "./context/RouterContext";
 import Navbar from "./components/Navbar";
@@ -167,14 +170,20 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <RouterProvider>
-          <DashboardFilterProvider>
-            <AppContent />
-          </DashboardFilterProvider>
-        </RouterProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <TransitionProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <DialogProvider>
+            <AuthProvider>
+              <RouterProvider>
+                <DashboardFilterProvider>
+                  <AppContent />
+                </DashboardFilterProvider>
+              </RouterProvider>
+            </AuthProvider>
+          </DialogProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </TransitionProvider>
   );
 }

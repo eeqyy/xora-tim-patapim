@@ -11,6 +11,7 @@
 import React, { useEffect, useState } from "react";
 import { assessmentsApi, adminAssessmentsApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
+import { useDialog } from "../context/DialogContext";
 import {
   PageContainer,
   PageHeader,
@@ -18,7 +19,7 @@ import {
   SecondaryButton,
   Button,
   StatusBadge,
-  LoadingState,
+  SkeletonTable,
   EmptyState,
   Alert,
   TABLE_CLASS,
@@ -44,6 +45,7 @@ const CAPTION_CLASS = cx(
 
 export default function AdminAssessmentsPage() {
   const { navigate } = useRouter();
+  const { confirm } = useDialog();
 
   const [assessments, setAssessments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,9 +69,12 @@ export default function AdminAssessmentsPage() {
   }, []);
 
   const handleDelete = async (item) => {
-    const confirmed = window.confirm(
-      `Hapus asesmen "${item.title}" beserta seluruh soalnya?\n\nTindakan ini tidak bisa dibatalkan.`
-    );
+    const confirmed = await confirm({
+      title: `Hapus asesmen "${item.title}"?`,
+      description: "Seluruh soal di dalamnya ikut terhapus. Tindakan ini tidak bisa dibatalkan.",
+      confirmLabel: "Hapus",
+      tone: "danger",
+    });
     if (!confirmed) return;
 
     setError(null);
@@ -107,7 +112,7 @@ export default function AdminAssessmentsPage() {
         }
       />
 
-      {isLoading && <LoadingState message="Memuat daftar asesmen..." />}
+      {isLoading && <SkeletonTable rows={5} columns={4} className="mt-8" />}
 
       {error && !isLoading && <Alert tone="error">{error}</Alert>}
 

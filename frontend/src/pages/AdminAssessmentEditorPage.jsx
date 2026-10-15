@@ -22,6 +22,7 @@ import {
   adminQuestionsApi,
 } from "../services/api";
 import { useRouter } from "../context/RouterContext";
+import { useDialog } from "../context/DialogContext";
 import AssessmentMetaFields from "../components/AssessmentMetaFields";
 import {
   PageContainer,
@@ -258,6 +259,7 @@ function buildCorrectAnswer(form) {
 
 export default function AdminAssessmentEditorPage({ assessmentId }) {
   const { navigate } = useRouter();
+  const { confirm } = useDialog();
   const isNew = assessmentId === "new";
 
   const [meta, setMeta] = useState(EMPTY_META);
@@ -479,9 +481,12 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
   };
 
   const handleDeleteQuestion = async (question) => {
-    const confirmed = window.confirm(
-      `Hapus soal "${question.questionText.slice(0, 60)}"?\n\nSoal yang sudah dijawab peserta tidak bisa dihapus (409).`
-    );
+    const confirmed = await confirm({
+      title: "Hapus soal ini?",
+      description: `${question.questionText.slice(0, 60)}… — soal yang sudah dijawab peserta tidak bisa dihapus.`,
+      confirmLabel: "Hapus Soal",
+      tone: "danger",
+    });
     if (!confirmed) return;
 
     setQuestionNotice(null);
@@ -520,10 +525,16 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
     }
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     const hasUnsavedQuestion = showQuestionForm && questionForm.questionText.trim() !== "";
     if (metaDirty || hasUnsavedQuestion) {
-      const confirmed = window.confirm("Ada perubahan yang belum disimpan. Tinggalkan halaman ini?");
+      const confirmed = await confirm({
+        title: "Ada perubahan yang belum disimpan",
+        description: "Kalau keluar sekarang, perubahan tadi akan hilang.",
+        confirmLabel: "Tinggalkan",
+        cancelLabel: "Tetap di Sini",
+        tone: "danger",
+      });
       if (!confirmed) return;
     }
     navigate("/admin/assessments");

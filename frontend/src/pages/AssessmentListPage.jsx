@@ -415,7 +415,8 @@ export default function AssessmentListPage() {
               }
             />
           ) : null}
-          <Grid cols={3} className={coreAvailable.length > 0 ? "mt-8" : ""}>
+          {coreAvailable.length > 0 && (
+            <Grid cols={3} className="mt-8">
             {coreAvailable.map((cfg) => {
               const item = cfg.assessment;
               if (!item) return null;
@@ -504,7 +505,8 @@ export default function AssessmentListPage() {
                 </GridCell>
               );
             })}
-          </Grid>
+            </Grid>
+          )}
 
           {/* 03 — Asesmen Penguatan Terarah (Only shown if recommended) */}
           {recommendedRemedials.length > 0 && (

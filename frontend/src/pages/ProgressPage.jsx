@@ -29,7 +29,7 @@ import {
   OutlineButton,
   ProgressBar,
   EmptyState,
-  LoadingState,
+  SkeletonPage,
   ErrorState,
   Alert,
   MicroMeta,
@@ -131,7 +131,7 @@ export default function ProgressPage() {
   if (isLoading) {
     return (
       <PageContainer maxWidth="normal">
-        <LoadingState message="Memuat rekam jejak progres &amp; riwayat belajar Anda..." />
+        <SkeletonPage />
       </PageContainer>
     );
   }
