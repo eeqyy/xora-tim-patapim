@@ -220,6 +220,59 @@ import { CHIP_CLASS, CHIP_ACTIVE, CHIP_INACTIVE, cx } from "../components";
 </div>
 ```
 
+## Halaman publik (Beranda)
+- `HomePage` melayani dua audiens: **pengunjung** (belum masuk) melihat paparan
+  platform, dan **pengguna yang sudah masuk** melihat pintasan menu.
+- Bagian pengunjung memakai `SectionHeader` bernomor: `1 Apa Itu Xolearn`
+  (ikhtisar), `2 Alur Kerja` (4 langkah), `3 Kelebihan & Keterbatasan`
+  (dua kolom, `IconCheck` positif vs `IconAlertTriangle` perhatian),
+  `4 Mulai` (band `GlassPanel variant="brand"`).
+- **Alur Kerja berfoto**: grid 2 kolom (`Grid cols={2}`) — tiap langkah satu
+  `GridCell` (`border-t`/`HAIRLINE`) berisi **keterangan dulu, foto di
+  bawahnya**. Keterangan dibungkus `Reveal` ber-`flex-1` di dalam sel
+  `flex flex-col`, jadi foto selalu **rata bawah** sebaris dan jarak
+  teks→foto tetap seimbang (tidak ada kolom teks kosong di samping foto).
+  Di layar kecil otomatis jadi 1 kolom dengan urutan sama: nomor + judul +
+  deskripsi, lalu foto.
+- Fotonya di `public/alur/` dengan format **WebP** (jauh lebih ringan dari
+  JPEG: 8 berkas total ~152 KB, dari aslinya ~800 KB). Tiap langkah punya
+  dua versi: `*.webp` untuk mode terang dan `*-dark.webp` untuk mode gelap
+  (`kerjakan-asesmen`, `analisis-bukti`, `peta-kesenjangan`,
+  `latih-verifikasi`). Dirujuk sebagai `/alur/<nama>.webp`.
+- **Foto ikut ganti tema.** Sumbernya dipilih lewat `useTheme()` di
+  `StepPhoto` (bukan dua `<img>` dengan `dark:hidden`/`dark:block`), supaya
+  hanya satu berkas yang terunduh per tema. Karena `TransitionContext`
+  menjalankan perubahan tema setelah fase `cover` selesai, tukar foto ini
+  terjadi di balik overlay pixel dan tidak terlihat.
+- Foto **tidak di-crop**: pembungkusnya `rounded-3xl overflow-hidden`
+  dengan `<img className="block h-auto w-full">`, ditambah atribut
+  `width`/`height` agar tidak ada pergeseran tata letak saat dimuat.
+  Pakai `loading="lazy"` + `decoding="async"` dan `alt` deskriptif.
+  Kalau mengganti foto, jaga nama berkasnya agar tidak perlu ubah kode.
+  Konversi dari JPEG memakai `cwebp -q 80 -m 6 -mt -metadata none
+  asal.jpg -o tujuan.webp` (tanpa menambah dependency proyek).
+- Blok baru dibungkus `Reveal` (`{ delay }`) agar muncul halus; karena
+  `Reveal` tidak pernah menyembunyikan konten (`opacity` tetap 1), aman untuk
+  tangkapan layar penuh.
+- Jangan menambah angka/klaim yang tidak ada di aplikasi; tulis fitur apa
+  adanya (diagnosis, peta kesenjangan, remediasi, progres, kelola bank soal).
+
+## Halaman masuk & daftar (auth)
+- Susunan dua kolom: `lg:grid-cols-[1.05fr_minmax(0,1fr)]` +
+  `lg:items-center`. Sisi penjelasan (`<aside>`) memakai `order-2 lg:order-1`;
+  panel formulir (`GlassPanel variant="elevated"`) memakai `order-1 lg:order-2`
+  supaya di layar kecil formulir tampil lebih dulu.
+- Kedua halaman memakai `PageContainer maxWidth="normal"` — jangan `narrow`,
+  karena akan menjejalkan dua kolom.
+- Isi `<aside>` = `MicroMeta` + `DisplayHeading` + satu paragraf + daftar poin
+  bergaris `border-t` (`HAIRLINE`), mengikuti bahasa editorial biasa.
+- **Tombol lihat password**: tombol teks "Lihat" / "Sembunyikan" di dalam
+  pembungkus `relative` (`aria-pressed` + `aria-label`, target ≥44px); input
+  password diberi `className="pr-28"` agar teks tidak menabrak tombol. Hanya
+  `type` input yang berubah — validasi & alur data tidak disentuh.
+- Tombol kirim memakai `size="lg" fullWidth` + `loading={isSubmitting}`;
+  labelnya tetap berubah ("Sedang Memeriksa..." / "Mendaftarkan...").
+
 ## Aturan wajib
 1. **JANGAN ubah logika data**: state, `useEffect`, pemanggilan API, handler,
    validasi, `aria-*`, teks/`copy`, dan aturan bisnis harus tetap identik.
