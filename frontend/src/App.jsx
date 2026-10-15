@@ -3,7 +3,6 @@
 // frontend/src/App.jsx
 // ============================================================
 
-import React from "react";
 import { TransitionProvider } from "./context/TransitionContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
@@ -13,6 +12,7 @@ import { DashboardFilterProvider } from "./context/DashboardFilterContext";
 import { RouterProvider, useRouter, ProtectedRoute, AdminRoute } from "./context/RouterContext";
 import Navbar from "./components/Navbar";
 import BottomNav from "./components/BottomNav";
+import GradualBlur from "./components/GradualBlur";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -164,6 +164,19 @@ function AppContent() {
         {pageContent}
       </main>
       <BottomNav />
+      {/* Gradual Blur (ReactBits): konten melembut sebelum keluar tepi
+          bawah viewport. Di HP bagian bawah pita tertutup BottomNav,
+          jadi tingginya dilebihkan supaya rampa blur tetap terlihat
+          utuh di atas bar. z-index di bawah Navbar/BottomNav. */}
+      <GradualBlur
+        position="bottom"
+        height="7.5rem"
+        strength={2}
+        divCount={5}
+        curve="bezier"
+        exponential
+        zIndex={30}
+      />
     </div>
   );
 }

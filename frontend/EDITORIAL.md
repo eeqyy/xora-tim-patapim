@@ -27,9 +27,9 @@ Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index
   **SUSE Mono** untuk `h1`–`h4` (judul halaman & section). Angka memakai
   `tabular-nums`. `font-mono` HANYA untuk blok kode (`<pre>`/`<code>`) dan
   input jawaban kode.
-- **Palet (brand kit SUSE Mono + SUSE)**: `brand` = *azure* untuk CTA & pil
-  terisi (`bg-brand`, hover `bg-brand-hover`, teks putih); `accent` = *indigo
-  pekat* untuk teks/tautan/tab aktif/nomor section (`text-accent`);
+- **Palet (brand kit SUSE Mono + SUSE)**: `brand` = biru **diredam** untuk CTA
+  & pil terisi (`bg-brand`, hover `bg-brand-hover`, teks putih); `accent` =
+  indigo tua untuk teks/tautan/tab aktif/nomor section (`text-accent`);
   `ink` = indigo gelap `#040063` untuk teks utama; `warning` = pastel hangat
   (`bg-warning-soft` + `text-warning-ink`) untuk "perlu perhatian";
   `positive` (`bg-positive-soft` + `text-positive-strong`) untuk berhasil;
@@ -42,12 +42,19 @@ Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index
 - **Target sentuh ≥ 44–48px** untuk semua kontrol interaktif (sengaja lebih
   besar dari chip 38px template agar nyaman di mobile).
 - **Dual-mode**: tema gelap dikendalikan atribut `[data-theme="dark"]` pada
-  `<html>`; `brand` (azure) tetap, `accent`/`brand-soft`/`warning-strong`/
-  `error-strong`/`positive-strong`/`highlight` diterangkan otomatis di gelap,
-  permukaan/teks/garis bertukar.
+  `<html>`; `brand`/`accent`/`brand-soft`/`warning-strong`/`error-strong`/
+  `positive-strong`/`highlight` di-override di gelap, permukaan/teks/garis
+  bertukar.
+- **Biru pilihan pemilik produk**: biru untuk tombol/pil/aksen memakai
+  `rgb(13,99,194)` = `#0d63c2` (menggantikan primary brand kit `#1D4ED8`).
+  Terang: `brand #0d63c2`, `brand-hover #0a52a3`, `brand-soft #dceafb`,
+  `accent #0b4f9e`. Gelap: `brand #0d63c2` (sama), `brand-hover #1a72d4`,
+  `brand-soft #16294a`, `accent #7fb4ea`. Semua turunan memakai hue yang sama
+  (~207°) supaya tidak ada dua nada biru bercampur. Teks putih di atas
+  `bg-brand` = 5,9:1 (aman AA). Jangan diganti tanpa persetujuan.
 - **Mode gelap diredam**: kanvas/sel/garis gelap memakai hue indigo yang sama
   tetapi saturasi rendah (`canvas-dark #0c0c22`, `cell-dark #1b1c44`,
-  `hairline-dark #3b3d75`, `rule-dark #5a5da6`, `brand-soft #202253`). Bidang
+  `hairline-dark #3b3d75`, `rule-dark #5a5da6`, `brand-soft #16294a`). Bidang
   luas tidak boleh memakai biru pekat (mis. `#040063` penuh) karena menyilaukan;
   garis tetap ≥1.8:1 dan teks tetap ≥4.5:1 di atas kanvas baru.
 
@@ -60,7 +67,7 @@ Primitif bersama: `src/components/ui/index.jsx` dan barrel `src/components/index
 | Teks redup | `text-muted` | `dark:text-muted-dark` |
 | Garis (baris/item) | `border-hairline` | `dark:border-hairline-dark` |
 | Garis section & PageHeader | `border-rule` (full-bleed) | `dark:border-rule-dark` |
-| Brand (isi) | `bg-brand` / `bg-brand-hover` | idem (azure) |
+| Brand (isi) | `bg-brand` / `bg-brand-hover` | idem (biru sama) |
 | Aksen (teks) | `text-accent` / `text-accent-hover` | override tema (lebih terang) |
 | Band pesan inti / aksen lembut | `bg-brand-soft` | override tema (indigo gelap) |
 | Peringatan | `bg-warning-soft` + `text-warning-ink` | override tema |
@@ -100,6 +107,10 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
   offset memakai CSS var `--header-h` yang di-set `Navbar` (tinggi header nyata,
   termasuk ContextPicker), fallback `68px`. Set `sticky={false}` bila tidak
   diinginkan.
+- `ScrollText` — judul yang beranimasi saat bergulir (`{ variant: "display" |
+  "label", className, as }`). `PageHeader` dan `SectionHeader` sudah memakainya
+  otomatis untuk `title` bertipe string; hanya perlu dipakai manual kalau ada
+  judul lain yang ingin ikut. Detail & angkanya di "Aturan wajib" no. 7.
 - `Grid` — `{ cols }` (1, 2, 3, 4, 6), `grid gap-x-8 gap-y-10`. Tambahkan
   `className="mt-8"` bila langsung setelah `SectionHeader`.
 - `GridCell` — `min-w-0 border-t pt-5` (sudah bergaris atas). JANGAN tambah
@@ -161,6 +172,13 @@ sans, uppercase, `tracking` lebar, `tabular-nums`.
   `prefers-reduced-motion`.
 - **Padanan makna**: `IconClipboard` = Asesmen, `IconSettings` = Sistem,
   `IconBandage` = Remediasi, `IconDiagnose` = event diagnostik.
+- **Ikon di dalam tombol**: selalu duduk di kotak bersumbu tetap
+  (`inline-flex h-4 w-4 shrink-0 items-center justify-center`). Kalau ikon
+  bergerak saat state berubah (mis. indikator terbuka/tertutup), gunakan
+  pembesaran (`icon-zoom`, scale 1.08 saat hover) — **bukan** putaran, karena
+  putaran membuat posisi ikon terlihat bergeser antara sebelum & sesudah.
+- **Tombol "Menu Admin" (Navbar)** sengaja dibedakan dari tautan lain: pil
+  penuh `bg-brand text-white` (hover `bg-brand-hover`), bukan gaya tautan biasa.
 
 ## Kerangka halaman standar
 ```jsx
@@ -206,6 +224,29 @@ import { CHIP_CLASS, CHIP_ACTIVE, CHIP_INACTIVE, cx } from "../components";
     </thead>
     <tbody>
       <tr><td className={TD_CLASS}>...</td></tr>
+    </tbody>
+  </table>
+</div>
+```
+
+### Tabel → kartu di HP (`table-cards`)
+Tabel yang isinya penting **tidak boleh** perlu digeser ke samping di HP.
+Tambahkan kelas `table-cards` pada pembungkus dan `data-label="Nama kolom"`
+pada setiap `<td>` (kolom pertama `th scope="row"` dan kolom aksi dibiarkan
+tanpa label supaya jadi judul/tombol kartu). Di bawah 640px (lihat
+`index.css`) `thead` disembunyikan secara visual, tiap baris jadi kartu
+dipisah garis horizontal, dan label kolom muncul dari `data-label`. Di layar
+lebar tampilannya tetap tabel biasa (label tidak dirender).
+```jsx
+<div className={cx("table-cards mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+  <table className={TABLE_CLASS}>
+    <thead><tr><th scope="col" className={TH_CLASS}>Subjek</th></tr></thead>
+    <tbody>
+      <tr>
+        <th scope="row" className={cx(TD_CLASS, "font-bold")}>Judul</th>
+        <td className={TD_CLASS} data-label="Subjek">Matematika</td>
+        <td className={TD_CLASS}>…aksi…</td>
+      </tr>
     </tbody>
   </table>
 </div>
@@ -273,6 +314,70 @@ import { CHIP_CLASS, CHIP_ACTIVE, CHIP_INACTIVE, cx } from "../components";
 - Tombol kirim memakai `size="lg" fullWidth` + `loading={isSubmitting}`;
   labelnya tetap berubah ("Sedang Memeriksa..." / "Mendaftarkan...").
 
+## Halaman admin (Panel, Asesmen, Pengguna, Sistem, AI, Editor)
+Area admin memakai bahasa yang **sama** dengan dashboard pelajar supaya tidak
+terasa berbeda: bagian bernomor (`SectionHeader index`), garis horizontal
+sebagai pemisah, `Reveal` untuk animasi masuk, skeleton saat memuat, dan
+akordeon untuk isi panjang.
+- **Panel (`/admin`)** — `01 Ringkasan Cepat` (4 `MetricCell` dari
+  `GET /api/admin/system/stats`; endpoint yang sama dengan halaman Sistem,
+  jadi tidak ada data baru) lalu `02 Menu Admin` (`Grid cols={2}`, tiap sel
+  `GlassPanel` ber-`onClick` + nomor + ikon + panah `icon-go-right`). Saat
+  statistik gagal dimuat, panel tetap bisa dipakai (hanya muncul `Alert`).
+- **Pencarian & filter** — pil `FilterChips` + `Input` diterapkan **otomatis**
+  (ketikan ditahan ±320ms), bukan lewat tombol "Terapkan". Pengurutan di
+  `Select` berlaku untuk tampilan yang sedang dimuat. `Reset` muncul hanya
+  saat ada filter aktif.
+- **Tabel** — semua tabel admin memakai `table-cards` + `data-label` supaya
+  di HP jadi daftar kartu (lihat bagian Tabel).
+- **Aktivitas panjang** (Event Belajar, Audit Log) memakai `AccordionRow`
+  satu baris per kejadian — ringkas, bisa dibuka satu per satu, dan tidak
+  butuh tabel. Detail (pelaku/entitas/waktu) ada di dalam `dl`.
+- **Umpan balik aksi** — `useToast()` (`success`/`error`) untuk hasil aksi
+  (simpan, aktifkan, hapus, muat ulang); `Alert` inline hanya untuk error yang
+  perlu dibaca sambil memperbaiki isian. Konfirmasi tetap lewat `useDialog()`.
+- **Form panjang** (form provider di halaman AI) boleh dilipat dengan
+  `AccordionRow` — biarkan **terbuka secara default** supaya aksi utama tidak
+  tersembunyi, dan otomatis terbuka saat pengguna menekan "Ubah".
+
+## Halaman materi (Jalur Belajar)
+
+Struktur materi harus terbaca berlapis dan **setiap batas punya garisnya
+sendiri**, bukan mengandalkan latar/kotak:
+
+```
+GARIS (RULE)                 ← batas bagian materi
+JUDUL MATERI UTAMA (tingkat)
+GARIS (RULE)
+label "Daftar Topik & Konsep Materi"
+materi turunan (grid topik + konsep, tiap sel `GridCell` = HAIRLINE)
+GARIS (RULE)                 ← garis penutup / pembuka bagian berikutnya
+```
+
+- Judul materi utama **tidak** memakai kotak berisi (`GlassPanel`) — pemisahnya
+  garis + ruang kosong, sesuai prinsip “tanpa kotak”.
+- **Judul materi di HP menumpuk rata kiri**: label tingkat, judul, keterangan,
+  lalu badge — semuanya mulai di tepi kiri yang sama (jangan menaruh judul
+  sebaris label di layar sempit, karena teksnya jadi menjorok & bergerigi).
+  Baru di `md:` label kembali sebaris dengan judul.
+- Garis batas antar-materi memakai `RULE` (lebih tegas dari `HAIRLINE`);
+  `HAIRLINE` hanya untuk pemisah baris/item di dalam satu materi.
+- **Garis menyala** dengan dua pemicu:
+  - *Desktop*: kursor di blok materinya — `group/level` pada bagian materi +
+    garis ber-`group-hover/level:border-brand` &
+    `group-hover/level:shadow-[0_0_16px_var(--color-brand)]`.
+  - *HP* (tanpa hover): posisi gulir — bagian materi / sel yang berada di
+    **tengah layar** menyala. Pemicunya komponen `CenterActive`
+    (`rootMargin: -50% 0 -50% 0`) yang memasang kelas `is-lit`; gaya nyalanya
+    ada di `index.css` (`.is-lit .rule-lit`, `.is-lit.cell-line::before`).
+    Hanya hidup di `(max-width: 767px), (hover: none)` supaya desktop tidak
+    dobel pemicu.
+- Garis materi turunan (`cell-line`) digambar sebagai pita tipis 1px tepat di
+  atas garis hairline sel (`::before`, `top: -1px`) supaya cahayanya hanya
+  menempel di garis, bukan mengelilingi kotak. Untuk ini `GridCell` meneruskan
+  `ref` (dipakai `as={GridCell}` pada `CenterActive`).
+- Garis batas materi dibuat dari elemen setinggi 0 (`border-t`) — alasan sama.
+
 ## Aturan wajib
 1. **JANGAN ubah logika data**: state, `useEffect`, pemanggilan API, handler,
    validasi, `aria-*`, teks/`copy`, dan aturan bisnis harus tetap identik.
@@ -288,8 +393,37 @@ import { CHIP_CLASS, CHIP_ACTIVE, CHIP_INACTIVE, cx } from "../components";
 7. Motion hanya CSS + `IntersectionObserver` (`Reveal` / kelas `.reveal`);
    tanpa dependency runtime baru (no framer-motion/GSAP).
    - **Teks masuk**: kelas `.enter-rise` (geser 9px + opacity `.45 → 1`, ±440ms)
-     sudah dipasang di `PageHeader` (badge → judul → lede) dan `SectionHeader`
-     (index/judul → meta). Stagger lewat `style={{ "--i": n }}` (kelipatan 55ms).
+     dipasang di `PageHeader` (badge → lede) dan `SectionHeader` (index → meta).
+     Stagger lewat `style={{ "--i": n }}` (kelipatan 55ms).
+   - **Judul saat bergulir** (`ScrollText`): judul halaman (`PageHeader` →
+     `variant="display"`) dan judul bagian (`SectionHeader` → `variant="label"`)
+     dipecah per kata + per huruf, lalu dianimasikan saat elemen masuk viewport.
+     Port dari ReactBits — "Scroll Reveal" **dipadukan** dengan "Scroll Float"
+     (lisensi MIT), yang aslinya butuh `gsap` + `ScrollTrigger`:
+       • per KATA  — muncul dari kabur (blur 3px → 0) + opacity `.3 → 1`
+         (Scroll Reveal: `baseOpacity .1`, `blurStrength 4`, stagger `.05`);
+       • per HURUF — naik dari bawah sambil memanjang lalu tegak
+         (Scroll Float: `yPercent 120`, `scaleY 2.3`, `scaleX 0.7`,
+         `transformOrigin 50% 0%`), hanya `variant="display"`;
+       • wadah `variant="display"` sedikit miring lalu tegak (aslinya
+         `rotate: 3deg`, `transformOrigin 0% 50%`).
+     Angka di sini: transform 560ms (stagger huruf 16ms), opacity/blur 520ms
+     (stagger kata 55ms), putaran wadah 720ms.
+     **Yang berbeda dari aslinya**: bukan `scrub` yang mengikuti posisi gulir,
+     melainkan sekali jalan saat masuk viewport — sama seperti `Reveal` /
+     `.enter-rise` di proyek ini. Jadi tidak ada dependency baru dan tidak ada
+     `scroll` listener; kalau butuh benar-benar terikat posisi gulir, pakai CSS
+     `animation-timeline: view()` (native), jangan tambah library.
+     Aturan CSS: transisi **hanya** boleh ada di keadaan akhir (`.is-in`).
+     Kalau ditaruh di `.is-run` (keadaan awal), pemasangan keadaan awal ikut
+     beranimasi sehingga animasinya hilang — sudah pernah kena.
+     Konten tidak pernah disembunyikan: keadaan awal (opacity `.3` + blur)
+     hanya hidup selama animasi; setelah selesai kelasnya **dilepas** sehingga
+     DOM kembali jadi teks biasa persis seperti sebelumnya (aman untuk
+     `truncate` di `SectionHeader` sticky, termasuk ellipsis-nya).
+     Kalau observer tidak jalan atau `prefers-reduced-motion`, judul tampil apa
+     adanya. `title` yang bukan string diteruskan utuh tanpa dipecah, dan semua
+     pecahan dirakit ulang tanpa menghilangkan spasi antar kata.
    - **Ganti tema (terang ⇄ gelap)**: transisi "pixel swap" lewat
      `usePixelTransition().run(fn, { targetTheme })` — overlay pixel menutup
      layar, `fn` dijalankan saat layar tertutup, lalu dibuka lagi. Palet pixel
@@ -344,6 +478,26 @@ import { CHIP_CLASS, CHIP_ACTIVE, CHIP_INACTIVE, cx } from "../components";
      di `commitLocation` dan `.enter-rise` bermain di halaman baru.
    - **Akordeon** (`AccordionRow`): tinggi dianimasikan dengan trik grid
      `0fr → 1fr`; isinya tetap ter-mount dan ditandai `aria-hidden` saat tertutup.
+   - **Tepi layar melembut** (*GradualBlur*): pita tetap di tepi bawah viewport
+     supaya konten yang bergulir keluar terlihat kabur dulu — scroll jadi
+     terasa enak. Dipasang **sekali** di `App.jsx`; sumbernya ReactBits
+     "Gradual Blur" (github.com/DavidHDev/react-bits, lisensi MIT), varian
+     JS + Tailwind, di-port ke `components/GradualBlur.jsx` + kelas pembungkus
+     di `index.css`. Matematika aslinya dipertahankan: `divCount` lapisan
+     `backdrop-filter` yang makin ke tepi makin kuat (kurva `bezier`, mode
+     `exponential`), tiap lapisan dipotong `mask-image: linear-gradient` yang
+     bergeser satu langkah. Angka di sini: `height 7.5rem`, `strength 2`,
+     `divCount 5`. Dibuang dari aslinya: preset, responsive, `hoverIntensity`,
+     `animated`/`"scroll"`, `target`.
+     Aturan: ini **hanya hiasan** — `pointer-events: none` + `aria-hidden`,
+     jadi klik tetap tembus ke konten. `position: fixed`, `bottom: 0`,
+     `z-index: 30` yaitu **di bawah** Navbar (50) dan BottomNav (40) supaya
+     bar-nya tidak ikut kabur. Di HP BottomNav (±68px) menutup bagian bawah
+     pita, jadi tinggi pita sengaja dilebihkan agar rampa blur tetap penuh
+     terlihat di atas bar. Karena cuma filter statis (tanpa gerak), ia tidak
+     perlu dimatikan saat `prefers-reduced-motion`; browser tanpa
+     `backdrop-filter` cuma dapat gradasi warna kanvas (`@supports` di
+     `index.css`).
    - Semua animasi berhenti saat `prefers-reduced-motion: reduce`, dan tidak ada
      konten yang disembunyikan dengan `opacity: 0` (aman untuk tangkapan layar).
 8. Setelah selesai: jalankan `cd frontend && npm run build` dan pastikan sukses.

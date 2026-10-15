@@ -4,7 +4,7 @@
 // frontend/src/pages/AssessmentResultPage.jsx
 // ============================================================
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { assessmentsApi, recommendationsApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
 import {

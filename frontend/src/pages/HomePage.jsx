@@ -10,7 +10,6 @@
 // Pemisah = garis horizontal + ruang kosong (tanpa grid kotak).
 // ============================================================
 
-import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { Link, useRouter } from "../context/RouterContext";
@@ -25,7 +24,7 @@ import {
   Grid,
   GridCell,
   MicroMeta,
-  Reveal,
+  AnimatedContent,
   Alert,
   HAIRLINE,
   INK,
@@ -239,7 +238,7 @@ export default function HomePage() {
         <>
           {/* 1 — Apa itu Xolearn */}
           <SectionHeader index="1" title="Apa Itu Xolearn" meta="Ikhtisar" />
-          <Reveal>
+          <AnimatedContent distance={40}>
             <SectionLede>
               Xolearn membantu pengajar dan siswa memahami <em>bukan hanya seberapa
               tinggi nilainya</em>, tetapi konsep mana yang belum terkuasai dan mengapa.
@@ -248,7 +247,7 @@ export default function HomePage() {
             <Grid cols={3} className="mt-2">
               {OVERVIEW.map((item, i) => (
                 <GridCell key={item.title}>
-                  <Reveal delay={i}>
+                  <AnimatedContent distance={40} delay={i * 90}>
                     <span className={cx("block", INK)}>{item.icon}</span>
                     <h3 className={cx("mt-3 text-[15px] font-bold leading-snug", INK)}>
                       {item.title}
@@ -256,26 +255,26 @@ export default function HomePage() {
                     <p className={cx("mt-2 text-[13px] leading-relaxed", MUTED)}>
                       {item.desc}
                     </p>
-                  </Reveal>
+                  </AnimatedContent>
                 </GridCell>
               ))}
             </Grid>
-          </Reveal>
+          </AnimatedContent>
 
           {/* 2 — Alur kerja: keterangan dulu, foto di bawahnya */}
           <SectionHeader index="2" title="Alur Kerja" meta="4 Langkah" />
-          <Reveal>
+          <AnimatedContent distance={40}>
             <SectionLede>
               Satu putaran belajar berjalan berurutan. Setelah verifikasi, siklusnya
               bisa berulang untuk konsep berikutnya sampai pemahaman benar-benar mantap.
             </SectionLede>
-          </Reveal>
+          </AnimatedContent>
 
           <Grid cols={2} className="mt-2">
             {WORKFLOW.map((step) => (
               <GridCell key={step.marker} className="flex flex-col">
                 {/* Keterangan langkah — tumbuh, jadi foto selalu rata bawah */}
-                <Reveal className="flex flex-1 flex-col">
+                <AnimatedContent distance={40} className="flex flex-1 flex-col">
                   <div className="flex items-center gap-3">
                     <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold tabular-nums text-accent">
                       {step.marker}
@@ -288,19 +287,19 @@ export default function HomePage() {
                   <p className={cx("mt-2 max-w-xl text-[14px] leading-relaxed", MUTED)}>
                     {step.desc}
                   </p>
-                </Reveal>
+                </AnimatedContent>
 
                 {/* Foto langkah — rasio asli dipertahankan (tanpa crop) */}
-                <Reveal delay={1} className="mt-6">
+                <AnimatedContent distance={40} delay={150} className="mt-6">
                   <div className="overflow-hidden rounded-3xl bg-cell dark:bg-cell-dark">
                     <StepPhoto step={step} isDark={isDark} />
                   </div>
-                </Reveal>
+                </AnimatedContent>
               </GridCell>
             ))}
           </Grid>
 
-          <Reveal>
+          <AnimatedContent distance={40}>
             <Alert tone="info" className="mt-8">
               <span className="shrink-0 text-accent">
                 <IconInfo size={18} />
@@ -310,11 +309,11 @@ export default function HomePage() {
                 setiap sesi menutup satu celah pemahaman sebelum lanjut ke materi berikutnya.
               </span>
             </Alert>
-          </Reveal>
+          </AnimatedContent>
 
           {/* 3 — Kelebihan & keterbatasan */}
           <SectionHeader index="3" title="Kelebihan & Keterbatasan" meta="Penilaian Objektif" />
-          <Reveal>
+          <AnimatedContent distance={40}>
             <SectionLede>
               Xolearn dipakai sebagai alat bantu diagnostik, bukan penentu tunggal.
               Berikut hal yang jadi kekuatannya sekaligus batas yang perlu diketahui.
@@ -348,11 +347,11 @@ export default function HomePage() {
                 />
               </GridCell>
             </Grid>
-          </Reveal>
+          </AnimatedContent>
 
           {/* 4 — Mulai */}
           <SectionHeader index="4" title="Mulai" meta="Gratis untuk Siswa" />
-          <Reveal>
+          <AnimatedContent distance={40}>
             <GlassPanel variant="brand" className="p-6 md:p-10">
               <MicroMeta>Langkah pertama</MicroMeta>
               <h3 className={cx("mt-3 max-w-2xl text-[24px] font-extrabold leading-tight tracking-tight md:text-[30px]", INK)}>
@@ -375,7 +374,7 @@ export default function HomePage() {
                 </OutlineButton>
               </div>
             </GlassPanel>
-          </Reveal>
+          </AnimatedContent>
         </>
       )}
 

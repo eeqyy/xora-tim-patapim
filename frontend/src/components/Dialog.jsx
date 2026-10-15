@@ -10,7 +10,7 @@
 // adalah DialogContext (confirm / prompt).
 // ============================================================
 
-import React, { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { cx, HAIRLINE, INK, MUTED } from "./ui";
 
 export default function Dialog({

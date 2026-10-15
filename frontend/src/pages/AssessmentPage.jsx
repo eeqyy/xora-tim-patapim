@@ -8,7 +8,7 @@
 // markup/className/struktur visual yang dimigrasi.
 // ============================================================
 
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { assessmentsApi, diagnosticsApi, recommendationsApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
 import {
@@ -56,8 +56,6 @@ export default function AssessmentPage({
   const [assessment, setAssessment] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [attempt, setAttempt] = useState(null);
-  const [verificationData, setVerificationData] = useState(null);
-  const [practiceData, setPracticeData] = useState(null);
 
   // Flow State: pre-start (false) vs answering (true) vs reviewing (true)
   const [isStarted, setIsStarted] = useState(false);
@@ -90,7 +88,6 @@ export default function AssessmentPage({
             throw new Error("Gagal menginisiasi sesi verifikasi diagnostik.");
           }
           const vData = vRes.data;
-          setVerificationData(vData);
           setAssessment(vData.assessment);
           setAttempt(vData.attempt);
 
@@ -111,7 +108,6 @@ export default function AssessmentPage({
             throw new Error("Gagal menginisiasi sesi latihan remediasi.");
           }
           const pData = pRes.data;
-          setPracticeData(pData);
           setAssessment(pData.assessment);
           setAttempt(pData.attempt);
 
@@ -446,7 +442,6 @@ export default function AssessmentPage({
 
   const isLocked = assessment.learner_status?.is_locked === true;
   const hasActiveSession = Boolean(assessment.learner_status?.active_attempt_id || attempt?.id);
-  const coveredTopics = Array.isArray(assessment.covered_topics) ? assessment.covered_topics : [];
 
   // ============================================================
   // STAGE 1: PRE-START INSTRUCTION VIEW

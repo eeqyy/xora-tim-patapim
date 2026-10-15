@@ -9,7 +9,6 @@
 // (light) yang otomatis jadi indigo gelap di mode gelap.
 // ============================================================
 
-import React from "react";
 import GlassPanel from "./GlassPanel";
 import StatusBadge from "./StatusBadge";
 import { PrimaryButton } from "./Button";

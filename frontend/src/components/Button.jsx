@@ -6,7 +6,6 @@
 // agar ramah target sentuh. Warna mono + aksen azure.
 // ============================================================
 
-import React from "react";
 import { cx } from "./ui";
 
 const VARIANT_CLASSES = {

@@ -8,7 +8,6 @@
 // memakai sudut pil besar + latar lembut, tanpa border kotak.
 // ============================================================
 
-import React from "react";
 import { cx } from "./ui";
 
 const VARIANT_CLASSES = {

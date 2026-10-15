@@ -6,7 +6,6 @@
 // isian mengikuti variant (aksen azure untuk primary).
 // ============================================================
 
-import React from "react";
 import { MicroMeta, cx } from "./ui";
 
 const HEIGHT = {

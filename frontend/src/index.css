@@ -7,8 +7,11 @@
    garis horizontal (hairline) + ruang kosong sebagai pemisah.
    Dual-mode via [data-theme].
    Palet brand kit: teks navy #040063, primary #1D4ED8, accent
-   #0222AF, border #DCDBE9 — dibuat pastel. Mode gelap memakai
-   latar navy #040063 (tile gelap brand kit) + aksen pastel.
+   #0222AF, border #DCDBE9 — dibuat pastel. Biru untuk tombol/pil/
+   aksen memakai warna pilihan pemilik produk, rgb(13,99,194)
+   = #0d63c2 (lihat `--color-brand`/`--color-accent`).
+   Mode gelap memakai latar navy #040063 (tile gelap brand kit)
+   dengan biru yang sama + aksen lebih terang.
    ============================================================ */
 @import "tailwindcss";
 
@@ -25,14 +28,18 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 
-  /* Warna utama — primary blue brand kit (isi tombol, pil, tab aktif) */
-  --color-brand: #1d4ed8;
-  --color-brand-hover: #1a44c2;
-  --color-brand-soft: #e2e7fc;
+  /* Warna utama — biru pilihan pemilik produk (rgb(13,99,194) = #0d63c2)
+     menggantikan primary brand kit #1D4ED8 yang terasa menyala.
+     Hover, varian lembut, dan aksen diturunkan dari hue yang sama.
+     Jangan diganti tanpa persetujuan. */
+  --color-brand: #0d63c2;
+  --color-brand-hover: #0a52a3;
+  --color-brand-soft: #dceafb;
 
-  /* Aksen interaktif — blue pekat (tautan, nomor, tab aktif) */
-  --color-accent: #0222af;
-  --color-accent-hover: #011b8c;
+  /* Aksen interaktif — versi lebih tua dari biru di atas (tautan, nomor,
+     tab aktif) supaya tetap nyaman dibaca sebagai teks */
+  --color-accent: #0b4f9e;
+  --color-accent-hover: #093f80;
 
   /* Perhatian (kesenjangan perlu verifikasi) — peach pastel */
   --color-warning: #f8cda4;
@@ -93,9 +100,13 @@
   html[data-theme="dark"] {
     background-color: var(--color-canvas-dark);
     color: var(--color-ink-dark);
-    --color-brand-soft: #202253;
-    --color-accent: #aabcff;
-    --color-accent-hover: #c8d4ff;
+    /* Biru mode gelap memakai warna yang sama (#0d63c2) sesuai
+       permintaan; aksen & varian lembut diturunkan dari hue itu. */
+    --color-brand: #0d63c2;
+    --color-brand-hover: #1a72d4;
+    --color-brand-soft: #16294a;
+    --color-accent: #7fb4ea;
+    --color-accent-hover: #9cc8f2;
     --color-warning-soft: #3a2c12;
     --color-warning-ink: #f8cda4;
     --color-warning-strong: #f8cda4;
@@ -160,23 +171,35 @@
 }
 
 /* ---------------------------------------------
-   Motion editorial ringan (pure CSS + observer)
-   --------------------------------------------- */
+   Konten masuk (.ac — AnimatedContent)
+   ---------------------------------------------
+   Port dari ReactBits "AnimatedContent" (MIT) tanpa gsap/ScrollTrigger.
+   Keadaan awal dipasang dari JS (`.is-run`) saat elemen masuk viewport,
+   lalu `.is-in` menjalankan transisinya; sisanya murni CSS.
+   Konten TIDAK pernah disembunyikan — titik awal (opacity `.3` +
+   geser `--ac-from`) hanya hidup selama animasi berjalan, jadi tetap
+   terbaca walau observer belum menyala (mis. tangkapan layar penuh).
+   Easing `power3.out` seperti aslinya; angka per pemakaian lewat
+   variabel `--ac-*` yang di-set komponen.
+   Kelas dilepas setelah selesai, jadi DOM kembali markup biasa. */
 @media (prefers-reduced-motion: no-preference) {
-  /* Konten TIDAK pernah disembunyikan (opacity tetap 1) supaya selalu
-     terlihat walau observer belum menyala (mis. render/screenshot
-     full-page). Animasi reveal = geser halus saja. */
-  .reveal {
-    opacity: 1;
-    transform: translateY(16px);
-    transition: transform 0.7s cubic-bezier(0.2, 0.75, 0.15, 1);
-    transition-delay: calc(var(--i, 0) * 45ms);
-    will-change: transform;
+  /* KEADAAN AWAL — tanpa transisi, supaya saat kelas dipasang hasilnya
+     langsung (kalau transisinya ada di sini, pemasangan keadaan awal ikut
+     beranimasi dan animasinya jadi tidak terlihat). */
+  .ac.is-run:not(.is-in) {
+    opacity: var(--ac-from-o, 1);
+    transform: var(--ac-from, none);
+    filter: var(--ac-blur, none);
   }
 
-  .reveal[data-seen="true"] {
+  /* KEADAAN AKHIR + transisi */
+  .ac.is-in {
+    opacity: 1;
     transform: none;
-    will-change: auto;
+    filter: none;
+    transition: opacity var(--ac-dur, 800ms) var(--ac-ease, ease-out) var(--ac-delay, 0ms),
+      transform var(--ac-dur, 800ms) var(--ac-ease, ease-out) var(--ac-delay, 0ms),
+      filter var(--ac-dur, 800ms) var(--ac-ease, ease-out) var(--ac-delay, 0ms);
   }
 }
 
@@ -241,40 +264,46 @@
   html {
     scroll-behavior: auto;
   }
-
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
 }
 
 /* ---------------------------------------------
-   Teks masuk (.enter-rise)
-   ---------------------------------------------
-   Dipakai judul & lede di PageHeader / SectionHeader. Sama seperti
-   `.reveal`, konten TIDAK pernah disembunyikan: titik awal opacity
-   `.45` + geser 9px, jadi teks selalu terbaca walau animasi belum
-   sempat berjalan (mis. pada tangkapan layar penuh).
-   Stagger antar baris lewat variabel `--i`. */
-@keyframes enter-rise {
-  from {
-    opacity: 0.45;
-    transform: translateY(9px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+   Teks lipat (Fold Text — paper fold)
+   --------------------------------------------- */
+.ft {
+  display: inline-block;
+  perspective: var(--ft-perspective, 800px);
+  line-height: 1.15;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.ft-inner {
+  display: inline-block;
+  transform-style: preserve-3d;
+}
+.ft-char {
+  display: inline-block;
+  vertical-align: text-bottom;
+  transform-origin: var(--ft-hinge, center center);
+  will-change: transform, filter, opacity;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .enter-rise {
-    animation: enter-rise 440ms cubic-bezier(0.2, 0.75, 0.15, 1) both;
-    animation-delay: calc(var(--i, 0) * 55ms);
+  .ft.is-run:not(.is-in) .ft-char {
+    transform: rotateX(var(--ft-angle, 90deg)) scaleY(0.25);
+    opacity: 0.4;
+    filter: brightness(calc(1 - var(--ft-shade, 0.55) * 0.5));
+  }
+  .ft.is-in .ft-char {
+    transform: none;
+    opacity: 1;
+    filter: none;
+    transition:
+      transform var(--ft-dur, 650ms) var(--ft-ease, ease-out) var(--ft-delay, 0ms),
+      filter var(--ft-dur, 650ms) var(--ft-ease, ease-out) var(--ft-delay, 0ms),
+      opacity var(--ft-dur, 650ms) ease var(--ft-delay, 0ms);
   }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .enter-rise {
     animation: none;
@@ -375,5 +404,162 @@ html[data-theme="dark"] dialog.dialog-panel::backdrop {
 @media (prefers-reduced-motion: reduce) {
   .accordion-region {
     transition: none;
+  }
+}
+
+/* ---------------------------------------------
+   Gradual Blur (port ReactBits) — pita tepi layar
+   ---------------------------------------------
+   Lapisan blur-nya dibuat di JS (components/GradualBlur.jsx);
+   di sini hanya pembungkus, `isolation` supaya `backdrop-filter`
+   mengambil latar halaman, dan fallback untuk browser lama. */
+.gradual-blur {
+  isolation: isolate;
+}
+
+.gradual-blur-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Browser tanpa backdrop-filter: cukup gradasi warna kanvas, supaya
+   tepi layar tetap melembut dan tidak ada pita gelap asing. */
+@supports not (backdrop-filter: blur(1px)) {
+  .gradual-blur-inner > div {
+    background: color-mix(in srgb, var(--color-canvas) 22%, transparent);
+  }
+
+  html[data-theme="dark"] .gradual-blur-inner > div {
+    background: color-mix(in srgb, var(--color-canvas-dark) 26%, transparent);
+  }
+}
+
+/* ---------------------------------------------
+   Garis materi yang menyala (halaman Jalur Belajar)
+   ---------------------------------------------
+   Garis batas materi menyala biru saat blok materinya di-hover
+   (desktop) atau saat blok materi berada di tengah layar (HP).
+   Kelas `is-lit` dipasang oleh `CenterActive` (LearningPathPage).
+   Gaya ini sengaja tanpa layer supaya menang atas token tema. */
+.is-lit .rule-lit {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 16px var(--color-brand);
+}
+
+/* Pita tipis tepat di atas garis hairline sel materi turunan —
+   cahaya hanya menempel di garisnya, bukan mengelilingi kotak. */
+.cell-line {
+  position: relative;
+}
+
+.cell-line::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  pointer-events: none;
+  background: transparent;
+  transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+/* Desktop: kursor berada di bagian materi turunan. */
+@media (hover: hover) {
+  .cell-line:hover::before {
+    background: var(--color-brand);
+    box-shadow: 0 0 14px var(--color-brand);
+  }
+}
+
+/* HP: materi turunan yang berada di tengah layar. */
+.is-lit.cell-line::before {
+  background: var(--color-brand);
+  box-shadow: 0 0 14px var(--color-brand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell-line::before {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------
+   Tabel → daftar kartu di layar sempit (<=640px)
+   ---------------------------------------------
+   Aturan: di HP tidak boleh ada tabel yang harus digeser ke
+   samping. Tiap baris berubah jadi kartu (pemisah = garis
+   horizontal + ruang kosong), dan nama kolomnya dipindah ke
+   tiap sel lewat atribut `data-label` pada <td>.
+   Pakai dengan menambahkan kelas `table-cards` pada pembungkus
+   tabel (lihat halaman admin). Kolom pertama (th scope="row")
+   tanpa label supaya langsung terbaca sebagai judul kartu. */
+@media (max-width: 640px) {
+  .table-cards {
+    overflow: visible;
+    border: 0;
+  }
+
+  .table-cards table,
+  .table-cards thead,
+  .table-cards tbody,
+  .table-cards tr,
+  .table-cards th,
+  .table-cards td {
+    display: block;
+  }
+
+  /* Judul kolom hanya untuk pembaca layar (label ada di tiap sel). */
+  .table-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .table-cards caption {
+    padding: 0 0 12px;
+    text-align: left;
+  }
+
+  .table-cards tbody tr {
+    border-top: 1px solid var(--color-hairline);
+    padding: 16px 0 18px;
+  }
+
+  .table-cards tbody tr:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  html[data-theme="dark"] .table-cards tbody tr {
+    border-top-color: var(--color-hairline-dark);
+  }
+
+  .table-cards th,
+  .table-cards td {
+    border-bottom: 0;
+    padding: 6px 0;
+  }
+
+  .table-cards td {
+    display: grid;
+    gap: 4px;
+  }
+
+  .table-cards td[data-label]::before {
+    content: attr(data-label);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--color-muted);
+  }
+
+  html[data-theme="dark"] .table-cards td[data-label]::before {
+    color: var(--color-muted-dark);
   }
 }

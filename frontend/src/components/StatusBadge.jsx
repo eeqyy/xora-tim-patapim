@@ -7,7 +7,6 @@
 // netral = muted.
 // ============================================================
 
-import React from "react";
 import { cx } from "./ui";
 
 const STATUS_CONFIGS = {

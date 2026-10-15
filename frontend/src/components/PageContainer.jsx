@@ -7,7 +7,6 @@
 // bukan lagi grid kotak ber-`border-l`.
 // ============================================================
 
-import React from "react";
 import { cx } from "./ui";
 
 const MAX_WIDTH = {

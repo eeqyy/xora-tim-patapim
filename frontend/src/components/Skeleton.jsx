@@ -7,7 +7,6 @@
 // Denyutnya murni CSS dan mati otomatis saat prefers-reduced-motion.
 // ============================================================
 
-import React from "react";
 import { cx, HAIRLINE, RULE, Grid, GridCell, TABLE_CLASS, TD_CLASS } from "./ui";
 
 export function SkeletonBar({ className = "", style }) {

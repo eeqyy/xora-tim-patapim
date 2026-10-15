@@ -3,7 +3,6 @@
 // frontend/src/components/ErrorState.jsx
 // ============================================================
 
-import React from "react";
 import { IconAlertTriangle, IconRefresh } from "./Icons";
 import Button from "./Button";
 import { INK, MUTED, cx } from "./ui";

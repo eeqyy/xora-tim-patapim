@@ -11,7 +11,7 @@
 // Logika data (state, useEffect, API, handler, URL, teks) tidak berubah.
 // ============================================================
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { subjectsApi, learningPathApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
 import {
@@ -31,6 +31,7 @@ import {
   ErrorState,
   MicroMeta,
   HAIRLINE,
+  RULE,
   CHIP_CLASS,
   CHIP_ACTIVE,
   CHIP_INACTIVE,
@@ -58,6 +59,48 @@ const ACTION_BOX = cx(
   "flex flex-col gap-3 border-t pt-4 md:flex-row md:items-center md:justify-between",
   HAIRLINE
 );
+
+// Garis batas antar-materi: pakai RULE (lebih tegas dari hairline) dan
+// menyala biru saat kursor berada di blok materinya. Kelas `rule-lit`
+// dipakai untuk penyalaan lewat gulir di HP (lihat CenterActive + index.css).
+const LEVEL_RULE = cx(
+  "border-t rule-lit transition-[border-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
+  RULE,
+  "group-hover/level:border-brand group-hover/level:shadow-[0_0_16px_var(--color-brand)]"
+);
+
+// Di HP / perangkat tanpa hover, garis menyala mengikuti gulir: materi yang
+// berada di tengah layar yang menyala. Di desktop tetap oleh hover.
+const CENTER_QUERY = "(max-width: 767px), (hover: none)";
+
+/* CenterActive — memasang kelas `is-lit` pada dirinya saat berada di tengah
+   layar. Gaya nyalanya ada di index.css (`.is-lit .rule-lit` dan
+   `.is-lit.cell-line::before`). Bisa dipakai lewat `as={GridCell}` karena
+   GridCell meneruskan ref-nya. */
+function CenterActive({ as: Tag = "div", className = "", children, ...rest }) {
+  const ref = useRef(null);
+  const [lit, setLit] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    if (!window.matchMedia(CENTER_QUERY).matches) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => setLit(entry.isIntersecting));
+      },
+      { rootMargin: "-50% 0px -50% 0px", threshold: 0 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <Tag ref={ref} className={cx(className, lit && "is-lit")} {...rest}>
+      {children}
+    </Tag>
+  );
+}
 
 // Indikator titik status konsep -> token warna (presentasi saja).
 function conceptDotTone(concept) {
@@ -715,14 +758,18 @@ export default function LearningPathPage() {
                 }
 
                 return (
-                  <React.Fragment key={level.id}>
-                    {/* Level Header */}
-                    <GlassPanel
-                      variant="subtle"
-                      className="mt-8 flex flex-col gap-3 p-4 md:flex-row md:items-start md:justify-between md:p-6"
-                    >
-                      <div className="flex min-w-0 items-start gap-3">
-                        <MicroMeta className="mt-0.5 shrink-0">
+                  <CenterActive as="section" key={level.id} className="group/level mt-10">
+                    {/* Materi utama (tingkat): garis — judul — garis.
+                        Kursor di mana pun di blok ini (desktop) atau posisi
+                        bagian ini di tengah layar (HP) membuat garis
+                        batasnya menyala biru. */}
+                    <div className={LEVEL_RULE} />
+                    {/* Judul dirapikan: di HP label/tingkat, judul, dan
+                        keterangan menumpuk rata kiri (tidak menjorok ke
+                        samping label) — di layar lebar kembali sebaris. */}
+                    <div className="flex flex-col gap-3 pt-6 md:flex-row md:items-start md:justify-between">
+                      <div className="flex min-w-0 flex-col gap-1.5 md:flex-row md:items-start md:gap-3">
+                        <MicroMeta className="shrink-0 md:mt-0.5">
                           Tingkat {level.order_index ?? lvlIdx + 1}
                         </MicroMeta>
                         <div className="min-w-0">
@@ -730,31 +777,30 @@ export default function LearningPathPage() {
                             {level.name}
                           </h3>
                           {level.description && (
-                            <p className={cx("mt-1 text-[13px] leading-relaxed", MUTED)}>
+                            <p className={cx("mt-1.5 text-[13px] leading-relaxed", MUTED)}>
                               {level.description}
                             </p>
                           )}
                         </div>
                       </div>
-                      <div>
+                      <div className="shrink-0">
                         <StatusBadge status={level.difficulty} />
                       </div>
-                    </GlassPanel>
+                    </div>
 
-                    {/* Topics under Level */}
+                    {/* Garis antara judul materi utama dan materi turunannya. */}
+                    <div className={cx(LEVEL_RULE, "mt-7")} />
+
+                    {/* Materi turunan (topik & konsep) */}
                     {!level.topics || level.topics.length === 0 ? (
-                      <div className={cx("mt-6 border-t pt-5", HAIRLINE)}>
-                        <p className={cx("text-[13px]", MUTED)}>
-                          Belum ada topik pada tingkat ini.
-                        </p>
-                      </div>
+                      <p className={cx("mt-6 text-[13px]", MUTED)}>
+                        Belum ada topik pada tingkat ini.
+                      </p>
                     ) : (
                       <>
-                        <div className={cx("mt-6 border-t pt-5", HAIRLINE)}>
-                          <h4 className={cx("tabular-nums text-[10px] font-bold uppercase tracking-widest md:text-[11px]", MUTED)}>
-                            Daftar Topik &amp; Konsep Materi
-                          </h4>
-                        </div>
+                        <h4 className={cx("mt-6 tabular-nums text-[10px] font-bold uppercase tracking-widest md:text-[11px]", MUTED)}>
+                          Daftar Topik &amp; Konsep Materi
+                        </h4>
                         <Grid cols={2} className="mt-6">
                           {level.topics.map((topic, topIdx) => {
                             const matchingConcepts = (topic.concepts || []).filter(matchesFilter);
@@ -764,7 +810,11 @@ export default function LearningPathPage() {
                             }
 
                             return (
-                              <GridCell key={topic.id} className="flex flex-col gap-3">
+                              <CenterActive
+                                as={GridCell}
+                                key={topic.id}
+                                className="cell-line flex flex-col gap-3"
+                              >
                                 <div className="flex items-start gap-2">
                                   <MicroMeta className="mt-0.5 shrink-0">{topIdx + 1}.</MicroMeta>
                                   <div className="min-w-0 flex-1">
@@ -852,15 +902,18 @@ export default function LearningPathPage() {
                                     </div>
                                   )}
                                 </div>
-                              </GridCell>
+                              </CenterActive>
                             );
                           })}
                         </Grid>
                       </>
                     )}
-                  </React.Fragment>
+                  </CenterActive>
                 );
               })}
+
+              {/* Garis penutup struktur materi. */}
+              <div className={cx("mt-10 border-t", RULE)} />
             </>
           )}
         </>

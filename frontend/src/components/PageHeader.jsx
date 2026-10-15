@@ -6,7 +6,7 @@
 // Dipisahkan dari konten oleh satu garis horizontal.
 // ============================================================
 
-import React from "react";
+import FoldText from "./FoldText";
 import { Eyebrow, DisplayHeading, MUTED, RULE, cx } from "./ui";
 
 export default function PageHeader({
@@ -34,10 +34,13 @@ export default function PageHeader({
         : null}
       {title ? (
         <DisplayHeading
-          className={cx("enter-rise max-w-4xl text-display", badge ? "mt-4" : "")}
-          style={{ "--i": 1 }}
+          className={cx("max-w-4xl text-display", badge ? "mt-4" : "")}
         >
-          {title}
+          {typeof title === "string" ? (
+            <FoldText>{title}</FoldText>
+          ) : (
+            title
+          )}
         </DisplayHeading>
       ) : null}
       {description ? (

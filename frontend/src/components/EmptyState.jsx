@@ -3,7 +3,6 @@
 // frontend/src/components/EmptyState.jsx
 // ============================================================
 
-import React from "react";
 import { IconInfo } from "./Icons";
 import { INK, MUTED, cx } from "./ui";
 

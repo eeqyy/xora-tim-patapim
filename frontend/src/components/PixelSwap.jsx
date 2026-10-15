@@ -31,7 +31,7 @@
 //   TransitionContext aman mengganti tema tepat di momen itu.
 // ============================================================
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./PixelSwap.css";
 
 // Every pixel is a window onto its own copy of the incoming content, so the

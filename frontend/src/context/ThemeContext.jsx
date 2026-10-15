@@ -6,13 +6,7 @@
 // menerapkannya lewat atribut <html data-theme="dark|light">.
 // Nilai awal sudah dipasang oleh script anti-FOUC di index.html.
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { usePixelTransition } from "./TransitionContext";
 
 const ThemeContext = createContext(null);

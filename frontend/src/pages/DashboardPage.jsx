@@ -16,7 +16,7 @@
 // Filter kelas memakai peta concept_id -> subject_id.
 // ============================================================
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "../context/RouterContext";
 import { useDashboardFilter } from "../context/DashboardFilterContext";
@@ -47,7 +47,7 @@ import {
   GhostButton,
   ProgressBar,
   Alert,
-  Reveal,
+  AnimatedContent,
   SkeletonLines,
   SkeletonSummary,
   HAIRLINE,
@@ -325,7 +325,7 @@ export default function DashboardPage() {
       {/* 01 — Ringkasan */}
       <SectionHeader id="summary" index="1" title="Ringkasan Asesmen" meta={learnerName} />
       <SectionLede>{summaryLede}</SectionLede>
-      <Reveal>
+      <AnimatedContent distance={40}>
         {isLoading ? (
           <SkeletonSummary />
         ) : (
@@ -355,7 +355,7 @@ export default function DashboardPage() {
             </Grid>
           </>
         )}
-      </Reveal>
+      </AnimatedContent>
 
       {/* 02 — Analisis bukti belajar */}
       <SectionHeader
@@ -364,7 +364,7 @@ export default function DashboardPage() {
         title="Analisis Bukti Belajar"
         meta={isLoading ? undefined : `${evidenceRows.length} konsep`}
       />
-      <Reveal>
+      <AnimatedContent distance={40}>
       {isLoading ? (
         <SkeletonLines count={4} className="mt-8 max-w-2xl" />
       ) : evidenceRows.length === 0 ? (
@@ -433,7 +433,7 @@ export default function DashboardPage() {
           })}
         </div>
       )}
-      </Reveal>
+      </AnimatedContent>
 
       {/* 03 — Matriks kesenjangan */}
       <SectionHeader
@@ -442,7 +442,7 @@ export default function DashboardPage() {
         title="Matriks Kesenjangan"
         meta={`${topGaps.length} aktif`}
       />
-      <Reveal>
+      <AnimatedContent distance={40}>
       {topGaps.length === 0 ? (
         <p className={cx("mt-8 text-[13px]", MUTED)}>
           Tidak ada kesenjangan aktif. Pertahankan dan lanjut ke materi berikutnya.
@@ -512,7 +512,7 @@ export default function DashboardPage() {
           })}
         </div>
       )}
-      </Reveal>
+      </AnimatedContent>
 
       {/* 04 — Program remedi */}
       <SectionHeader
@@ -521,7 +521,7 @@ export default function DashboardPage() {
         title="Program Remedi"
         meta={`${filteredRecommendations.length} langkah`}
       />
-      <Reveal>
+      <AnimatedContent distance={40}>
       {filteredRecommendations.length === 0 ? (
         <p className={cx("mt-8 text-[13px]", MUTED)}>
           Belum ada rekomendasi aktif. Selesaikan asesmen agar AI menyusun rencana.
@@ -566,7 +566,7 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
-      </Reveal>
+      </AnimatedContent>
     </PageContainer>
   );
 }

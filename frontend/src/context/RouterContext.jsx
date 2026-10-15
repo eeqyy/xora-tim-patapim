@@ -3,7 +3,7 @@
 // frontend/src/context/RouterContext.jsx
 // ============================================================
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 
 const RouterContext = createContext(null);

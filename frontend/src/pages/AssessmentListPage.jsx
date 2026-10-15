@@ -12,7 +12,7 @@
 // Logika data (state, useEffect, API, handler, URL, teks) tidak berubah.
 // ============================================================
 
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { assessmentsApi } from "../services/api";
 import { useRouter } from "../context/RouterContext";
 import {
