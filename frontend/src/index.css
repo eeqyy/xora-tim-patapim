@@ -2,12 +2,16 @@
    XOLEARN — Editorial System v2
    frontend/src/index.css
    ------------------------------------------------------------
-   Bahasa visual mengikuti template editorial 21st.dev #1116:
-   tipografi Manrope, sudut pil untuk elemen interaktif, garis
-   horizontal (hairline) + ruang kosong sebagai pemisah, tanpa
-   grid kotak 1px. Dual-mode via [data-theme].
-   Palet two-tone hangat: aksen azure (#0f6fd6) dipadukan tone
-   hangat sandy_brown / vanilla_custard di atas netral krem.
+   Mengikuti brand kit "SUSE Mono + SUSE" (fontpair.co):
+   judul SUSE Mono, isi SUSE, sudut pil untuk elemen interaktif,
+   garis horizontal (hairline) + ruang kosong sebagai pemisah.
+   Dual-mode via [data-theme].
+   Palet brand kit: teks navy #040063, primary #1D4ED8, accent
+   #0222AF, border #DCDBE9 — dibuat pastel. Biru untuk tombol/pil/
+   aksen memakai warna pilihan pemilik produk, rgb(13,99,194)
+   = #0d63c2 (lihat `--color-brand`/`--color-accent`).
+   Mode gelap memakai latar navy #040063 (tile gelap brand kit)
+   dengan biru yang sama + aksen lebih terang.
    ============================================================ */
 @import "tailwindcss";
 
@@ -16,54 +20,68 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system,
+  --font-sans: "SUSE", ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Judul memakai SUSE Mono (bagian "heading" brand kit). */
+  --font-display: "SUSE Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 
-  /* Warna utama — azure vivid (isi tombol, pil, tab aktif) */
+  /* Warna utama — biru pilihan pemilik produk (rgb(13,99,194) = #0d63c2)
+     menggantikan primary brand kit #1D4ED8 yang terasa menyala.
+     Hover, varian lembut, dan aksen diturunkan dari hue yang sama.
+     Jangan diganti tanpa persetujuan. */
   --color-brand: #0d63c2;
-  --color-brand-hover: #0a53a5;
-  --color-brand-soft: #dcebfa;
+  --color-brand-hover: #0a52a3;
+  --color-brand-soft: #dceafb;
 
-  /* Aksen interaktif — azure pekat (tautan, nomor, tab aktif) */
-  --color-accent: #0b5cb4;
-  --color-accent-hover: #0a4f9c;
+  /* Aksen interaktif — versi lebih tua dari biru di atas (tautan, nomor,
+     tab aktif) supaya tetap nyaman dibaca sebagai teks */
+  --color-accent: #0b4f9e;
+  --color-accent-hover: #093f80;
 
-  --color-warning: #f49e4c;
-  --color-warning-ink: #3c1f04;
-  --color-warning-strong: #8a4a08;
-  --color-highlight: #f5ee9e;
-  --color-highlight-ink: #494308;
+  /* Perhatian (kesenjangan perlu verifikasi) — peach pastel */
+  --color-warning: #f8cda4;
+  --color-warning-soft: #fdf0dd;
+  --color-warning-ink: #7a4a0d;
+  --color-warning-strong: #a85e14;
+  --color-highlight: #fbf0ac;
+  --color-highlight-ink: #4a4300;
 
-  /* Error / destruktif — brick_red */
-  --color-error: #ab3428;
-  --color-error-strong: #ab3428;
+  /* Error / destruktif (kesenjangan terkonfirmasi) — merah pastel */
+  --color-error: #c0392b;
+  --color-error-soft: #fbe4e1;
+  --color-error-ink: #8f1d15;
+  --color-error-strong: #b3261e;
 
-  /* Positif / berhasil — olive hangat */
-  --color-positive: #4f6b26;
-  --color-positive-strong: #3f5c1c;
-  --color-positive-soft: #e4ecce;
+  /* Positif / berhasil — mint pastel */
+  --color-positive: #1e7a54;
+  --color-positive-strong: #176b49;
+  --color-positive-soft: #d9f2e5;
 
-  /* Kanvas & permukaan lembut — krem hangat / biru-teal gelap */
-  --color-canvas: #faf8f3;
-  --color-canvas-dark: #09171d;
-  --color-cell: #f0e9dd;
-  --color-cell-dark: #122e39;
+  /* Kanvas & permukaan lembut — lavender pastel (terang) / indigo pekat
+     yang diredam (gelap). Mode gelap memakai saturasi rendah supaya bidang
+     luas tidak menyilaukan; hue tetap indigo mengikuti brand kit. */
+  --color-canvas: #f7f7fd;
+  --color-canvas-dark: #0c0c22;
+  --color-cell: #ebebf8;
+  --color-cell-dark: #1b1c44;
 
   /* Teks */
-  --color-ink: #15242a;
-  --color-ink-dark: #f5f0e6;
-  --color-muted: #5c564e;
-  --color-muted-dark: #bdb4a6;
+  --color-ink: #040063;
+  --color-ink-dark: #ffffff;
+  --color-muted: #5a5a93;
+  --color-muted-dark: #c0c0e8;
 
-  /* Garis rambut horizontal (baris/item) */
-  --color-hairline: #ece6dc;
-  --color-hairline-dark: #173440;
+  /* Garis rambut horizontal (baris/item) — cukup tegas agar terlihat
+     di atas kanvas (>=1.8:1), tanpa terasa berat. */
+  --color-hairline: #b0afd6;
+  --color-hairline-dark: #3b3d75;
 
   /* Garis tegas khusus batas section (lebih kuat dari hairline) */
-  --color-rule: #d9d1c5;
-  --color-rule-dark: #245563;
+  --color-rule: #8b8abd;
+  --color-rule-dark: #5a5da6;
 
   /* Skala tipe editorial */
   --text-eyebrow: 0.75rem;
@@ -77,19 +95,29 @@
     color: var(--color-ink);
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    transition: background-color 300ms cubic-bezier(0.2, 0.75, 0.15, 1),
+                color 300ms cubic-bezier(0.2, 0.75, 0.15, 1);
   }
 
   html[data-theme="dark"] {
     background-color: var(--color-canvas-dark);
     color: var(--color-ink-dark);
-    --color-brand-soft: #122a44;
-    --color-accent: #5aa9f5;
-    --color-accent-hover: #8cc2f8;
-    --color-warning-strong: #f49e4c;
-    --color-error-strong: #e08a80;
-    --color-positive-strong: #a9c46a;
-    --color-positive-soft: #253117;
-    --color-highlight: #3a3712;
+    /* Biru mode gelap memakai warna yang sama (#0d63c2) sesuai
+       permintaan; aksen & varian lembut diturunkan dari hue itu. */
+    --color-brand: #0d63c2;
+    --color-brand-hover: #1a72d4;
+    --color-brand-soft: #16294a;
+    --color-accent: #7fb4ea;
+    --color-accent-hover: #9cc8f2;
+    --color-warning-soft: #3a2c12;
+    --color-warning-ink: #f8cda4;
+    --color-warning-strong: #f8cda4;
+    --color-error-soft: #3b1417;
+    --color-error-ink: #f2aaa3;
+    --color-error-strong: #f2aaa3;
+    --color-positive-strong: #8fe3b9;
+    --color-positive-soft: #0c3a2b;
+    --color-highlight: #3b360f;
   }
 
   body {
@@ -101,14 +129,25 @@
     font-feature-settings: "ss01" on, "cv01" on;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 300ms cubic-bezier(0.2, 0.75, 0.15, 1),
+                color 300ms cubic-bezier(0.2, 0.75, 0.15, 1);
   }
 
-  /* Judul editorial: bobot sedang, rapat, seimbang. */
+  /* Judul editorial: SUSE Mono, rapat, seimbang. */
   h1,
   h2,
   h3,
   h4 {
+    font-family: var(--font-display);
     text-wrap: balance;
+  }
+
+  /* Teks dinamis panjang tanpa spasi (kode, URL, id, jawaban) tidak boleh
+     menjebol kotaknya & memicu geser horizontal di layar sempit. Nilai
+     `anywhere` juga mengecilkan min-content sehingga item flex bisa
+     menyusut (mencegah overflow pada baris ber-flex). */
+  :where(h1, h2, h3, h4, p, li, dt, dd, figcaption, strong, em, code, a, span, td, th) {
+    overflow-wrap: anywhere;
   }
 
   ::selection {
@@ -136,23 +175,35 @@
 }
 
 /* ---------------------------------------------
-   Motion editorial ringan (pure CSS + observer)
-   --------------------------------------------- */
+   Konten masuk (.ac — AnimatedContent)
+   ---------------------------------------------
+   Port dari ReactBits "AnimatedContent" (MIT) tanpa gsap/ScrollTrigger.
+   Keadaan awal dipasang dari JS (`.is-run`) saat elemen masuk viewport,
+   lalu `.is-in` menjalankan transisinya; sisanya murni CSS.
+   Konten TIDAK pernah disembunyikan — titik awal (opacity `.3` +
+   geser `--ac-from`) hanya hidup selama animasi berjalan, jadi tetap
+   terbaca walau observer belum menyala (mis. tangkapan layar penuh).
+   Easing `power3.out` seperti aslinya; angka per pemakaian lewat
+   variabel `--ac-*` yang di-set komponen.
+   Kelas dilepas setelah selesai, jadi DOM kembali markup biasa. */
 @media (prefers-reduced-motion: no-preference) {
-  .reveal {
-    opacity: 0;
-    transform: translateY(16px);
-    transition:
-      opacity 0.7s cubic-bezier(0.2, 0.75, 0.15, 1),
-      transform 0.7s cubic-bezier(0.2, 0.75, 0.15, 1);
-    transition-delay: calc(var(--i, 0) * 45ms);
-    will-change: opacity, transform;
+  /* KEADAAN AWAL — tanpa transisi, supaya saat kelas dipasang hasilnya
+     langsung (kalau transisinya ada di sini, pemasangan keadaan awal ikut
+     beranimasi dan animasinya jadi tidak terlihat). */
+  .ac.is-run:not(.is-in) {
+    opacity: var(--ac-from-o, 1);
+    transform: var(--ac-from, none);
+    filter: var(--ac-blur, none);
   }
 
-  .reveal[data-seen="true"] {
+  /* KEADAAN AKHIR + transisi */
+  .ac.is-in {
     opacity: 1;
     transform: none;
-    will-change: auto;
+    filter: none;
+    transition: opacity var(--ac-dur, 800ms) var(--ac-ease, ease-out) var(--ac-delay, 0ms),
+      transform var(--ac-dur, 800ms) var(--ac-ease, ease-out) var(--ac-delay, 0ms),
+      filter var(--ac-dur, 800ms) var(--ac-ease, ease-out) var(--ac-delay, 0ms);
   }
 }
 
@@ -217,10 +268,315 @@
   html {
     scroll-behavior: auto;
   }
+}
 
-  .reveal {
+/* ---------------------------------------------
+   Teks lipat (Fold Text — paper fold)
+   --------------------------------------------- */
+.ft {
+  display: inline;
+  perspective: var(--ft-perspective, 800px);
+  line-height: inherit;
+}
+.ft-inner {
+  display: inline;
+  transform-style: preserve-3d;
+}
+.ft-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.ft-space {
+  display: inline;
+  white-space: pre;
+}
+.ft-char {
+  display: inline-block;
+  vertical-align: baseline;
+  transform-origin: var(--ft-hinge, center center);
+  will-change: transform, filter, opacity;
+}
+
+@keyframes ftFoldIn {
+  0% {
+    transform: perspective(var(--ft-perspective, 800px)) rotateX(var(--ft-angle, 90deg)) scaleY(0.25);
+    opacity: 0.2;
+    filter: brightness(calc(1 - var(--ft-shade, 0.55) * 0.5));
+  }
+  100% {
+    transform: perspective(var(--ft-perspective, 800px)) rotateX(0deg) scaleY(1);
+    opacity: 1;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ft.is-in .ft-char {
+    animation-name: ftFoldIn;
+    animation-duration: var(--ft-dur, 600ms);
+    animation-timing-function: var(--ft-ease, cubic-bezier(0.215, 0.61, 0.355, 1));
+    animation-delay: var(--ft-delay, 0ms);
+    animation-fill-mode: both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft .ft-char,
+  .enter-rise {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ---------------------------------------------
+   Skeleton (kerangka muat)
+   ---------------------------------------------
+   Warna diambil dari token permukaan, jadi otomatis ikut tema.
+   Denyut halus; mati saat prefers-reduced-motion. */
+.skeleton {
+  background-color: var(--color-cell);
+}
+
+html[data-theme="dark"] .skeleton {
+  background-color: var(--color-cell-dark);
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+/* ---------------------------------------------
+   Dialog & Toast
+   ---------------------------------------------
+   Dialog memakai elemen <dialog> native (fokus terkurung + latar
+   inert otomatis). Yang diatur di sini hanya tampilan & animasinya. */
+dialog.dialog-panel {
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+dialog.dialog-panel::backdrop {
+  background-color: rgb(4 0 99 / 0.42);
+}
+
+html[data-theme="dark"] dialog.dialog-panel::backdrop {
+  background-color: rgb(0 0 0 / 0.62);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.dialog-panel[open] {
+    animation: dialog-in 200ms ease-out both;
+  }
+
+  .toast-item {
+    animation: toast-in 220ms cubic-bezier(0.2, 0.75, 0.15, 1) both;
+  }
+}
+
+/* ---------------------------------------------
+   Akordeon (buka/tutup beranimasi)
+   ---------------------------------------------
+   Tinggi baris dianimasikan dengan trik grid `0fr → 1fr`.
+   Kalau browser belum mendukung interpolasi `fr`, baris hanya
+   membuka/menutup seketika — fungsi tetap utuh. */
+.accordion-region {
+  transition: grid-template-rows 260ms cubic-bezier(0.2, 0.75, 0.15, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-region {
     transition: none;
+  }
+}
+
+/* ---------------------------------------------
+   Gradual Blur (port ReactBits) — pita tepi layar
+   ---------------------------------------------
+   Lapisan blur-nya dibuat di JS (components/GradualBlur.jsx);
+   di sini hanya pembungkus, `isolation` supaya `backdrop-filter`
+   mengambil latar halaman, dan fallback untuk browser lama. */
+.gradual-blur {
+  isolation: isolate;
+}
+
+.gradual-blur-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Browser tanpa backdrop-filter: cukup gradasi warna kanvas, supaya
+   tepi layar tetap melembut dan tidak ada pita gelap asing. */
+@supports not (backdrop-filter: blur(1px)) {
+  .gradual-blur-inner > div {
+    background: color-mix(in srgb, var(--color-canvas) 22%, transparent);
+  }
+
+  html[data-theme="dark"] .gradual-blur-inner > div {
+    background: color-mix(in srgb, var(--color-canvas-dark) 26%, transparent);
+  }
+}
+
+/* ---------------------------------------------
+   Garis materi yang menyala (halaman Jalur Belajar)
+   ---------------------------------------------
+   Garis batas materi menyala biru saat blok materinya di-hover
+   (desktop) atau saat blok materi berada di tengah layar (HP).
+   Kelas `is-lit` dipasang oleh `CenterActive` (LearningPathPage).
+   Gaya ini sengaja tanpa layer supaya menang atas token tema. */
+.is-lit .rule-lit {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 16px var(--color-brand);
+}
+
+/* Pita tipis tepat di atas garis hairline sel materi turunan —
+   cahaya hanya menempel di garisnya, bukan mengelilingi kotak. */
+.cell-line {
+  position: relative;
+}
+
+.cell-line::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  pointer-events: none;
+  background: transparent;
+  transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+/* Desktop: kursor berada di bagian materi turunan. */
+@media (hover: hover) {
+  .cell-line:hover::before {
+    background: var(--color-brand);
+    box-shadow: 0 0 14px var(--color-brand);
+  }
+}
+
+/* HP: materi turunan yang berada di tengah layar. */
+.is-lit.cell-line::before {
+  background: var(--color-brand);
+  box-shadow: 0 0 14px var(--color-brand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell-line::before {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------
+   Tabel → daftar kartu di layar sempit (<=640px)
+   ---------------------------------------------
+   Aturan: di HP tidak boleh ada tabel yang harus digeser ke
+   samping. Tiap baris berubah jadi kartu (pemisah = garis
+   horizontal + ruang kosong), dan nama kolomnya dipindah ke
+   tiap sel lewat atribut `data-label` pada <td>.
+   Pakai dengan menambahkan kelas `table-cards` pada pembungkus
+   tabel (lihat halaman admin). Kolom pertama (th scope="row")
+   tanpa label supaya langsung terbaca sebagai judul kartu. */
+@media (max-width: 640px) {
+  .table-cards {
+    overflow: visible;
+    border: 0;
+  }
+
+  .table-cards table,
+  .table-cards thead,
+  .table-cards tbody,
+  .table-cards tr,
+  .table-cards th,
+  .table-cards td {
+    display: block;
+  }
+
+  /* Judul kolom hanya untuk pembaca layar (label ada di tiap sel). */
+  .table-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .table-cards caption {
+    padding: 0 0 12px;
+    text-align: left;
+  }
+
+  .table-cards tbody tr {
+    border-top: 1px solid var(--color-hairline);
+    padding: 16px 0 18px;
+  }
+
+  .table-cards tbody tr:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  html[data-theme="dark"] .table-cards tbody tr {
+    border-top-color: var(--color-hairline-dark);
+  }
+
+  .table-cards th,
+  .table-cards td {
+    border-bottom: 0;
+    padding: 6px 0;
+  }
+
+  .table-cards td {
+    display: grid;
+    gap: 4px;
+  }
+
+  .table-cards td[data-label]::before {
+    content: attr(data-label);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--color-muted);
+  }
+
+  html[data-theme="dark"] .table-cards td[data-label]::before {
+    color: var(--color-muted-dark);
   }
 }

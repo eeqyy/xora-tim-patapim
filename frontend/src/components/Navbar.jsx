@@ -8,7 +8,7 @@
 // Sudut pil untuk semua elemen interaktif.
 // ============================================================
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -198,18 +198,28 @@ export default function Navbar() {
 
               {isAdmin && (
                 <div className="relative flex items-center" ref={adminRef}>
+                  {/* Tombol ini sengaja dibedakan dari tautan lain: kotak biru
+                      penuh. Ikonnya duduk di kotak bersumbu tetap (h-4 w-4)
+                      sehingga posisinya tidak bergeser; penanda "geser" cukup
+                      zoom halus saat kursor mendekat — tanpa animasi memutar. */}
                   <button
                     type="button"
-                    className={navLinkClass(currentPath.startsWith("/admin"))}
+                    className={cx(
+                      "inline-flex min-h-[44px] items-center gap-2 rounded-full bg-brand px-4 text-[13px] font-semibold text-white",
+                      "transition-[background-color,transform] duration-150 ease-out hover:bg-brand-hover active:scale-[.98]",
+                      "motion-reduce:transition-none",
+                      adminOpen && "bg-brand-hover"
+                    )}
                     aria-expanded={adminOpen}
+                    aria-haspopup="true"
                     onClick={() => setAdminOpen((v) => !v)}
                   >
                     Menu Admin
                     <span
-                      className={cx("transition-transform", adminOpen && "rotate-180")}
+                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center"
                       aria-hidden="true"
                     >
-                      <IconChevronDown size={14} />
+                      <IconChevronDown size={14} className="icon-zoom" />
                     </span>
                   </button>
                   {adminOpen && (

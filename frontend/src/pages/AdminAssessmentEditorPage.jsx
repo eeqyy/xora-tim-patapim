@@ -14,7 +14,7 @@
 // yang menyembunyikan kunci.
 // ============================================================
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   subjectsApi,
   referenceApi,
@@ -22,6 +22,7 @@ import {
   adminQuestionsApi,
 } from "../services/api";
 import { useRouter } from "../context/RouterContext";
+import { useDialog } from "../context/DialogContext";
 import AssessmentMetaFields from "../components/AssessmentMetaFields";
 import {
   PageContainer,
@@ -36,6 +37,7 @@ import {
   LoadingState,
   EmptyState,
   Alert,
+  AnimatedContent,
   Field,
   Input,
   Select,
@@ -258,6 +260,7 @@ function buildCorrectAnswer(form) {
 
 export default function AdminAssessmentEditorPage({ assessmentId }) {
   const { navigate } = useRouter();
+  const { confirm } = useDialog();
   const isNew = assessmentId === "new";
 
   const [meta, setMeta] = useState(EMPTY_META);
@@ -479,9 +482,12 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
   };
 
   const handleDeleteQuestion = async (question) => {
-    const confirmed = window.confirm(
-      `Hapus soal "${question.questionText.slice(0, 60)}"?\n\nSoal yang sudah dijawab peserta tidak bisa dihapus (409).`
-    );
+    const confirmed = await confirm({
+      title: "Hapus soal ini?",
+      description: `${question.questionText.slice(0, 60)}… — soal yang sudah dijawab peserta tidak bisa dihapus.`,
+      confirmLabel: "Hapus Soal",
+      tone: "danger",
+    });
     if (!confirmed) return;
 
     setQuestionNotice(null);
@@ -520,10 +526,16 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
     }
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     const hasUnsavedQuestion = showQuestionForm && questionForm.questionText.trim() !== "";
     if (metaDirty || hasUnsavedQuestion) {
-      const confirmed = window.confirm("Ada perubahan yang belum disimpan. Tinggalkan halaman ini?");
+      const confirmed = await confirm({
+        title: "Ada perubahan yang belum disimpan",
+        description: "Kalau keluar sekarang, perubahan tadi akan hilang.",
+        confirmLabel: "Tinggalkan",
+        cancelLabel: "Tetap di Sini",
+        tone: "danger",
+      });
       if (!confirmed) return;
     }
     navigate("/admin/assessments");
@@ -587,6 +599,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
           <section aria-labelledby="meta-heading">
             <SectionHeader id="meta-heading" index="1" title="Detail asesmen" />
             {renderNotice(metaNotice)}
+            <AnimatedContent>
             <GlassPanel variant="subtle" className="mt-8 p-4 md:p-6">
               <form onSubmit={handleSaveMeta} noValidate>
                 <AssessmentMetaFields
@@ -612,6 +625,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                 </div>
               </form>
             </GlassPanel>
+            </AnimatedContent>
           </section>
 
           {/* Soal — baru bisa diisi setelah asesmen punya id */}
@@ -641,7 +655,8 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                   description="Tekan “Tambah soal” untuk memulai."
                 />
               ) : (
-                <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+                <AnimatedContent>
+                <div className={cx("table-cards mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
                   <table className={TABLE_CLASS}>
                     <caption className={CAPTION_CLASS}>
                       {questions.length} soal tersusun sesuai nomor urut. Tombol naik/turun mengubah
@@ -682,24 +697,28 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                           <th scope="row" className={cx(TD_CLASS, "font-bold")}>
                             {question.questionText}
                           </th>
-                          <td className={TD_CLASS}>
+                          <td className={TD_CLASS} data-label="Tipe">
                             <StatusBadge
                               label={Q_TYPE_LABELS[question.type] || question.type}
                               variant="info"
                             />
                           </td>
-                          <td className={TD_CLASS}>
+                          <td className={TD_CLASS} data-label="Materi">
                             <StatusBadge label={question.material || "HTML"} variant="neutral" />
                           </td>
-                          <td className={cx(TD_CLASS, MUTED)}>{question.conceptName || "—"}</td>
-                          <td className={TD_CLASS}>
+                          <td className={cx(TD_CLASS, MUTED)} data-label="Konsep">
+                            {question.conceptName || "—"}
+                          </td>
+                          <td className={TD_CLASS} data-label="Kesulitan">
                             <StatusBadge
                               status={question.difficulty}
                               label={DIFF_LABELS[question.difficulty] || question.difficulty}
                               variant={DIFF_VARIANT[question.difficulty]}
                             />
                           </td>
-                          <td className={cx(TD_CLASS, "tabular-nums")}>{question.points}</td>
+                          <td className={cx(TD_CLASS, "tabular-nums")} data-label="Poin">
+                            {question.points}
+                          </td>
                           <td className={TD_CLASS}>
                             <div className="flex flex-wrap gap-1">
                               <OutlineButton
@@ -744,6 +763,7 @@ export default function AdminAssessmentEditorPage({ assessmentId }) {
                     </tbody>
                   </table>
                 </div>
+                </AnimatedContent>
               )}
 
               {showQuestionForm && (

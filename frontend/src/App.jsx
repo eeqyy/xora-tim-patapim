@@ -3,13 +3,16 @@
 // frontend/src/App.jsx
 // ============================================================
 
-import React from "react";
-import { AuthProvider } from "./context/AuthContext";
+import { TransitionProvider } from "./context/TransitionContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
+import { DialogProvider } from "./context/DialogContext";
+import { AuthProvider } from "./context/AuthContext";
 import { DashboardFilterProvider } from "./context/DashboardFilterContext";
 import { RouterProvider, useRouter, ProtectedRoute, AdminRoute } from "./context/RouterContext";
 import Navbar from "./components/Navbar";
 import BottomNav from "./components/BottomNav";
+import GradualBlur from "./components/GradualBlur";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -153,24 +156,47 @@ function AppContent() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-canvas text-ink dark:bg-canvas-dark dark:text-ink-dark">
+    <div className="flex min-h-dvh flex-col bg-canvas text-ink dark:bg-canvas-dark dark:text-ink-dark transition-colors duration-300">
       <Navbar />
-      <main className="flex-1 pb-20 md:pb-0">{pageContent}</main>
+      {/* pb = tinggi BottomNav (5rem) + safe-area iPhone, agar konten
+          terakhir tidak pernah tertutup bar bawah. */}
+      <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+        {pageContent}
+      </main>
       <BottomNav />
+      {/* Gradual Blur (ReactBits): konten melembut sebelum keluar tepi
+          bawah viewport. Di HP bagian bawah pita tertutup BottomNav,
+          jadi tingginya dilebihkan supaya rampa blur tetap terlihat
+          utuh di atas bar. z-index di bawah Navbar/BottomNav. */}
+      <GradualBlur
+        position="bottom"
+        height="7.5rem"
+        strength={2}
+        divCount={5}
+        curve="bezier"
+        exponential
+        zIndex={30}
+      />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <RouterProvider>
-          <DashboardFilterProvider>
-            <AppContent />
-          </DashboardFilterProvider>
-        </RouterProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <TransitionProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <DialogProvider>
+            <AuthProvider>
+              <RouterProvider>
+                <DashboardFilterProvider>
+                  <AppContent />
+                </DashboardFilterProvider>
+              </RouterProvider>
+            </AuthProvider>
+          </DialogProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </TransitionProvider>
   );
 }

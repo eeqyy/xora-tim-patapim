@@ -3,7 +3,7 @@
 // frontend/src/context/RouterContext.jsx
 // ============================================================
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 
 const RouterContext = createContext(null);
@@ -25,25 +25,40 @@ const readLocation = () => ({
 export function RouterProvider({ children }) {
   const [location, setLocation] = useState(readLocation);
 
+  /* Setiap perpindahan halaman dimulai dari atas. */
+  const commitLocation = useCallback((pathname, search) => {
+    setLocation({ pathname, search });
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+  }, []);
+
   useEffect(() => {
-    const handlePopState = () => setLocation(readLocation());
+    // Tombol maju/mundur browser.
+    const handlePopState = () => {
+      const next = readLocation();
+      commitLocation(next.pathname, next.search);
+    };
 
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [commitLocation]);
 
-  const navigate = useCallback((to) => {
-    // `to` boleh berupa path polos maupun menyertakan query string.
-    const url = new URL(to, window.location.origin);
-    const next = `${url.pathname}${url.search}`;
-    const current = `${window.location.pathname}${window.location.search}`;
-    if (current !== next) {
+  const navigate = useCallback(
+    (to) => {
+      // `to` boleh berupa path polos maupun menyertakan query string.
+      const url = new URL(to, window.location.origin);
+      const next = `${url.pathname}${url.search}`;
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current === next) return;
+
       window.history.pushState({}, "", next);
-      setLocation({ pathname: normalizePath(url.pathname), search: url.search });
-    }
-  }, []);
+      commitLocation(normalizePath(url.pathname), url.search);
+    },
+    [commitLocation]
+  );
 
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 

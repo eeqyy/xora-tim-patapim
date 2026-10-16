@@ -6,6 +6,7 @@
 export { default as PageContainer } from "./PageContainer";
 export { default as PageHeader } from "./PageHeader";
 export { default as GlassPanel } from "./GlassPanel";
+export { default as AiRecommendation } from "./AiRecommendation";
 export { default as StatCard } from "./StatCard";
 export {
   default as Button,
@@ -18,7 +19,10 @@ export { default as ProgressBar } from "./ProgressBar";
 export { default as EmptyState } from "./EmptyState";
 export { default as LoadingState } from "./LoadingState";
 export { default as ErrorState } from "./ErrorState";
+export { default as Skeleton, SkeletonBar, SkeletonLines, SkeletonTable, SkeletonSummary, SkeletonPage } from "./Skeleton";
 export { default as AssessmentMetaFields } from "./AssessmentMetaFields";
+export { default as AnimatedContent } from "./AnimatedContent";
+export { default as FoldText } from "./FoldText";
 export * from "./Icons";
 
 // Primitif sistem editorial v2 (dipakai langsung oleh halaman).
@@ -33,11 +37,9 @@ export {
   GridCell,
   MetricCell,
   SeverityBadge,
-  PrimaryButton as EditorialPrimaryButton,
   GhostButton,
   AccordionRow,
   ChecklistRow,
-  DataRow,
   Field,
   Input,
   Select,
@@ -46,6 +48,7 @@ export {
   Avatar,
   FilterChips,
   Reveal,
+  ScrollText,
   INPUT_CLASS,
   TH_CLASS,
   TD_CLASS,
@@ -56,8 +59,6 @@ export {
   cx,
   HAIRLINE,
   RULE,
-  SURFACE,
-  CELL,
   INK,
   MUTED,
 } from "./ui";

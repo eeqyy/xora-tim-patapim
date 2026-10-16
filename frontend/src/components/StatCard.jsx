@@ -6,7 +6,6 @@
 // Dipisahkan oleh garis horizontal (border-t), tanpa kotak.
 // ============================================================
 
-import React from "react";
 import { MicroMeta, INK, MUTED, cx, HAIRLINE } from "./ui";
 
 export default function StatCard({

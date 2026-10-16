@@ -16,10 +16,11 @@
 // Filter kelas memakai peta concept_id -> subject_id.
 // ============================================================
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "../context/RouterContext";
 import { useDashboardFilter } from "../context/DashboardFilterContext";
+import { useToast } from "../context/ToastContext";
 import {
   historyApi,
   masteryApi,
@@ -33,6 +34,10 @@ import {
   PageHeader,
   MicroMeta,
   SectionHeader,
+  SectionLede,
+  AiRecommendation,
+  GlassPanel,
+  StatusBadge,
   Grid,
   MetricCell,
   AccordionRow,
@@ -42,7 +47,9 @@ import {
   GhostButton,
   ProgressBar,
   Alert,
-  Reveal,
+  AnimatedContent,
+  SkeletonLines,
+  SkeletonSummary,
   HAIRLINE,
   INK,
   MUTED,
@@ -86,8 +93,15 @@ function gapSeverityShort(status) {
   return "Aman";
 }
 
+/* Label manusiawi untuk jenis tindakan rekomendasi AI
+   (menggantikan kode teknis agar mudah dibaca pengguna/juri). */
 function actionTypeLabel(type) {
   const t = String(type || "").toUpperCase();
+  if (t === "COLLECT_MORE_EVIDENCE") return "Kumpulkan Bukti Tambahan";
+  if (t === "RUN_DIAGNOSTIC") return "Verifikasi Akar Masalah";
+  if (t === "PREREQUISITE_PRACTICE") return "Latihan Prasyarat";
+  if (t === "TARGETED_PRACTICE") return "Latihan Terarah";
+  if (t === "ADVANCE") return "Lanjut ke Materi Berikutnya";
   if (t.includes("VERIFICATION")) return "Verifikasi";
   if (t.includes("PRACTICE")) return "Latihan";
   if (t.includes("REMEDI")) return "Remediasi";
@@ -99,9 +113,21 @@ function humanizePattern(pattern) {
   return String(pattern).replace(/_/g, " ").toLowerCase();
 }
 
+/* Tujuan tombol "Lanjutkan Belajar": langsung ke sesi tindak lanjut
+   dari AI (verifikasi atau latihan), sama seperti alur di halaman
+   Progres. Bila data tidak lengkap, jatuh ke peta materi. */
+function recommendationTarget(rec) {
+  if (!rec) return "/learning-path";
+  if (String(rec.action_type || "").toUpperCase() === "RUN_DIAGNOSTIC") {
+    return rec.diagnostic_id ? `/verification/${rec.diagnostic_id}` : "/learning-path";
+  }
+  return rec.id ? `/practice/${rec.id}` : "/learning-path";
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { navigate } = useRouter();
+  const toast = useToast();
   const { isAdmin, learners, conceptSubject, selectedSubject, selectedLearnerId } =
     useDashboardFilter();
 
@@ -195,6 +221,13 @@ export default function DashboardPage() {
 
   const totalConcepts = assessedRows.length;
 
+  // Narasi ringkas (turunan tampilan saja): gap teratas & rekomendasi AI prioritas.
+  const topGapName = filteredGaps[0]?.concept_name || "";
+  const priorityRec =
+    filteredRecommendations
+      .slice()
+      .sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99))[0] || null;
+
   const metrics = [
     {
       label: "Penguasaan",
@@ -204,14 +237,23 @@ export default function DashboardPage() {
     {
       label: "Kesenjangan",
       value: String(filteredGaps.length),
-      hint: "dugaan / terkonfirmasi lemah",
+      hint: topGapName ? `Teratas: ${topGapName}` : "Tidak ada kesenjangan aktif",
     },
     {
       label: "Status Remediasi",
       value: filteredRecommendations.length ? "Aktif" : "Kosong",
-      hint: `${filteredRecommendations.length} langkah tindak lanjut`,
+      hint: priorityRec
+        ? `${filteredRecommendations.length} langkah · ${actionTypeLabel(priorityRec.action_type)}`
+        : "Belum ada rencana tindak lanjut",
     },
   ];
+
+  // Kalimat narasi section 1: menyatukan gap -> rekomendasi AI.
+  const summaryLede = priorityRec
+    ? `Dari ${totalConcepts} konsep terukur, ${filteredGaps.length} menunjukkan kesenjangan aktif. AI menyusun ${filteredRecommendations.length} langkah remediasi — prioritas: ${actionTypeLabel(priorityRec.action_type)}.`
+    : filteredGaps.length
+    ? `${filteredGaps.length} kesenjangan aktif dari ${totalConcepts} konsep terukur. Belum ada rekomendasi AI yang aktif.`
+    : `Tidak ada kesenjangan aktif dari ${totalConcepts} konsep terukur. Lanjutkan ke materi berikutnya.`;
 
   const evidenceRows = (
     filteredMastery.length
@@ -260,7 +302,13 @@ export default function DashboardPage() {
         }
         actions={
           <>
-            <GhostButton onClick={() => window.print()} className="w-auto">
+            <GhostButton
+              onClick={() => {
+                toast.info("Menyiapkan laporan untuk dicetak…", { duration: 2600 });
+                setTimeout(() => window.print(), 60);
+              }}
+              className="w-auto"
+            >
               Ekspor Laporan
             </GhostButton>
             {isLoading ? <MicroMeta>Memuat data…</MicroMeta> : null}
@@ -276,23 +324,50 @@ export default function DashboardPage() {
 
       {/* 01 — Ringkasan */}
       <SectionHeader id="summary" index="1" title="Ringkasan Asesmen" meta={learnerName} />
-      <Reveal>
-        <Grid cols={3} className="mt-8">
-          {metrics.map((m) => (
-            <MetricCell key={m.label} label={m.label} value={m.value} hint={m.hint} />
-          ))}
-        </Grid>
-      </Reveal>
+      <SectionLede>{summaryLede}</SectionLede>
+      <AnimatedContent distance={40}>
+        {isLoading ? (
+          <SkeletonSummary />
+        ) : (
+          <>
+            {priorityRec ? (
+              <AiRecommendation
+                meta="Otomatis dari analisis AI"
+                title={priorityRec.concept_name || actionTypeLabel(priorityRec.action_type)}
+                reason={priorityRec.reason || "Langkah tindak lanjut dari analisis AI."}
+                actionLabel="Lanjutkan Belajar"
+                onAction={() => navigate(recommendationTarget(priorityRec))}
+                iconRight={<IconArrowRight size={16} />}
+              />
+            ) : (
+              <AiRecommendation
+                title="Belum Ada Langkah Prioritas"
+                reason="Mulai dari peta materi untuk memilih konsep yang ingin dikerjakan — AI akan menyusun langkah berikutnya."
+                actionLabel="Mulai Belajar"
+                onAction={() => navigate("/learning-path")}
+                iconRight={<IconArrowRight size={16} />}
+              />
+            )}
+            <Grid cols={3} className="mt-8">
+              {metrics.map((m) => (
+                <MetricCell key={m.label} label={m.label} value={m.value} hint={m.hint} />
+              ))}
+            </Grid>
+          </>
+        )}
+      </AnimatedContent>
 
       {/* 02 — Analisis bukti belajar */}
       <SectionHeader
         id="evidence"
         index="2"
         title="Analisis Bukti Belajar"
-        meta={`${evidenceRows.length} konsep`}
+        meta={isLoading ? undefined : `${evidenceRows.length} konsep`}
       />
-      <Reveal>
-      {evidenceRows.length === 0 ? (
+      <AnimatedContent distance={40}>
+      {isLoading ? (
+        <SkeletonLines count={4} className="mt-8 max-w-2xl" />
+      ) : evidenceRows.length === 0 ? (
         <p className={cx("mt-8 text-[13px]", MUTED)}>
           Belum ada bukti. Mulai asesmen untuk menghasilkan data.
         </p>
@@ -316,14 +391,20 @@ export default function DashboardPage() {
                   </span>
                 }
                 trailing={
-                  <span
-                    className={cx(
-                      "text-[15px] font-bold tabular-nums",
-                      score === null ? MUTED : INK
-                    )}
-                  >
-                    {score === null ? "—" : `${score}%`}
-                  </span>
+                  <>
+                    <span
+                      className={cx(
+                        "text-[15px] font-bold tabular-nums",
+                        score === null ? MUTED : INK
+                      )}
+                    >
+                      {score === null ? "—" : `${score}%`}
+                    </span>
+                    <IconChevronDown
+                      size={16}
+                      className={cx("transition-transform", isOpen && "rotate-180")}
+                    />
+                  </>
                 }
               >
                 <div className="grid grid-cols-3 gap-x-6 gap-y-6">
@@ -352,7 +433,7 @@ export default function DashboardPage() {
           })}
         </div>
       )}
-      </Reveal>
+      </AnimatedContent>
 
       {/* 03 — Matriks kesenjangan */}
       <SectionHeader
@@ -361,7 +442,7 @@ export default function DashboardPage() {
         title="Matriks Kesenjangan"
         meta={`${topGaps.length} aktif`}
       />
-      <Reveal>
+      <AnimatedContent distance={40}>
       {topGaps.length === 0 ? (
         <p className={cx("mt-8 text-[13px]", MUTED)}>
           Tidak ada kesenjangan aktif. Pertahankan dan lanjut ke materi berikutnya.
@@ -431,7 +512,7 @@ export default function DashboardPage() {
           })}
         </div>
       )}
-      </Reveal>
+      </AnimatedContent>
 
       {/* 04 — Program remedi */}
       <SectionHeader
@@ -440,13 +521,21 @@ export default function DashboardPage() {
         title="Program Remedi"
         meta={`${filteredRecommendations.length} langkah`}
       />
-      <Reveal>
+      <AnimatedContent distance={40}>
       {filteredRecommendations.length === 0 ? (
         <p className={cx("mt-8 text-[13px]", MUTED)}>
           Belum ada rekomendasi aktif. Selesaikan asesmen agar AI menyusun rencana.
         </p>
       ) : (
         <div className="mt-2">
+          <GlassPanel variant="elevated" className="mb-6 flex flex-col gap-2 p-5 md:p-6">
+            <StatusBadge variant="accent" label="Rekomendasi AI" className="self-start" />
+            <p className={cx("max-w-2xl text-[13px] leading-relaxed", MUTED)}>
+              Rencana remediasi ini disusun AI dari bukti asesmen{" "}
+              <strong className={cx("font-bold", INK)}>{learnerName}</strong> dan diurutkan
+              berdasarkan prioritas.
+            </p>
+          </GlassPanel>
           {filteredRecommendations.map((rec, i) => (
             <ChecklistRow
               key={rec.id}
@@ -477,7 +566,7 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
-      </Reveal>
+      </AnimatedContent>
     </PageContainer>
   );
 }

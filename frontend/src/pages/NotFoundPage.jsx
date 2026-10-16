@@ -3,7 +3,6 @@
 // frontend/src/pages/NotFoundPage.jsx
 // ============================================================
 
-import React from "react";
 import { useRouter } from "../context/RouterContext";
 import { useAuth } from "../context/AuthContext";
 import {

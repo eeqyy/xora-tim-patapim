@@ -12,8 +12,10 @@
 // Hanya bisa dibuka lewat AdminRoute (role ADMIN).
 // ============================================================
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { adminAiApi } from "../services/api";
+import { useDialog } from "../context/DialogContext";
+import { useToast } from "../context/ToastContext";
 import {
   PageContainer,
   PageHeader,
@@ -26,6 +28,8 @@ import {
   LoadingState,
   EmptyState,
   Alert,
+  AccordionRow,
+  AnimatedContent,
   Field,
   Input,
   Select,
@@ -36,6 +40,7 @@ import {
   INK,
   MUTED,
   cx,
+  IconChevronDown,
 } from "../components";
 
 const DEFAULT_BASE = "https://openrouter.ai/api/v1";
@@ -82,11 +87,15 @@ const EMPTY_FORM = {
 };
 
 export default function AdminAiSettingsPage() {
+  const { confirm } = useDialog();
+  const toast = useToast();
   const [status, setStatus] = useState({ active: null, providers: [], health: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  // Bagian "Tambah / Ubah" bisa dilipat; terbuka secara default agar
+  // aksi utamanya tetap terlihat.
+  const [formOpen, setFormOpen] = useState(true);
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
@@ -147,7 +156,7 @@ export default function AdminAiSettingsPage() {
     setModels(row.model ? [{ id: row.model, name: row.model }] : []);
     setModelsError(null);
     setTestResult(null);
-    setNotice(null);
+    setFormOpen(true);
     setError(null);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -155,7 +164,6 @@ export default function AdminAiSettingsPage() {
   const handleLoadModels = async () => {
     setIsLoadingModels(true);
     setModelsError(null);
-    setNotice(null);
     try {
       let res;
       if (form.api_key) {
@@ -183,7 +191,6 @@ export default function AdminAiSettingsPage() {
   const handleTest = async () => {
     setIsTesting(true);
     setTestResult(null);
-    setNotice(null);
     try {
       const useStored = editing && !form.api_key;
       const payload = {
@@ -210,7 +217,6 @@ export default function AdminAiSettingsPage() {
     event.preventDefault();
     setIsSaving(true);
     setError(null);
-    setNotice(null);
     try {
       const base = {
         label: form.label,
@@ -223,12 +229,13 @@ export default function AdminAiSettingsPage() {
         const body = { ...base };
         if (form.api_key) body.api_key = form.api_key;
         await adminAiApi.update(form.id, body);
-        setNotice(`Provider "${form.label}" diperbarui.`);
+        toast.success(`Provider "${form.label}" diperbarui.`);
       } else {
         await adminAiApi.create({ ...base, api_key: form.api_key });
-        setNotice(`Provider "${form.label}" ditambahkan.`);
+        toast.success(`Provider "${form.label}" ditambahkan.`);
       }
       resetForm();
+      setFormOpen(false);
       await loadStatus();
     } catch (err) {
       setError(err.message || "Gagal menyimpan provider AI.");
@@ -240,10 +247,9 @@ export default function AdminAiSettingsPage() {
   const handleActivate = async (row) => {
     setBusyId(row.id);
     setError(null);
-    setNotice(null);
     try {
       await adminAiApi.activate(row.id);
-      setNotice(`Provider "${row.label}" dijadikan aktif.`);
+      toast.success(`Provider "${row.label}" dijadikan aktif.`);
       await loadStatus();
     } catch (err) {
       setError(err.message || "Gagal mengaktifkan provider.");
@@ -255,15 +261,17 @@ export default function AdminAiSettingsPage() {
   const handleRowTest = async (row) => {
     setBusyId(row.id);
     setError(null);
-    setNotice(null);
     try {
       const res = await adminAiApi.testProvider(row.id, {});
       const data = res?.data || {};
-      setNotice(
-        `${data.ok ? "✅" : "⚠️"} "${row.label}" — ${data.message || data.status}${
-          data.duration_ms ? ` (${data.duration_ms} ms)` : ""
-        }`
-      );
+      const detail = `"${row.label}" — ${data.message || data.status}${
+        data.duration_ms ? ` (${data.duration_ms} ms)` : ""
+      }`;
+      if (data.ok) {
+        toast.success(detail);
+      } else {
+        toast.error(detail);
+      }
     } catch (err) {
       setError(err.message || "Gagal menguji provider.");
     } finally {
@@ -272,16 +280,18 @@ export default function AdminAiSettingsPage() {
   };
 
   const handleDelete = async (row) => {
-    const confirmed = window.confirm(
-      `Hapus provider "${row.label}"? API key tersimpan akan ikut dihapus.`
-    );
+    const confirmed = await confirm({
+      title: `Hapus provider "${row.label}"?`,
+      description: "API key yang tersimpan akan ikut dihapus.",
+      confirmLabel: "Hapus",
+      tone: "danger",
+    });
     if (!confirmed) return;
     setBusyId(row.id);
     setError(null);
-    setNotice(null);
     try {
       await adminAiApi.remove(row.id);
-      setNotice(`Provider "${row.label}" dihapus.`);
+      toast.success(`Provider "${row.label}" dihapus.`);
       if (form.id === row.id) resetForm();
       await loadStatus();
     } catch (err) {
@@ -303,8 +313,7 @@ export default function AdminAiSettingsPage() {
         description="Simpan API key provider AI dan pilih model untuk mesin diagnosis Xolearn. API key disimpan terenkripsi dan tidak pernah ditampilkan utuh."
       />
 
-      {notice && <Alert tone="success">{notice}</Alert>}
-      {error && <Alert tone="error">{error}</Alert>}
+      {error && <Alert tone="error" className="mt-8">{error}</Alert>}
 
       {isLoading && <LoadingState message="Memuat konfigurasi AI..." />}
 
@@ -312,6 +321,7 @@ export default function AdminAiSettingsPage() {
         <>
           {/* ---- 01 Status ---- */}
           <SectionHeader id="ai-status" index="1" title="Status AI" />
+          <AnimatedContent>
           <GlassPanel variant="subtle" className="mt-8 p-5 md:p-6">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
               <div className="flex flex-col gap-1.5">
@@ -365,16 +375,23 @@ export default function AdminAiSettingsPage() {
               </div>
             )}
           </GlassPanel>
+          </AnimatedContent>
 
           {/* ---- 02 Provider tersimpan ---- */}
-          <SectionHeader id="ai-providers" index="2" title="API Key Tersimpan" />
+          <SectionHeader
+            id="ai-providers"
+            index="2"
+            title="API Key Tersimpan"
+            meta={providers.length ? `${providers.length} provider` : undefined}
+          />
+          <AnimatedContent>
           {providers.length === 0 ? (
             <EmptyState
               title="Belum Ada API Key"
               description="Tambahkan API key provider di bawah agar fitur diagnosis AI Xolearn bisa berjalan."
             />
           ) : (
-            <div className={cx("mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
+            <div className={cx("table-cards mt-8 overflow-x-auto rounded-3xl border", HAIRLINE)}>
               <table className={TABLE_CLASS}>
                 <thead>
                   <tr>
@@ -402,12 +419,14 @@ export default function AdminAiSettingsPage() {
                             {row.base_url}
                           </span>
                         </th>
-                        <td className={cx(TD_CLASS, MUTED)}>
+                        <td className={cx(TD_CLASS, MUTED)} data-label="API Key">
                           <code className="text-[12px]">{row.api_key_masked}</code>
                         </td>
-                        <td className={cx(TD_CLASS, "break-all")}>{row.model}</td>
-                        <td className={cx(TD_CLASS, MUTED)}>{row.json_mode ? "Aktif" : "Nonaktif"}</td>
-                        <td className={TD_CLASS}>
+                        <td className={cx(TD_CLASS, "break-all")} data-label="Model">{row.model}</td>
+                        <td className={cx(TD_CLASS, MUTED)} data-label="JSON">
+                          {row.json_mode ? "Aktif" : "Nonaktif"}
+                        </td>
+                        <td className={TD_CLASS} data-label="Status">
                           {row.is_active ? (
                             <StatusBadge status="ACTIVE" label="Aktif" variant="success" dot />
                           ) : (
@@ -458,6 +477,7 @@ export default function AdminAiSettingsPage() {
               </table>
             </div>
           )}
+          </AnimatedContent>
 
           {/* ---- 03 Tambah / Ubah ---- */}
           <SectionHeader
@@ -466,7 +486,29 @@ export default function AdminAiSettingsPage() {
             title={editing ? `Ubah Provider — ${form.label}` : "Tambah Provider"}
           />
 
-          <GlassPanel variant="subtle" className="mt-8 p-5 md:p-6">
+          <AnimatedContent>
+          <AccordionRow
+            className="mt-4"
+            open={formOpen}
+            onToggle={() => setFormOpen((v) => !v)}
+            summary={
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className={cx("text-[13px] font-bold", INK)}>
+                  {editing ? `Formulir ubah “${form.label}”` : "Formulir provider baru"}
+                </span>
+                <span className={cx("text-[12px]", MUTED)}>
+                  Label, Base URL, API key, lalu pilih model dan uji koneksinya.
+                </span>
+              </span>
+            }
+            trailing={
+              <IconChevronDown
+                size={16}
+                className={cx("transition-transform duration-200", formOpen && "rotate-180")}
+              />
+            }
+          >
+          <GlassPanel variant="subtle" className="p-5 md:p-6">
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <Field label="Label Provider" htmlFor="ai-label" required>
@@ -615,6 +657,8 @@ export default function AdminAiSettingsPage() {
               </div>
             </form>
           </GlassPanel>
+          </AccordionRow>
+          </AnimatedContent>
         </>
       )}
     </PageContainer>

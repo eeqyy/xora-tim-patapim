@@ -4,7 +4,7 @@
 // frontend/src/pages/ProfilePage.jsx
 // ============================================================
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "../context/RouterContext";
 import { profileApi, subjectsApi } from "../services/api";

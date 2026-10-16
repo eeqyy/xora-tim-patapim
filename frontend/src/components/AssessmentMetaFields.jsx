@@ -7,7 +7,6 @@
 // (TOPIC butuh topik, LEVEL_FINAL butuh level — aturan CHECK di schema).
 // ============================================================
 
-import React from "react";
 import { Field, Input, Select } from "./ui";
 
 export const ASSESSMENT_TYPES = [

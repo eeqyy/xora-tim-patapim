@@ -248,18 +248,6 @@ export const assessmentsApi = {
     apiRequest(`/api/assessments/attempts/${attemptId}/analyze-gap`, { method: "POST", token }),
 };
 
-export const attemptsApi = {
-  getById: (id, token) =>
-    apiRequest(`/api/attempts/${id}`, { method: "GET", token }),
-
-  submit: (id, answers, token) =>
-    apiRequest(`/api/attempts/${id}/submit`, {
-      method: "POST",
-      body: { answers },
-      token,
-    }),
-};
-
 /**
  * Data referensi untuk form admin (level / topik / konsep).
  * Endpoint ini publik, tanpa token.
@@ -316,48 +304,6 @@ export const adminQuestionsApi = {
     apiRequest(`/api/assessments/${assessmentId}/questions/reorder`, {
       method: "PUT",
       body: { orderedIds },
-      token,
-    }),
-};
-
-export const adminQuestionBankApi = {
-  list: (params = {}, token) => {
-    const query = new URLSearchParams();
-    if (params.material) query.append("material", params.material);
-    if (params.difficulty) query.append("difficulty", params.difficulty);
-    if (params.type) query.append("type", params.type);
-    if (params.is_active !== undefined) query.append("is_active", params.is_active);
-    if (params.search) query.append("search", params.search);
-    const qs = query.toString() ? `?${query.toString()}` : "";
-    return apiRequest(`/api/assessments/admin/questions/bank${qs}`, { method: "GET", token });
-  },
-
-  create: (body, token) =>
-    apiRequest("/api/assessments/admin/questions/bank", {
-      method: "POST",
-      body,
-      token,
-    }),
-
-  getById: (id, token) =>
-    apiRequest(`/api/assessments/admin/questions/bank/${id}`, { method: "GET", token }),
-
-  update: (id, body, token) =>
-    apiRequest(`/api/assessments/admin/questions/bank/${id}`, {
-      method: "PUT",
-      body,
-      token,
-    }),
-
-  remove: (id, token) =>
-    apiRequest(`/api/assessments/admin/questions/bank/${id}`, {
-      method: "DELETE",
-      token,
-    }),
-
-  toggleActive: (id, token) =>
-    apiRequest(`/api/assessments/admin/questions/bank/${id}/toggle-active`, {
-      method: "PATCH",
       token,
     }),
 };
@@ -422,33 +368,6 @@ export const recommendationsApi = {
     apiRequest(`/api/recommendations/${id}/skip`, { method: "POST", token }),
 };
 
-export const practicesApi = {
-  list: (params = {}, token) => {
-    const query = new URLSearchParams();
-    if (params.subjectId) query.append("subjectId", params.subjectId);
-    if (params.levelId) query.append("levelId", params.levelId);
-    if (params.conceptId) query.append("conceptId", params.conceptId);
-    const qs = query.toString() ? `?${query.toString()}` : "";
-    return apiRequest(`/api/practices${qs}`, { method: "GET", token });
-  },
-
-  getById: (id, token) =>
-    apiRequest(`/api/practices/${id}`, { method: "GET", token }),
-
-  start: (id, token) =>
-    apiRequest(`/api/practices/${id}/start`, { method: "POST", token }),
-
-  submit: (attemptId, answers, token) =>
-    apiRequest(`/api/practices/attempts/${attemptId}/submit`, {
-      method: "POST",
-      body: { answers },
-      token,
-    }),
-
-  getResult: (attemptId, token) =>
-    apiRequest(`/api/practices/attempts/${attemptId}/result`, { method: "GET", token }),
-};
-
 export const historyApi = {
   getHistory: (params = {}, token) => {
     const query = new URLSearchParams();
@@ -461,13 +380,6 @@ export const historyApi = {
 
   getProgress: (params = {}, token) =>
     historyApi.getHistory(params, token),
-};
-
-export const systemApi = {
-  getHealth: () =>
-    apiRequest("/api/health", {
-      method: "GET",
-    }),
 };
 
 /**

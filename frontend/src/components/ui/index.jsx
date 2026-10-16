@@ -18,17 +18,14 @@ export function cx(...parts) {
    Token kelas yang dipakai berulang
    ------------------------------------------------------------ */
 export const HAIRLINE = "border-hairline dark:border-hairline-dark";
-export const HAIRLINE_DIVIDE_X = "divide-hairline dark:divide-hairline-dark";
 /* Garis batas section — satu tingkat lebih tegas dari HAIRLINE. */
 export const RULE = "border-rule dark:border-rule-dark";
-export const SURFACE = "bg-canvas dark:bg-canvas-dark";
-export const CELL = "bg-cell dark:bg-cell-dark";
 export const INK = "text-ink dark:text-ink-dark";
 export const MUTED = "text-muted dark:text-muted-dark";
 
 /* Pil filter / chip (target sentuh >=44px). */
 export const CHIP_CLASS =
-  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[13px] font-semibold transition-colors";
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[13px] font-semibold transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[.98]";
 export const CHIP_INACTIVE =
   "border-hairline bg-transparent text-ink hover:border-brand hover:text-accent dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent";
 export const CHIP_ACTIVE = "border-brand bg-brand text-white hover:bg-brand-hover";
@@ -103,7 +100,9 @@ export function SectionHeader({ index, title, meta, id, sticky = true, className
       >
         <div className="flex min-w-0 items-baseline gap-4">
           {index ? (
-            <span className="text-[12px] font-bold tabular-nums text-accent">{index}</span>
+            <span className="enter-rise text-[12px] font-bold tabular-nums text-accent" style={{ "--i": 0 }}>
+              {index}
+            </span>
           ) : null}
           <h2
             className={cx(
@@ -112,10 +111,18 @@ export function SectionHeader({ index, title, meta, id, sticky = true, className
               INK
             )}
           >
-            {title}
+            {typeof title === "string" ? (
+              <ScrollText variant="label">{title}</ScrollText>
+            ) : (
+              title
+            )}
           </h2>
         </div>
-        {meta ? <MicroMeta className={sticky ? "shrink-0" : ""}>{meta}</MicroMeta> : null}
+        {meta ? (
+          <MicroMeta className={cx("enter-rise", sticky && "shrink-0")} style={{ "--i": 1 }}>
+            {meta}
+          </MicroMeta>
+        ) : null}
       </div>
     </div>
   );
@@ -142,13 +149,18 @@ export function Panel({ as: Tag = "div", className = "", children, ...rest }) {
   );
 }
 
-export function GridCell({ as: Tag = "div", className = "", children, ...rest }) {
+/* GridCell — sel grid. Meneruskan `ref` ke elemennya supaya bisa dipakai
+   sebagai target IntersectionObserver (mis. CenterActive di Jalur Belajar). */
+export const GridCell = React.forwardRef(function GridCell(
+  { as: Tag = "div", className = "", children, ...rest },
+  ref
+) {
   return (
-    <Tag className={cx("min-w-0 border-t pt-5", HAIRLINE, className)} {...rest}>
+    <Tag ref={ref} className={cx("min-w-0 border-t pt-5", HAIRLINE, className)} {...rest}>
       {children}
     </Tag>
   );
-}
+});
 
 /* Grid — kolom responsif dengan jarak lega. */
 export function Grid({ cols = 1, className = "", children, ...rest }) {
@@ -198,8 +210,8 @@ export function MetricCell({ label, value, hint, className = "" }) {
    SeverityBadge — indikator tingkat keparahan (pil)
    ------------------------------------------------------------ */
 const SEVERITY_STYLES = {
-  high: "bg-error text-white",
-  medium: "border border-warning bg-warning text-warning-ink",
+  high: "border border-error-strong bg-error-soft text-error-ink",
+  medium: "border border-warning-strong bg-warning-soft text-warning-ink",
   low: "border border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
   neutral:
     "border border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
@@ -219,31 +231,12 @@ export function SeverityBadge({ tone = "neutral", className = "", children }) {
   );
 }
 
-/* ------------------------------------------------------------
-   PrimaryButton — CTA utama (pil, >=48px, full-width opsional)
-   ------------------------------------------------------------ */
-export function PrimaryButton({ className = "", fullWidth = false, children, ...rest }) {
-  return (
-    <button
-      className={cx(
-        "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-brand px-6 text-[14px] font-semibold text-white transition-colors",
-        "hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50",
-        fullWidth && "w-full",
-        className
-      )}
-      {...rest}
-    >
-      {children}
-    </button>
-  );
-}
-
 /* GhostButton — aksi sekunder (pil, garis tipis) */
 export function GhostButton({ className = "", children, ...rest }) {
   return (
     <button
       className={cx(
-        "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[14px] font-semibold transition-colors",
+        "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-5 text-[14px] font-semibold transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[.98]",
         "border-hairline text-ink hover:border-brand hover:text-accent",
         "dark:border-hairline-dark dark:text-ink-dark dark:hover:border-brand dark:hover:text-accent",
         className
@@ -252,27 +245,6 @@ export function GhostButton({ className = "", children, ...rest }) {
     >
       {children}
     </button>
-  );
-}
-
-/* ------------------------------------------------------------
-   ProgressBar — batang pil (isi aksen azure)
-   ------------------------------------------------------------ */
-export function ProgressBar({ value = 0, className = "" }) {
-  const pct = Math.max(0, Math.min(100, Number(value) || 0));
-  return (
-    <div
-      className={cx("h-2 w-full overflow-hidden rounded-full bg-cell dark:bg-cell-dark", className)}
-      role="progressbar"
-      aria-valuenow={pct}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div
-        className="h-full rounded-full bg-brand transition-[width] duration-500"
-        style={{ width: `${pct}%` }}
-      />
-    </div>
   );
 }
 
@@ -298,7 +270,20 @@ export function AccordionRow({
         <span className="min-w-0 flex-1">{summary}</span>
         <span className="flex shrink-0 items-center gap-3">{trailing}</span>
       </button>
-      {open ? <div className="pb-6">{children}</div> : null}
+      {/* Isi akordeon tetap ter-mount supaya tingginya bisa dianimasikan
+          (0fr → 1fr). Saat tertutup, isinya terpotong `overflow-hidden`
+          dan ditandai aria-hidden; isinya hanya teks sehingga tidak ada
+          elemen yang bisa difokus. Tanpa dukungan animasi grid, barisnya
+          hanya membuka/menutup seketika (tetap berfungsi). */}
+      <div
+        className="accordion-region grid"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+        aria-hidden={!open}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="pb-6">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -321,17 +306,6 @@ export function ChecklistRow({ marker, title, description, children, className =
         </div>
       </div>
       {children ? <div className="mt-5">{children}</div> : null}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------
-   DataRow — baris data generik (garis horizontal)
-   ------------------------------------------------------------ */
-export function DataRow({ className = "", children, ...rest }) {
-  return (
-    <div className={cx("border-t py-4", HAIRLINE, className)} {...rest}>
-      {children}
     </div>
   );
 }
@@ -408,7 +382,7 @@ Textarea.displayName = "Textarea";
    ------------------------------------------------------------ */
 const ALERT_STYLES = {
   success: "border-positive/30 bg-positive-soft text-ink dark:text-ink-dark",
-  error: "border-error bg-error text-white",
+  error: "border-error-strong bg-error-soft text-error-ink",
   info: "border-hairline bg-cell text-ink dark:border-hairline-dark dark:bg-cell-dark dark:text-ink-dark",
   neutral:
     "border-hairline bg-cell text-ink dark:border-hairline-dark dark:bg-cell-dark dark:text-ink-dark",
@@ -526,6 +500,109 @@ export function Reveal({
       {...rest}
     >
       {children}
+    </Tag>
+  );
+}
+/* ------------------------------------------------------------
+   Port dari ReactBits: "Scroll Reveal" + "Scroll Float" (lisensi MIT),
+   yang aslinya memakai GSAP + ScrollTrigger. Di sini tanpa dependency:
+   saat elemen masuk viewport, kelas keadaan dipasang dari JS dan
+   sisanya dikerjakan CSS (delay per kata `--wi`, per huruf `--ci`).
+   Paduan keduanya:
+     • per KATA  — muncul dari kabur (blur → 0) + opacity  (Scroll Reveal);
+     • per HURUF — naik dari bawah sambil memanjang lalu tegak kembali
+       (Scroll Float), khusus `variant="display"`.
+   Konten TIDAK pernah disembunyikan: keadaan awal (opacity `.3`, blur 3px)
+   hanya hidup selama animasi berjalan, jadi teks tetap terbaca walau
+   observer belum sempat menyala (mis. tangkapan layar penuh).
+   `variant="label"` = hanya per kata, tanpa pecah huruf & tanpa putaran
+   wadah — untuk judul bagian kecil yang bisa ter-`truncate`.
+   Setelah selesai kelasnya dilepas, jadi DOM kembali berupa teks biasa
+   persis seperti sebelumnya (aman untuk `truncate` / ellipsis).
+   ------------------------------------------------------------ */
+export function ScrollText({
+  children,
+  variant = "display",
+  className = "",
+  as: Tag = "span",
+}) {
+  const ref = React.useRef(null);
+  const timer = React.useRef(0);
+
+  const teks = typeof children === "string" ? children : null;
+  const potongan = [];
+  let jumlahKata = 0;
+  let jumlahHuruf = 0;
+
+  if (teks !== null) {
+    let ci = 0;
+    teks.split(/(\s+)/).forEach((bagian) => {
+      if (bagian === "") return;
+      if (/^\s+$/.test(bagian)) {
+        potongan.push(bagian);
+        return;
+      }
+      const wi = jumlahKata++;
+      const isi =
+        variant === "display"
+          ? Array.from(bagian).map((huruf, k) => (
+              <span className="sft-char" key={k} style={{ "--ci": ci++ }}>
+                {huruf}
+              </span>
+            ))
+          : bagian;
+      jumlahHuruf = ci;
+      potongan.push(
+        <span className="sft-word" key={`w${wi}`} style={{ "--wi": wi }}>
+          {isi}
+        </span>
+      );
+    });
+  }
+
+  const ms = Math.round(
+    Math.max(
+      560 + Math.max(0, jumlahHuruf - 1) * 16,
+      520 + Math.max(0, jumlahKata - 1) * 55
+    ) + 80
+  );
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return undefined;
+    const lama = Number(el.dataset.sftMs || 0);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          observer.disconnect();
+          el.classList.add("is-run");
+          void el.offsetHeight; // paksa gaya "awal" terhitung dulu
+          el.classList.add("is-in");
+          timer.current = window.setTimeout(() => {
+            el.classList.remove("is-run");
+            el.classList.remove("is-in");
+          }, lama);
+        });
+      },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.05 }
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (timer.current) window.clearTimeout(timer.current);
+    };
+  }, []);
+
+  if (teks === null) return children ?? null;
+
+  return (
+    <Tag
+      ref={ref}
+      data-sft-ms={ms}
+      className={cx("sft", variant === "display" ? "sft-display" : "sft-label", className)}
+    >
+      {potongan}
     </Tag>
   );
 }

@@ -6,8 +6,8 @@
 // Dipisahkan dari konten oleh satu garis horizontal.
 // ============================================================
 
-import React from "react";
-import { Eyebrow, DisplayHeading, MUTED, HAIRLINE, cx } from "./ui";
+import FoldText from "./FoldText";
+import { Eyebrow, DisplayHeading, MUTED, RULE, cx } from "./ui";
 
 export default function PageHeader({
   badge,
@@ -17,21 +17,37 @@ export default function PageHeader({
   className = "",
 }) {
   return (
-    <header className={cx("border-b pb-8 md:pb-10", HAIRLINE, className)}>
+    <header
+      className={cx(
+        // Garis bawah dibuat full-bleed ke tepi PageContainer dan memakai
+        // RULE (sama seperti SectionHeader) supaya kedua garis yang
+        // berurutan di satu halaman punya panjang + warna yang identik.
+        "-mx-5 border-b px-5 pb-8 md:-mx-8 md:px-8 md:pb-10 xl:-mx-10 xl:px-10",
+        RULE,
+        className
+      )}
+    >
       {badge
         ? typeof badge === "string"
-          ? <Eyebrow>{badge}</Eyebrow>
+          ? <Eyebrow className="enter-rise" style={{ "--i": 0 }}>{badge}</Eyebrow>
           : badge
         : null}
       {title ? (
         <DisplayHeading
           className={cx("max-w-4xl text-display", badge ? "mt-4" : "")}
         >
-          {title}
+          {typeof title === "string" ? (
+            <FoldText>{title}</FoldText>
+          ) : (
+            title
+          )}
         </DisplayHeading>
       ) : null}
       {description ? (
-        <p className={cx("mt-5 max-w-2xl text-[15px] leading-relaxed md:text-[16px]", MUTED)}>
+        <p
+          className={cx("enter-rise mt-5 max-w-2xl text-[15px] leading-relaxed md:text-[16px]", MUTED)}
+          style={{ "--i": 2 }}
+        >
           {description}
         </p>
       ) : null}

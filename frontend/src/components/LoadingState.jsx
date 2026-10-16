@@ -3,7 +3,6 @@
 // frontend/src/components/LoadingState.jsx
 // ============================================================
 
-import React from "react";
 import { MicroMeta, cx } from "./ui";
 
 export default function LoadingState({ message = "Memuat data...", className = "", style }) {

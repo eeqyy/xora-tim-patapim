@@ -7,7 +7,6 @@
 // netral = muted.
 // ============================================================
 
-import React from "react";
 import { cx } from "./ui";
 
 const STATUS_CONFIGS = {
@@ -36,9 +35,9 @@ const STATUS_CONFIGS = {
 };
 
 const VARIANT_CLASSES = {
-  success: "border-positive bg-positive text-white",
-  warning: "border-warning bg-warning text-warning-ink",
-  error: "border-error bg-error text-white",
+  success: "border-positive-strong bg-positive-soft text-positive-strong",
+  warning: "border-warning-strong bg-warning-soft text-warning-ink",
+  error: "border-error-strong bg-error-soft text-error-ink",
   info: "border-hairline text-ink dark:border-hairline-dark dark:text-ink-dark",
   neutral: "border-hairline text-muted dark:border-hairline-dark dark:text-muted-dark",
   primary: "border-brand text-accent",

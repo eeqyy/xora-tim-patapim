@@ -6,13 +6,8 @@
 // menerapkannya lewat atribut <html data-theme="dark|light">.
 // Nilai awal sudah dipasang oleh script anti-FOUC di index.html.
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { usePixelTransition } from "./TransitionContext";
 
 const ThemeContext = createContext(null);
 const THEME_KEY = "xora_theme";
@@ -32,6 +27,7 @@ function readInitialTheme() {
 
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(readInitialTheme);
+  const { run } = usePixelTransition();
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -42,13 +38,32 @@ export function ThemeProvider({ children }) {
     }
   }, [theme]);
 
-  const setTheme = useCallback((next) => {
-    setThemeState(next === "dark" ? "dark" : "light");
-  }, []);
+  /* Perubahan tema dijalankan di dalam penutup pixel supaya pergantian
+     terang ⇄ gelap terasa seperti satu transisi, bukan kedipan. Tema
+     tujuan dikirim ke overlay, jadi panel penutupnya berwarna tema yang
+     akan muncul (gelap → terang berarti panel putih, dan sebaliknya). */
+  const setTheme = useCallback(
+    (next) => {
+      const value = next === "dark" ? "dark" : "light";
+      run(
+        () => {
+          setThemeState((prev) => (prev === value ? prev : value));
+        },
+        { targetTheme: value }
+      );
+    },
+    [run]
+  );
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
-  }, []);
+    const next = theme === "dark" ? "light" : "dark";
+    run(
+      () => {
+        setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
+      },
+      { targetTheme: next }
+    );
+  }, [run, theme]);
 
   return (
     <ThemeContext.Provider
