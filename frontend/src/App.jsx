@@ -158,9 +158,10 @@ function AppContent() {
   return (
     <div className="flex min-h-dvh flex-col bg-canvas text-ink dark:bg-canvas-dark dark:text-ink-dark transition-colors duration-300">
       <Navbar />
-      {/* pb = tinggi BottomNav (5rem) + safe-area iPhone, agar konten
-          terakhir tidak pernah tertutup bar bawah. */}
-      <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+      {/* pb = tinggi pita GradualBlur (7.5rem) + safe-area iPhone, supaya
+          elemen terakhir tidak pernah masuk area blur / tertutup bar bawah
+          saat halaman di-scroll sampai habis (mobile maupun desktop). */}
+      <main className="flex-1 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-[7.5rem]">
         {pageContent}
       </main>
       <BottomNav />
