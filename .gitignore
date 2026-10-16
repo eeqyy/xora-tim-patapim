@@ -6,6 +6,9 @@ node_modules/
 .env.*.local
 .env.vercel*
 
+# Vercel CLI
+.vercel/
+
 # Build outputs
 dist/
 build/
