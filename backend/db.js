@@ -10,6 +10,11 @@ const useSsl = String(process.env.DATABASE_SSL || "").toLowerCase() !== "false";
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: useSsl ? { rejectUnauthorized: false } : false,
+  // Ramah serverless (Vercel): batasi jumlah koneksi per instance fungsi.
+  // Untuk produksi, pakai koneksi "pooled" dari Supabase/Neon.
+  max: 1,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 15000,
 });
 
 pool.on("error", (err) => {

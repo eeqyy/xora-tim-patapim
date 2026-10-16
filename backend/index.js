@@ -105,6 +105,12 @@ app.use((req, res) =>
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => sendError(res, err));
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Backend Xolearn berjalan di http://localhost:${PORT}`);
-});
+// Di Vercel (serverless) app di-ekspor sebagai handler; app.listen hanya
+// dijalankan bila berkas ini dipanggil langsung (pengembangan lokal).
+if (require.main === module) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Backend Xolearn berjalan di http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
